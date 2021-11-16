@@ -1,0 +1,14 @@
+# If you only wish to "use" vipersci with conda, you can just
+# > conda env create -n vipersci -f environment.yml
+#
+# If you want to develop vipersci, can should do this:
+# > conda env create -n vipersci -f environment_dev.yml
+# > conda activate vipersci
+# > conda env update -f environment.yml
+# If the last "update" takes forever, consider using "mamba" instead of "conda".
+dependencies:
+  - geopandas
+  - gdal
+  - pandas
+  - pyproj
+  - shapely

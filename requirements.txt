@@ -1,0 +1,5 @@
+geopandas
+gdal
+pandas
+pyproj
+shapely
