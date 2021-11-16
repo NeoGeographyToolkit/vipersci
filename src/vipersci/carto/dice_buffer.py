@@ -1,25 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Takes a geospatial vector file and creates positive and negative buffered
-versions of the regions.
+"""Takes a geospatial vector file and creates either positive or negative
+buffered versions of the regions.
 """
 
-# Copyright 2021, Ross A. Beyer.
+# Copyright 2021, vipersci developers.
 #
 # Reuse is permitted under the terms of the license.
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
 import argparse
-import logging
 import sys
 
 import geopandas as gp
 from shapely.geometry import Polygon, MultiPolygon
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
-
-logger = logging.getLogger(__name__)
 
 
 def arg_parser():
