@@ -16,13 +16,10 @@ more.
 
 import argparse
 from collections import Counter
-import logging
 import sys
 
 import geopandas as gp
 from shapely.geometry import LineString, box
-
-logger = logging.getLogger(__name__)
 
 
 def arg_parser():
@@ -66,13 +63,10 @@ The area and path have different coordinate reference systems.
 """
         )
 
-    if not box(*areas.total_bounds).contains(path["geometry"]):
-        parser.error(
-            "The first geometry in the path is not entirely contained within "
-            "the area's bounding box."
-        )
-
-    accrual = accumulate(path["geometry"], areas)
+    try:
+        accrual = accumulate(path["geometry"], areas)
+    except ValueError as err:
+        parser.error(err.msg)
 
     accumulated_length = sum(accrual.values())
 
@@ -96,6 +90,12 @@ def accumulate(
     is provided, returned accumulations will be added to those values
     provided in *counter*.
     """
+    if not box(*areas.total_bounds).contains(path["geometry"]):
+        raise ValueError(
+            "The specified path geometry is not entirely contained within "
+            "the area's bounding box."
+        )
+
     if counter is None:
         counter = Counter()
     else:
