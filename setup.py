@@ -5,20 +5,22 @@
 from setuptools import setup, find_packages
 
 requirements = [
-    "lxml",
     "setuptools"
 ]
 
 setup(
     entry_points={
         'console_scripts': [
-
-        ]
+            'accrual=vipersci.carto.accrual:main',
+            'dice_buffer=vipersci.carto.dice_buffer:main',
+            'dissolve_dice=vipersci.carto.dissolve_dice:main',
+            'tri102gpkg=vipersci.carto.tri102gpkg:main'
+        ],
     },
     install_requires=requirements,
     include_package_data=True,
     # package_data={
-    #     "hiproc": ["data/*"],
+    #     "vipersci": ["data/*"],
     # },
     packages=find_packages(
         include=['vipersci', 'vipersci.*'],
