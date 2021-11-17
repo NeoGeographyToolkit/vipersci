@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 '''Converts the vertices in a .tri10 file to a GeoCSV or GeoPackage file.
 
-A .tri10 file is a comma separated value file where each line contains ten
+A .tri10 file is a whitespace separated value file where each line contains ten
 elements which describe a triangular facet.  The first nine elements are the
-X, Y, and Z coordinates of the verticies, in this order
-x1, y1, z1, x2, y2, z2, x3, y3, z3
+X, Y, and Z coordinates of the verticies, in this order:
+x1 y1 z1 x2 y2 z2 x3 y3 z3
 
 The last element is a data value of some kind representing the value of
 "the facet".  So for a depth to ice file, that value would be the depth in
@@ -24,23 +24,27 @@ This file format is not particularly a standard, but is simple to process.
 # top level of this library.
 
 import argparse
-import csv
-
+# import csv
 from pathlib import Path
+
+import geopandas
 from pyproj import CRS, Transformer
-from osgeo import ogr, osr
+# from osgeo import ogr, osr
+from shapely import Polygon
 
-ogr.UseExceptions()
+# ogr.UseExceptions()
 
+stere_crs = "+proj=stere +lon_0={} +lat_0={} +R=1737400"
 sites = dict(  # lon first, then lat
-    nobile=(31.1492746341015, -85.391176037601),
-    haworth=(0, -90),  # the Haworth DEMs are polar stereographic, apparently.
-    spole=(0, -90),
-    npole=(0, 90)
+    spole=stere_crs.format(0, -90),
+    npole=stere_crs.format(0, 90),
+    nobile=stere_crs.format(31.1492746341015, -85.391176037601),
+    # the Haworth DEMs are polar stereographic, apparently.
+    haworth=stere_crs.format(0, -90),
 )
 
 
-def main():
+def arg_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "-o", "--output", help="Optional name of output file.", required=False
@@ -50,113 +54,166 @@ def main():
         help="Will output a GeoCSV instead of a GeoPackage file."
     )
     parser.add_argument(
-        "--lat", type=float, required=False,
-        help="Latitude for the center of the stereographic projection."
-    )
-    parser.add_argument(
-        "--lon", type=float, required=False,
-        help="Longitude for the center of the stereographic projection."
-    )
-    parser.add_argument(
         "-s", "--site", choices=sites.keys(), required=False,
         help="Specifying a site, sets the latitude and longitude for the "
              "center of projection."
     )
-    parser.add_argument('file', help='.tri10 file')
+    parser.add_argument(
+        "--s_srs",
+        default="+proj=cart +a=1737400 +b=1737400",
+        help="The source CRS or SRS of the .tri10 data."
+    )
+    parser.add_argument(
+        "--t_srs",
+        help="The CRS or SRS of the output file.  The various -s options are "
+             "short-hands for this."
+    )
+    parser.add_argument(
+        "-v", "--value_name",
+        default="Depth (m)",
+        help="This text will be used as the title of the data value field in "
+             "the output file."
+    )
+    parser.add_argument(
+        "--keep_z",
+        action="store_true",
+        help="Will retain the Z value in the output geometries, otherwise "
+             "collapses to 2D geometries."
+    )
+    parser.add_argument(
+        "--keep_all_facets",
+        action="store_true",
+        help="Will retain all of the triangular facets of the original .tri10 "
+             "file, which will result in a very large file.  By default, "
+             "adjoining facets with identical values will be merged into "
+             "larger polygons."
+    )
+    parser.add_argument("file", help=".tri10 file")
+    return parser
 
+
+def main():
+    parser = arg_parser()
     args = parser.parse_args()
 
-    try:
-        lon, lat = get_lonlat(args, sites)
-    except ValueError as err:
-        parser.error(err)
+    if args.sites is not None:
+        t_srs = sites[args.sites]
+    else:
+        if args.t_srs is None:
+            parser.error(
+                "Neither a site (-s) nor a target SRS (--t_srs) was provided."
+            )
+        else:
+            t_srs = args.t_srs
 
     if args.output is None:
         outfile = Path(args.file).with_suffix(".gpkg")
     else:
         outfile = Path(args.output)
 
-    radius = 1737400
-    cart = CRS.from_proj4(f"+proj=cart +a={radius} +b={radius}")
-    # pstere = CRS.from_proj4(f"+proj=stere +lat_0=90 +lat_ts=-90 +R={radius}")
-    pstere = CRS.from_proj4(
-        f"+proj=stere +lat_0={lat} +lon_0={lon} +R={radius}"
+    s_crs = CRS(args.s_srs)
+    t_crs = CRS(t_srs)
+    transformer = Transformer.from_crs(s_crs, t_crs)
+
+    polys = list()
+    values = list()
+    with open(args.file, "r") as f:
+        for line in f:
+            tokens = line.split()
+            poly, value = get_poly_value(transformer, tokens, args.keep_z)
+            polys.append(poly)
+            values.append(value)
+
+    gdf = geopandas.GeoDataFrame(
+        {args.value_name: values, "geometry": polys},
+        crs=t_crs
     )
-    transformer = Transformer.from_crs(cart, pstere)
+
+    if not args.keep_all_facets:
+        gdf = gdf.dissolve(by=args.value_name)
 
     if args.csv:
-        with open(args.file, "r") as f:
-            with open(outfile.with_suffix(".csv"), "w", newline="") as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(["wkt", "depth"])
-                for line in f:
-                    tokens = line.split()
-                    writer.writerow([get_wkt_depth(transformer, tokens)])
+        gdf.to_file(outfile.with_suffix(".csv"), driver="CSV")
     else:
-        # Write GeoPackage
-        driver = ogr.GetDriverByName("GPKG")
-        datasource = driver.CreateDataSource(str(outfile))
-        srs = osr.SpatialReference()
-        srs.ImportFromWkt(pstere.to_wkt())
-        layer = datasource.CreateLayer("depth", srs, ogr.wkbPolygon25D)
-        layer.CreateField(ogr.FieldDefn("Depth (m)", ogr.OFTReal))
+        gdf.to_file(outfile, driver="GPKG")
 
-        with open(args.file, "r") as f:
-            for line in f:
-                tokens = line.split()
-                wkt, depth = get_wkt_depth(transformer, tokens)
-                feature = ogr.Feature(layer.GetLayerDefn())
-                feature.SetField("Depth (m)", depth)
-                feature.SetGeometry(ogr.CreateGeometryFromWkt(wkt))
-                layer.CreateFeature(feature)
+    # if args.csv:
+    #     with open(args.file, "r") as f:
+    #         with open(outfile.with_suffix(".csv"), "w", newline="") as csvfile:
+    #             writer = csv.writer(csvfile)
+    #             writer.writerow(["WKT", args.value_name])
+    #             for line in f:
+    #                 tokens = line.split()
+    #                 writer.writerow([get_wkt_value(transformer, tokens)])
+    # else:
+    #     # Write GeoPackage
+    #     driver = ogr.GetDriverByName("GPKG")
+    #     datasource = driver.CreateDataSource(str(outfile))
+    #     srs = osr.SpatialReference()
+    #     srs.ImportFromWkt(pstere.to_wkt())
+    #     layer = datasource.CreateLayer("depth", srs, ogr.wkbPolygon25D)
+    #     layer.CreateField(ogr.FieldDefn(args.value_name, ogr.OFTReal))
 
-        # This closes and saves the data source
-        del datasource
+    #     with open(args.file, "r") as f:
+    #         for line in f:
+    #             tokens = line.split()
+    #             wkt, value = get_wkt_value(transformer, tokens)
+    #             feature = ogr.Feature(layer.GetLayerDefn())
+    #             feature.SetField(args.value_name, value)
+    #             feature.SetGeometry(ogr.CreateGeometryFromWkt(wkt))
+    #             layer.CreateFeature(feature)
 
+    #     # This closes and saves the data source
+    #     del datasource
 
-def get_lonlat(args, sites):
-    if args.site is None:
-        if args.lat is None:
-            raise ValueError("There is no latitude.")
-        else:
-            lat = args.lat
-
-        if args.lon is None:
-            raise ValueError("There is no longitude.")
-        else:
-            lon = args.lon
-    else:
-        lon, lat = sites[args.site]
-
-    return lon, lat
+    return
 
 
-def get_wkt_depth(transformer, tokens: list):
+def get_poly_value(transformer, tokens: list, z=True):
     in_m = list(map(lambda x: float(x) * 1000, tokens[:9]))
 
     v1 = transformer.transform(in_m[0], in_m[1], in_m[2])
     v2 = transformer.transform(in_m[3], in_m[4], in_m[5])
     v3 = transformer.transform(in_m[6], in_m[7], in_m[8])
 
-    wkt = make_wkt(v1, v2, v3)
-    if float(tokens[9]) == -1:
-        depth = 0
+    if z:
+        poly = Polygon(v1, v2, v3)
     else:
-        depth = tokens[9]
+        poly = Polygon(v1[-1], v2[-1], v3[-1])
+    if float(tokens[9]) == -1:
+        value = 0
+    else:
+        value = tokens[9]
 
-    return wkt, depth
+    return poly, value
 
 
-def make_wkt(v1: list, v2: list, v3: list) -> str:
-    c_list = ", ".join(
-        [
-            " ".join(map(str, v1)),
-            " ".join(map(str, v2)),
-            " ".join(map(str, v3)),
-            " ".join(map(str, v1))
-        ]
-    )
-    return (f"POLYGON Z (({c_list}))")
+# def get_wkt_value(transformer, tokens: list):
+#     in_m = list(map(lambda x: float(x) * 1000, tokens[:9]))
+#
+#     v1 = transformer.transform(in_m[0], in_m[1], in_m[2])
+#     v2 = transformer.transform(in_m[3], in_m[4], in_m[5])
+#     v3 = transformer.transform(in_m[6], in_m[7], in_m[8])
+#
+#     wkt = make_wkt(v1, v2, v3)
+#     if float(tokens[9]) == -1:
+#         value = 0
+#     else:
+#         value = tokens[9]
+#
+#     return wkt, value
+
+
+# def make_wkt(v1: list, v2: list, v3: list) -> str:
+#     c_list = ", ".join(
+#         [
+#             " ".join(map(str, v1)),
+#             " ".join(map(str, v2)),
+#             " ".join(map(str, v3)),
+#             " ".join(map(str, v1))
+#         ]
+#     )
+#     return (f"POLYGON Z (({c_list}))")
 
 
 if __name__ == "__main__":
