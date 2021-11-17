@@ -1,5 +1,5 @@
 ====================================================================
-viss Contributor Covenant Code of Conduct
+vipersci Contributor Covenant Code of Conduct
 ====================================================================
 
 The PlanetaryPy Project `Code of `Conduct`_ applies to

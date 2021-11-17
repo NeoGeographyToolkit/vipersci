@@ -48,7 +48,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 lint: ## check style with flake8
-	flake8 vipersci tests
+	flake8 src/vipersci tests
 
 test: ## run tests quickly with the default Python
 	pytest
@@ -65,7 +65,7 @@ coverage: ## check code coverage quickly with the default Python
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/vipersci.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ viss
+	sphinx-apidoc -o docs/ src/vipersci 
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
