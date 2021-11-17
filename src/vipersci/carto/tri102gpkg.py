@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Converts the vertices in a .tri10 file to a GeoCSV or GeoPackage file.
+"""Converts the vertices in a .tri10 file to a GeoCSV or GeoPackage file.
 
 A .tri10 file is a whitespace separated value file where each line contains ten
 elements which describe a triangular facet.  The first nine elements are the
@@ -15,7 +15,7 @@ The depth-to-ice .tri10 files sometimes have a -1 to indicate surface ice
 (instead of zero).
 
 This file format is not particularly a standard, but is simple to process.
-'''
+"""
 
 # Copyright 2021, vipersci developers.
 #
@@ -75,6 +75,26 @@ def arg_parser():
              "the output file."
     )
     parser.add_argument(
+        "--value_file",
+        help="If provided another whitespace-separated file will be read in, "
+             "and the value from the column indicated by --value_file_column "
+             "will be used as the value for each facet."
+    )
+    parser.add_argument(
+        "--value_file_column",
+        type=int,
+        default=-1,
+        help="When --value_file is indicated, this integer indicates which "
+             "column (zero is the first column) to extract the value from."
+    )
+    parser.add_argument(
+        "--replace_with_zero",
+        help="If there is a value that should be replaced with zero, it can "
+             "be provided here.  If the --value_name is 'Depth (m)' this will "
+             "automatically be set to '-1'.  If you want to override that, "
+             "you can set '--replace_with_zero 0'."
+    )
+    parser.add_argument(
         "--keep_z",
         action="store_true",
         help="Will retain the Z value in the output geometries, otherwise "
@@ -92,15 +112,12 @@ def arg_parser():
     return parser
 
 
-def main():
-    parser = arg_parser()
-    args = parser.parse_args()
-
+def arg_checks(args):
     if args.sites is not None:
         t_srs = sites[args.sites]
     else:
         if args.t_srs is None:
-            parser.error(
+            raise argparse.ArgumentError(
                 "Neither a site (-s) nor a target SRS (--t_srs) was provided."
             )
         else:
@@ -111,6 +128,23 @@ def main():
     else:
         outfile = Path(args.output)
 
+    if args.value_name == "Depth (m)":
+        replace_with_zero = -1
+    else:
+        replace_with_zero = args.replace_with_zero
+
+    return t_srs, outfile, replace_with_zero
+
+
+def main():
+    parser = arg_parser()
+    args = parser.parse_args()
+
+    try:
+        t_srs, outfile, replace_with_zero = arg_checks(args)
+    except argparse.ArgumentError as err:
+        parser.error(str(err))
+
     s_crs = CRS(args.s_srs)
     t_crs = CRS(t_srs)
     transformer = Transformer.from_crs(s_crs, t_crs)
@@ -120,9 +154,24 @@ def main():
     with open(args.file, "r") as f:
         for line in f:
             tokens = line.split()
-            poly, value = get_poly_value(transformer, tokens, args.keep_z)
+            poly, value = get_poly_value(
+                transformer, tokens, args.keep_z, replace_with_zero
+            )
             polys.append(poly)
             values.append(value)
+
+    if args.value_file is not None:
+        values = list()  # Re-initialize and empty.
+        with open(args.value_file, "r") as vf:
+            for line in vf:
+                tokens = line.split()
+                values.append(tokens[args.value_file_column])
+
+        if len(values) != len(polys):
+            parser.error(
+                "The provided value_file has a different number of entries "
+                "than the provided .tri10 file with facet vertices."
+            )
 
     gdf = geopandas.GeoDataFrame(
         {args.value_name: values, "geometry": polys},
@@ -169,7 +218,7 @@ def main():
     return
 
 
-def get_poly_value(transformer, tokens: list, z=True):
+def get_poly_value(transformer, tokens: list, z=True, replace_with_zero=0):
     in_m = list(map(lambda x: float(x) * 1000, tokens[:9]))
 
     v1 = transformer.transform(in_m[0], in_m[1], in_m[2])
@@ -180,7 +229,7 @@ def get_poly_value(transformer, tokens: list, z=True):
         poly = Polygon(v1, v2, v3)
     else:
         poly = Polygon(v1[-1], v2[-1], v3[-1])
-    if float(tokens[9]) == -1:
+    if float(tokens[9]) == replace_with_zero:
         value = 0
     else:
         value = tokens[9]
