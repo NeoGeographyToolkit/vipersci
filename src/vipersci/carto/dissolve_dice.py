@@ -29,7 +29,7 @@ def arg_parser():
         help="Output GeoPackage filename"
     )
     parser.add_argument(
-        "gpkg", help="The GeoPackage to evaluate the path against."
+        "gpkg", help="The geospatial file containing polygon geometries."
     )
 
     return parser
@@ -42,16 +42,17 @@ def main():
 
     print("Read in file.")
 
-    df['geometry'] = df.apply(
-        lambda row: shapely.ops.transform(
-            lambda x, y, z=None: (x, y),
-            row["geometry"]
-        ),
-        axis=1,
-        result_type="expand"
-    )
+    if (df.has_z).any():
+        df['geometry'] = df.apply(
+            lambda row: shapely.ops.transform(
+                lambda x, y, z=None: (x, y),
+                row["geometry"]
+            ),
+            axis=1,
+            result_type="expand"
+        )
 
-    print("Converted geometries to 2D.")
+        print("Converted geometries to 2D.")
     # print(df)
 
     # based on VIPER-SCI-PLN-002:
