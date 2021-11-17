@@ -68,11 +68,15 @@ Ready to contribute? Here's how to set up `vipersci` for local development.
 
     $ git clone git@github.com:your_name_here/vipersci.git
 
-3. Install your local copy into a virtual environment of your choice (there are many to choose from like conda, etc.). Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Install your local copy into a virtual environment of your choice (there are many to choose from like conda, etc.). We will assume conda here, but any should work::
 
-    $ mkvirtualenv vipersci
     $ cd vipersci/
-    $ pip install -e .
+    $ conda env create -n vipersci -f environment_dev.yml
+    $ conda activate vipersci
+    $ mamba env update -f environment.yml
+    $ pip install --no-deps -e .
+
+   The last `pip install` installs vipersci in "editable" mode which facilitates using the programs and testing.
 
 4. Create a branch for local development::
 
@@ -83,7 +87,7 @@ Ready to contribute? Here's how to set up `vipersci` for local development.
 5. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox::
 
-    $ flake8 viss tests
+    $ flake8 src/vipersci tests
     $ python setup.py test or pytest
     $ tox
 
