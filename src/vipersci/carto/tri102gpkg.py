@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Converts the vertices in a .tri10 file to a GeoCSV or GeoPackage file.
+"""Converts the vertices in a .triN file to a GeoCSV or GeoPackage file.
 
 A .tri10 file is a whitespace separated value file where each line contains ten
 elements which describe a triangular facet.  The first nine elements are the
@@ -13,6 +13,10 @@ meters.
 
 The depth-to-ice .tri10 files sometimes have a -1 to indicate surface ice
 (instead of zero).
+
+These files can sometimes have more than 10 elements, and these 'triN' files
+have additional columns of data values that should be associated with the
+facet in the output file.
 
 This file format is not particularly a standard, but is simple to process.
 """
@@ -30,7 +34,7 @@ from pathlib import Path
 import geopandas
 from pyproj import CRS, Transformer
 # from osgeo import ogr, osr
-from shapely import Polygon
+from shapely.geometry import Polygon
 
 # ogr.UseExceptions()
 
@@ -69,23 +73,26 @@ def arg_parser():
              "short-hands for this."
     )
     parser.add_argument(
-        "-v", "--value_name",
+        "-v", "--value_names",
         default="Depth (m)",
         help="This text will be used as the title of the data value field in "
-             "the output file."
+             "the output file.  If there are commas, this text is split on "
+             "the commas and whitespace stripped, to produce a list of value "
+             "fields in the output."
+    )
+    parser.add_argument(
+        "--value_columns",
+        default="9",
+        help="This should be a comma-separated list of integers (or just one) "
+             "specifying which columns from the .tri file get the names from "
+             "-v.  The first 9 columns (zero is the first) have facet "
+             "coordinates, so typically this value (or list) starts at 9."
     )
     parser.add_argument(
         "--value_file",
         help="If provided another whitespace-separated file will be read in, "
-             "and the value from the column indicated by --value_file_column "
-             "will be used as the value for each facet."
-    )
-    parser.add_argument(
-        "--value_file_column",
-        type=int,
-        default=-1,
-        help="When --value_file is indicated, this integer indicates which "
-             "column (zero is the first column) to extract the value from."
+             "and the value(s) from the column(s) indicated by --value_columns "
+             "will be used as the value(s)."
     )
     parser.add_argument(
         "--replace_with_zero",
@@ -113,11 +120,25 @@ def arg_parser():
 
 
 def arg_checks(args):
-    if args.sites is not None:
-        t_srs = sites[args.sites]
+    value_keys = list(
+        map(lambda x: x.strip(), args.value_names.strip().split(","))
+    )
+    col_idxs = list(
+        map(lambda x: int(x.strip()), args.value_columns.strip().split(","))
+    )
+
+    if not args.keep_all_facets and len(value_keys) > 1:
+        raise ValueError(
+            "In order to dissolve facets into larger polygons, there can "
+            "be only one --value_column.  Either reduce to one, or set "
+            "--keep_all_facets."
+        )
+
+    if args.site is not None:
+        t_srs = sites[args.site]
     else:
         if args.t_srs is None:
-            raise argparse.ArgumentError(
+            raise ValueError(
                 "Neither a site (-s) nor a target SRS (--t_srs) was provided."
             )
         else:
@@ -128,12 +149,12 @@ def arg_checks(args):
     else:
         outfile = Path(args.output)
 
-    if args.value_name == "Depth (m)":
+    if "Depth (m)" in args.value_names:
         replace_with_zero = -1
     else:
         replace_with_zero = args.replace_with_zero
 
-    return t_srs, outfile, replace_with_zero
+    return value_keys, col_idxs, t_srs, outfile, replace_with_zero
 
 
 def main():
@@ -141,45 +162,51 @@ def main():
     args = parser.parse_args()
 
     try:
-        t_srs, outfile, replace_with_zero = arg_checks(args)
-    except argparse.ArgumentError as err:
+        (
+            value_keys, col_idxs, t_srs, outfile, replace_with_zero
+        ) = arg_checks(args)
+    except ValueError as err:
         parser.error(str(err))
 
     s_crs = CRS(args.s_srs)
     t_crs = CRS(t_srs)
     transformer = Transformer.from_crs(s_crs, t_crs)
 
+    values = {k: [] for k in value_keys}
+
     polys = list()
-    values = list()
     with open(args.file, "r") as f:
         for line in f:
             tokens = line.split()
-            poly, value = get_poly_value(
-                transformer, tokens, args.keep_z, replace_with_zero
-            )
+            poly = vertexes_to_poly(transformer, tokens[:9], args.keep_z)
             polys.append(poly)
-            values.append(value)
+
+            for i, col in enumerate(col_idxs):
+                values[value_keys[i]].append(
+                    replace_with(0, replace_with_zero, tokens[col])
+                )
 
     if args.value_file is not None:
-        values = list()  # Re-initialize and empty.
+        values = {k: [] for k in value_keys}  # Re-initialize and empty.
         with open(args.value_file, "r") as vf:
             for line in vf:
                 tokens = line.split()
-                values.append(tokens[args.value_file_column])
+                for i, col in enumerate(col_idxs):
+                    values[value_keys[i]].append(
+                        replace_with(0, replace_with_zero, tokens[col])
+                    )
 
-        if len(values) != len(polys):
+        if len(values[value_keys[0]]) != len(polys):
             parser.error(
                 "The provided value_file has a different number of entries "
-                "than the provided .tri10 file with facet vertices."
+                "than the provided .tri file with facet vertices."
             )
 
-    gdf = geopandas.GeoDataFrame(
-        {args.value_name: values, "geometry": polys},
-        crs=t_crs
-    )
+    values["geometry"] = polys
+    gdf = geopandas.GeoDataFrame(values, crs=t_crs)
 
     if not args.keep_all_facets:
-        gdf = gdf.dissolve(by=args.value_name)
+        gdf = gdf.dissolve(by=value_keys[0])
 
     if args.csv:
         gdf.to_file(outfile.with_suffix(".csv"), driver="CSV")
@@ -218,8 +245,8 @@ def main():
     return
 
 
-def get_poly_value(transformer, tokens: list, z=True, replace_with_zero=0):
-    in_m = list(map(lambda x: float(x) * 1000, tokens[:9]))
+def vertexes_to_poly(transformer, tokens: list, z=True):
+    in_m = list(map(lambda x: float(x) * 1000, tokens))
 
     v1 = transformer.transform(in_m[0], in_m[1], in_m[2])
     v2 = transformer.transform(in_m[3], in_m[4], in_m[5])
@@ -228,13 +255,16 @@ def get_poly_value(transformer, tokens: list, z=True, replace_with_zero=0):
     if z:
         poly = Polygon(v1, v2, v3)
     else:
-        poly = Polygon(v1[-1], v2[-1], v3[-1])
-    if float(tokens[9]) == replace_with_zero:
-        value = 0
-    else:
-        value = tokens[9]
+        poly = Polygon([v1[:-1], v2[:-1], v3[:-1]])
 
-    return poly, value
+    return poly
+
+
+def replace_with(replacement_val, replacement_check, value):
+    if float(value) == replacement_check:
+        return replacement_val
+    else:
+        return value
 
 
 # def get_wkt_value(transformer, tokens: list):

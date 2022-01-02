@@ -14,7 +14,7 @@ setup(
             'accrual=vipersci.carto.accrual:main',
             'dice_buffer=vipersci.carto.dice_buffer:main',
             'dissolve_dice=vipersci.carto.dissolve_dice:main',
-            'tri102gpkg=vipersci.carto.tri102gpkg:main'
+            'tri2gpkg=vipersci.carto.tri2gpkg:main'
         ],
     },
     install_requires=requirements,

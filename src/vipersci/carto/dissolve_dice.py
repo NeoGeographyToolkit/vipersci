@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Takes GPKG file nominally created by tri102gpkg.py, and creates a simplified
+"""Takes GPKG file nominally created by tri2gpkg.py, and creates a simplified
 geometry of the different ISR types.
 """
 
