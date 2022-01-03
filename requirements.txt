@@ -1,5 +1,7 @@
+genshi
 geopandas
 gdal
+lxml
 pandas
 pyproj
 shapely

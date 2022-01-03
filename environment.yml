@@ -6,9 +6,13 @@
 # > conda activate vipersci
 # > conda env update -f environment.yml
 # If the last "update" takes forever, consider using "mamba" instead of "conda".
+# If you will perform XML Validation, you may also need to install Saxon/C and
+# set some environment variables, please see the Installation Instructions.
 dependencies:
+  - genshi
   - geopandas
   - gdal
+  - lxml
   - pandas
   - pyproj
   - shapely

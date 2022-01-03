@@ -16,8 +16,8 @@ Directorate (SPD-41) <https://science.nasa.gov/science-red/s3fs-public/atoms/fil
 
 * Free software: Apache 2 License
 ..
-    * Documentation: https://vipersci.readthedocs.io.
-    * `PlanetaryPy`_ Affiliate Package.
+..    * Documentation: https://vipersci.readthedocs.io.
+..    * `PlanetaryPy`_ Affiliate Package.
 
 
 Features
@@ -32,3 +32,12 @@ Feedback, issues, and contributions are always gratefully welcomed. See the
 contributing guide for details on how to help and setup a development
 environment.
 
+
+Validating
+----------
+
+If you do plan to validate XML labels, see the extra installation instructions for
+XML Validation.
+
+
+.. _PlanetaryPy: https://github.com/planetarypy
