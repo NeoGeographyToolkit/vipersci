@@ -8,6 +8,14 @@
 # If the last "update" takes forever, consider using "mamba" instead of "conda".
 # If you will perform XML Validation, you may also need to install Saxon/C and
 # set some environment variables, please see the Installation Instructions.
+#
+# If you are using/developing with the XML validation component, you may need
+# to create a pypy-based conda environment:
+# > conda create -n vipersci pypy
+# > conda activate vipersci
+# > mamba env update -f environment_dev.yml <-- only needed if developing
+# > mamba env update -f environment.yml
+# 
 dependencies:
   - genshi
   - geopandas

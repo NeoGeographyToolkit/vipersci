@@ -6,8 +6,6 @@ dependencies:
   - bump2version
   - cookiecutter
   - flake8
-  - pypy3.6
-  - python=3.6
   - pytest
   - pytest-cov
   - sphinx
