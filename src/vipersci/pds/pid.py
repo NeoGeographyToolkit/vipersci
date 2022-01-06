@@ -56,7 +56,7 @@ pid_re = re.compile(
 
 vis_comp_re = re.compile("|".join(vis_compression.keys()))
 vis_pid_re = re.compile(
-    pid_re.pattern + fr"(?P<compression>{vis_comp_re.pattern})"
+    pid_re.pattern + fr"-(?P<compression>{vis_comp_re.pattern})"
 )
 
 
@@ -71,7 +71,7 @@ class VIPERID:
     :ivar instrument: A three character sequence denoting the instrument.
     """
 
-    def __init__(self, args):
+    def __init__(self, *args):
 
         if len(args) == 1:
             match = pid_re.search(str(args))
@@ -131,7 +131,7 @@ class VIPERID:
         return
 
     def __str__(self):
-        return "-".join((self.date, self.met, self.instrument))
+        return "-".join((self.date, self.time, self.instrument))
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.__str__()}')"
@@ -209,7 +209,7 @@ class VIPERID:
         if len(self.time) == 9:
             fmt += "%f"
             time_string += "000"
-        return datetime.strptime(time_string, fmt)
+        return datetime.datetime.strptime(time_string, fmt)
 
 
 class VISID(VIPERID):
@@ -223,7 +223,7 @@ class VISID(VIPERID):
     :ivar instrument: A three character sequence denoting the instrument.
     """
 
-    def __init__(self, args):
+    def __init__(self, *args):
 
         if len(args) == 1:
             match = vis_pid_re.search(str(args))
@@ -237,7 +237,7 @@ class VISID(VIPERID):
                 raise ValueError(
                     f"{args} did not match regex: {vis_pid_re.pattern}"
                 )
-        if len(args) == 4:
+        elif len(args) == 4:
             if args[3] in vis_compression:
                 (date, time, instrument) = args[:3]
                 compression = args[3]
@@ -245,6 +245,8 @@ class VISID(VIPERID):
                 raise ValueError(
                     f"{args[3]} is not one of {vis_compression.keys()}"
                 )
+        else:
+            raise IndexError("accepts 1 to 4 arguments")
 
         super().__init__(date, time, instrument)
         self.compression = compression
