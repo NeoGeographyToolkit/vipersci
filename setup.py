@@ -15,6 +15,7 @@ setup(
             'dice_buffer=vipersci.carto.dice_buffer:main',
             'dissolve_dice=vipersci.carto.dissolve_dice:main',
             'tri2gpkg=vipersci.carto.tri2gpkg:main',
+            "create_raw=vipersci.pds.create_raw:main",
             "template_test=vipersci.pds.template_test:main",
             "validate_label=vipersci.pds.validate_label:main"
         ],
