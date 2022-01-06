@@ -33,6 +33,20 @@ except ImportError as err:
 
 logger = logging.getLogger(__name__)
 
+name_map = {
+    # It is important that more specific items like
+    # PDS4_IMG_SURFACE come before less specific, but
+    # similarly spelled items like PDS4_IMG
+    "PDS4_PDS": "pds",
+    "PDS4_DISP": "disp",
+    "PDS4_GEOM": "geom",
+    "PDS4_IMG_SURFACE": "img_surface",
+    "PDS4_IMG": "img",
+    "PDS4_MSN_SURFACE": "msn_surface",
+    "PDS4_MSN": "msn",
+    "PDS4_PROC": "proc"
+}
+
 
 def arg_parser():
     parser = argparse.ArgumentParser(
@@ -40,31 +54,38 @@ def arg_parser():
         parents=[util.parent_parser()]
     )
     parser.add_argument(
-        "--sch",
+        "--dd",
         type=Path,
-        default=Path(pkg_resources.resource_filename(
-            __name__,
-            'data/pds/'
-            )),
-        help="Path to Schematron document or directory containing .sch files. "
-             "Default: %(default)s"
+        help="Path to local clone of "
+             "https://github.com/pds-data-dictionaries/dd-library"
     )
-    parser.add_argument(
-        "--xsd",
-        type=Path,
-        default=Path(pkg_resources.resource_filename(
-            __name__,
-            'data/pds/'
-            )),
-        help="Path(s) to XML Schema file or directory containing .xsd "
-             "files to validate against. Default: %(default)s"
-    )
+    # parser.add_argument(
+    #     "--sch",
+    #     type=Path,
+    #     default=Path(pkg_resources.resource_filename(
+    #         __name__,
+    #         'data/pds/'
+    #         )),
+    #     help="Path to Schematron document or directory containing .sch files. "
+    #          "Default: %(default)s"
+    # )
+    # parser.add_argument(
+    #     "--xsd",
+    #     type=Path,
+    #     default=Path(pkg_resources.resource_filename(
+    #         __name__,
+    #         'data/pds/'
+    #         )),
+    #     help="Path(s) to XML Schema file or directory containing .xsd "
+    #          "files to validate against. Default: %(default)s"
+    # )
     parser.add_argument(
         "--xsl",
         type=Path,
         default=Path(pkg_resources.resource_filename(
             __name__,
-            "data/schxslt-1.7/2.0/pipeline-for-svrl.xsl"
+            # "data/schxslt-1.7/2.0/pipeline-for-svrl.xsl"
+            "data/schxslt-1.8.6/2.0/pipeline-for-svrl.xsl"
         )),
         help="Path to .xsl file that will be used to compile the Schematron "
              "file(s).  Default: %(default)s"
@@ -83,17 +104,30 @@ def main():
     util.set_logger(args.verbose)
 
     # Gather local schema
-    nsmap = get_local_schema(args.xsd)
+    # nsmap = get_local_schema(args.xsd)
+    nsmap = get_local_schema(args.dd)
 
     # Gather Schematron paths
-    if args.sch.is_dir():
-        sch_list = list(args.sch.glob("*.sch"))
-    elif args.sch.is_file():
-        sch_list = [args.sch, ]
+    # if args.sch.is_dir():
+    #     sch_list = list(args.sch.glob("*.sch"))
+    # elif args.sch.is_file():
+    #     sch_list = [args.sch, ]
+    # else:
+    #     raise ValueError(
+    #         f"The path ({args.sch}) is neither a file nor a directory."
+    #     )
+    sch_list = list()
+    if args.dd.is_dir():
+        for k, v in name_map.items():
+            dd_path = args.dd / v / "v1"
+            if dd_path.is_dir():
+                temp_list = sorted(dd_path.glob(f"{k}*.sch"))
+                if len(temp_list) > 0:
+                    sch_list.append(temp_list[-1])
     else:
-        raise ValueError(
-            f"The path ({args.sch}) is neither a file nor a directory."
-        )
+        raise ValueError(f"The path ({args.dd}) is not a directory.")
+
+    logger.debug(f"Schematron files: {sch_list}")
 
     proc = saxonc.PySaxonProcessor(license=False)
     logger.info(proc.version)
@@ -142,7 +176,7 @@ def get_local_schema(xsd_path: Path):
     #     pass
 
     if xsd_path.is_dir():
-        sch_list = xsd_path.glob("*.xsd")
+        sch_list = sorted(xsd_path.glob("*.xsd"))
     elif xsd_path.is_file():
         sch_list = [xsd_path, ]
     else:
@@ -150,24 +184,22 @@ def get_local_schema(xsd_path: Path):
             f"The path ({xsd_path}) is neither a file nor a directory."
         )
 
-    name_map = {
-        # It is important that more specific items like
-        # PDS4_IMG_SURFACE come before less specific, but
-        # similarly spelled items like PDS4_IMG
-        "PDS4_PDS": "http://pds.nasa.gov/pds4/pds/v1",
-        "PDS4_DISP": "http://pds.nasa.gov/pds4/disp/v1",
-        "PDS4_GEOM": "http://pds.nasa.gov/pds4/geom/v1",
-        "PDS4_IMG_SURFACE": "http://pds.nasa.gov/pds4/img_surface/v1",
-        "PDS4_IMG": "http://pds.nasa.gov/pds4/img/v1",
-        "PDS4_MSN_SURFACE": "http://pds.nasa.gov/pds4/msn_surface/v1",
-        "PDS4_MSN": "http://pds.nasa.gov/pds4/msn/v1",
-        "PDS4_PROC": "http://pds.nasa.gov/pds4/proc/v1"
-    }
-    for f in sch_list:
+    httprefix = "http://pds.nasa.gov/pds4/"
+
+    if xsd_path.is_dir() and len(sch_list) == 0:
         for k, v in name_map.items():
-            if f.stem.startswith(k):
-                schema_locs[v] = f
-                break
+            dd_path = xsd_path / v / "v1"
+            if dd_path.is_dir():
+                xsd_list = sorted(dd_path.glob(f"{k}*.xsd"))
+                if len(xsd_list) > 0:
+                    schema_locs[httprefix + v + "/v1"] = xsd_list[-1]
+
+    else:
+        for f in sch_list:
+            for k, v in name_map.items():
+                if f.stem.startswith(k):
+                    schema_locs[httprefix + v] = f
+                    break
 
     logger.debug(f"local schema: {schema_locs}")
 
@@ -208,8 +240,8 @@ def get_schema(doc=None, nsmap=None):
     )
 
     for ns, location in schema_locs.items():
-        # logger.info(ns)
-        # logger.info(location)
+        # logger.debug(ns)
+        # logger.debug(location)
 
         etree.SubElement(
             schema_def,
