@@ -6,6 +6,9 @@ dependencies:
   - bump2version
   - cookiecutter
   - flake8
+  - jupyterlab
+  - matplotlib
+  - ipympl
   - pytest
   - pytest-cov
   - sphinx

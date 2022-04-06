@@ -1,11 +1,14 @@
 # If you only wish to "use" vipersci with conda, you can just
 # > conda env create -n vipersci -f environment.yml
 #
-# If you want to develop vipersci, can should do this:
-# > conda env create -n vipersci -f environment_dev.yml
+# If you want to develop vipersci, do this:
+# > conda create -n vipersci python=3.7
 # > conda activate vipersci
+# > conda env update -f environment_dev.yml
 # > conda env update -f environment.yml
-# If the last "update" takes forever, consider using "mamba" instead of "conda".
+# If the last "update" takes forever, consider using "mamba" instead of "conda"
+# for the update steps.
+#
 # If you will perform XML Validation, you may also need to install Saxon/C and
 # set some environment variables, please see the Installation Instructions.
 #
@@ -15,6 +18,9 @@
 # > conda activate vipersci
 # > mamba env update -f environment_dev.yml <-- only needed if developing
 # > mamba env update -f environment.yml
+#  This is currently refusing to install pyproj with this pypy environment,
+#  maybe it'll get fixed.  I may need to have a separate repo with the PDS
+#  XML validation piece that is more focused.  We'll see.
 # 
 dependencies:
   - genshi
@@ -23,5 +29,6 @@ dependencies:
   - lxml
   - pandas
   - pyproj
+  - rasterio
   - shapely
   - tifftools
