@@ -17,7 +17,6 @@ setup(
             'tri2gpkg=vipersci.carto.tri2gpkg:main',
             "create_raw=vipersci.pds.create_raw:main",
             "template_test=vipersci.pds.template_test:main",
-            "validate_label=vipersci.pds.validate_label:main"
         ],
     },
     install_requires=requirements,

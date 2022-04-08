@@ -1,7 +1,6 @@
 genshi
 geopandas
 gdal
-lxml
 rasterio
 pandas
 pyproj

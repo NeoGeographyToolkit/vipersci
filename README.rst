@@ -33,11 +33,4 @@ contributing guide for details on how to help and setup a development
 environment.
 
 
-Validating
-----------
-
-If you do plan to validate XML labels, see the extra installation instructions for
-XML Validation.
-
-
 .. _PlanetaryPy: https://github.com/planetarypy
