@@ -161,11 +161,16 @@ def telemetry_info(pid: pds.VISID):
         cclass = "Lossy"
         cratio = comp
 
+    # Don't have a place for "Voltage Ramp" that I can find.
+    # Where do we put the IMG_ID?
     d = {
         "start_time": st,
         "stop_time": st,
         "bad_pixel_table_id": 1,
         "exposure": 2,
+        "exposure_type": "Manual",  # Manual, Auto, or Test
+        "offset": 16324,
+        "gain": 63,  # combination of ADC Gain and PGA Gain
         "lights": [
             {"name": "NavLight Left", "wavelength": 450},
             {"name": "NavLight Right", "wavelength": 450}

@@ -94,12 +94,13 @@
 				<img:first_sample>1</img:first_sample>
 				<img:lines>2048</img:lines>
 				<img:samples>2048</img:samples>
-				<img:analog_offset>1</img:analog_offset>
+				<img:analog_offset>${offset}</img:analog_offset>
+				<img:gain_number>${gain}</img:gain_number>
 				<img:bad_pixel_replacement_table_id>${bad_pixel_table_id}</img:bad_pixel_replacement_table_id>
 			</img:Detector>
 			<img:Exposure>
 				<img:exposure_duration unit="s">${exposure}</img:exposure_duration>
-    			<img:exposure_type>Manual</img:exposure_type>
+    			<img:exposure_type>${exposure_type}</img:exposure_type>
     		</img:Exposure>
 			<img:Illumination>
 				<img:LED_Illumination_Source py:for="led in lights">
