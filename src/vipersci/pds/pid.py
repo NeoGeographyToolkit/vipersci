@@ -66,7 +66,7 @@ class VIPERID:
     def __init__(self, *args):
 
         if len(args) == 1:
-            match = pid_re.search(str(args))
+            match = pid_re.search(str(args).lower())
             if match:
                 parsed = match.groupdict()
                 self.date = parsed["date"]
@@ -154,7 +154,7 @@ class VIPERID:
     @staticmethod
     def format_date(date) -> str:
         if isinstance(date, datetime.date):
-            if 2000 <= date < 2100:
+            if datetime.date(2000, 1, 1) <= date < datetime.date(2100, 1, 1):
                 datestr = date.strftime("%y%m%d")
             else:
                 raise ValueError(
@@ -218,7 +218,7 @@ class VISID(VIPERID):
     def __init__(self, *args):
 
         if len(args) == 1:
-            match = vis_pid_re.search(str(args))
+            match = vis_pid_re.search(str(args).lower())
             if match:
                 parsed = match.groupdict()
                 date = parsed["date"]
