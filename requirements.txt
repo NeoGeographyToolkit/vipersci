@@ -4,5 +4,6 @@ gdal
 rasterio
 pandas
 pyproj
+scikit-image
 shapely
 tifftools

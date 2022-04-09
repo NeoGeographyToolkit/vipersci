@@ -16,5 +16,6 @@ dependencies:
   - pandas
   - pyproj
   - rasterio
+  - scikit-image
   - shapely
   - tifftools
