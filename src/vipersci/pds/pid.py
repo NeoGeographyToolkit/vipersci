@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""A module contains classes for VIPER Product IDs."""
+"""This module contains classes for VIPER Product IDs."""
 
 # Copyright 2022, vipersci developers.
 #
@@ -16,8 +16,8 @@ vis_instruments = dict(
     ncr="NavCam Right",
     hfp="HazCam Forward Port",
     hfs="HazCam Forward Starboard",
-    hbs="HazCam Back Starboard",
-    hbp="HazCam Back Port",
+    has="HazCam Aft Starboard",
+    hap="HazCam Aft Port",
     acl="AftCam Left",
     acr="AftCam Right",
 )
