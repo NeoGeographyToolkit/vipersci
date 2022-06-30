@@ -7,10 +7,6 @@ Contributing
 Contributions are welcome, and they are greatly appreciated! Every little bit
 helps, and credit will always be given.
 
-For a high-level overview of the philosophy of contributions to PlanetaryPy,
-which applies to this project, please see
-https://github.com/planetarypy/TC/blob/master/Contributing.md.
-
 You can contribute in many ways:
 
 Types of Contributions
@@ -112,6 +108,49 @@ Before you submit a pull request, check that it meets these guidelines:
    feature to the list in CHANGELOG.rst.
 3. The pull request should work for Python 3.6, 3.7 and 3.8, and optionally for PyPy.
    And make sure that the tests pass for all supported Python versions.
+
+
+What to expect
+--------------
+
+Our development of vipersci is neither continuous, nor as well-funded as we
+might like, and it is entirely possible that when you submit a PR
+(pull request), none of us will have the time to evaluate or integrate
+your PR.  If we don't, we'll try and communicate that with you via the
+PR.
+
+For large contributions, it is likely that you, or your employer,
+will be retaining your copyrights, but releasing the contributions
+via an open-source license.  It must be compatible with the Apache-2
+license that vipersci is distributed with, so that we can redistribute
+that contribution with vipersci, give you credit, and make vipersci even
+better!  Please contact us if you have a contribution of that nature,
+so we can be sure to get all of the details right.
+
+For smaller contributions, where you (or your employer) are not
+concerned about retaining copyright (but we will give you credit!),
+you will need to fill out a Contributor License Agreement (CLA)
+if we plan to accept your PR.  The CLA assigns your copyright in
+your contribution to NASA, so that our NASA copyright statement
+remains true:
+
+    Copyright (c) YEAR, United States Government as represented by the
+    Administrator of the National Aeronautics and Space Administration.
+    All rights reserved.
+
+There is an `Individual CLA <https://github.com/NeoGeographyToolkit/vipersci/blob/master/docs/vipersci_Individual_CLA.pdf>`_ and a `Corporate CLA
+<https://github.com/NeoGeographyToolkit/vipersci/blob/master/docs/ASP_Corporate_CLA.pdf>`_.
+
+vipersci People
+----------
+
+- A vipersci **Contributor** is any individual creating or commenting
+  on an issue or pull request.  Anyone who has authored a PR that was
+  merged should be listed in the AUTHORS.rst file.
+
+- A vipersci **Committer** is a subset of contributors, typically NASA
+  employees or contractors, who have been given write access to the
+  repository.
 
 
 Deploying
