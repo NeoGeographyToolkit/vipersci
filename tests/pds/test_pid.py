@@ -44,8 +44,8 @@ class TestVIPERID(unittest.TestCase):
             (("231225", "182000", "acr"), (
                 datetime.date(2023, 12, 25), datetime.time(18, 20, 0), "acr"
             )),
-            (("240330", "121212", "hbp"), (
-                datetime.datetime(2024, 3, 30, 12, 12, 12), "hbp"
+            (("240330", "121212", "hap"), (
+                datetime.datetime(2024, 3, 30, 12, 12, 12), "hap"
             )),
         )
         for truth, t in tuples:
@@ -132,11 +132,11 @@ class TestVISID(unittest.TestCase):
                 (datetime.date(2022, 1, 17), datetime.time(1, 1, 1), "ncl", "a")
             ),
             (
-                ("240330", "121212", "hbp", "d"),
+                ("240330", "121212", "hap", "d"),
                 (
                     datetime.date(2024, 3, 30),
                     datetime.time(12, 12, 12),
-                    "hbp",
+                    "hap",
                     "d"
                 )
             ),
