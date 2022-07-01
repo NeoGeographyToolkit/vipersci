@@ -1,4 +1,9 @@
-"""Test creation of VIS labels."""
+"""
+Test creation of PDS labels.
+
+Takes a JSON file and a Genshi XML template, and uses the JSON file to fill
+out the template.
+"""
 
 # Copyright 2021-2022, vipersci developers.
 #
