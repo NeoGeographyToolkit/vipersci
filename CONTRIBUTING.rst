@@ -80,7 +80,8 @@ conda here, but any should work::
 
     $ git checkout -b name-of-your-bugfix-or-feature
 
-   Now you can make your changes locally.
+   Now you can make your changes locally.  Please consider using `Conventional Commits
+   <https://www.conventionalcommits.org/>`_ in styling your commit messages.
 
 5. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox::
@@ -90,6 +91,8 @@ conda here, but any should work::
     $ tox
 
    To get flake8 and tox, just pip install them into your virtual environment.
+
+   Don't forget to add your name to the AUTHORS.rst file!
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -115,8 +118,8 @@ Before you submit a pull request, check that it meets these guidelines:
 What to expect
 --------------
 
-Our development of vipersci is neither continuous, nor as well-funded as we
-might like, and it is entirely possible that when you submit a PR
+Our development of vipersci is not particularly continuous,
+and it is entirely possible that when you submit a PR
 (pull request), none of us will have the time to evaluate or integrate
 your PR.  If we don't, we'll try and communicate that with you via the
 PR.
@@ -132,7 +135,7 @@ so we can be sure to get all of the details right.
 For smaller contributions, where you (or your employer) are not
 concerned about retaining copyright (but we will give you credit!),
 you will need to fill out a Contributor License Agreement (CLA)
-if we plan to accept your PR.  The CLA assigns your copyright in
+before we can accept your PR.  The CLA assigns your copyright in
 your contribution to NASA, so that our NASA copyright statement
 remains true:
 
