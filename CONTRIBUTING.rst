@@ -64,7 +64,9 @@ Ready to contribute? Here's how to set up `vipersci` for local development.
 
     $ git clone git@github.com:your_name_here/vipersci.git
 
-3. Install your local copy into a virtual environment of your choice (there are many to choose from like conda, etc.). We will assume conda here, but any should work::
+3. Install your local copy into a virtual environment of your choice
+(there are many to choose from like conda, etc.). We will assume
+conda here, but any should work::
 
     $ cd vipersci/
     $ conda env create -n vipersci -f environment_dev.yml

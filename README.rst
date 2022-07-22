@@ -8,9 +8,11 @@ Volatiles Investigating Polar Exploration Rover (VIPER) Science Team.
 At the moment, this repo is under significant development and change as we
 attempt to craft various pieces of code.  It is very messy and a work-in-progress.
 
-The VIPER Science Team is developing this software "in the open" in order to 
-adhere to the new `NASA Science Information Policy for the Science Mission
-Directorate (SPD-41) <https://science.nasa.gov/science-red/s3fs-public/atoms/files/Scientific%20Information%20policy%20SPD-41.pdf>`_ as much as is possible.
+The VIPER Science Team is developing this software "in the open"
+in order to adhere to the new `NASA Science Information Policy for
+the Science Mission Directorate (SPD-41)
+<https://science.nasa.gov/science-red/s3fs-public/atoms/files/Scientific%20Information%20policy%20SPD-41.pdf>`_
+as much as is possible.
 
 
 * Free software: Apache 2 License
@@ -28,7 +30,9 @@ Features
 Installation
 ------------
 
-TBD
+Once this library releases, versions will be posted to PyPI and conda to easy installation.
+
+For the moment, follow the "Get Started!" directions in the CONTRIBUTING.rst document.
 
 
 Contributing
