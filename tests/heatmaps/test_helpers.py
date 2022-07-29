@@ -10,32 +10,30 @@
 import numpy as np
 from rasterio import transform
 import shapely
+import unittest
 
 from vipersci.heatmaps import heatmap as hm
 
 
-def test_transform_frombuffer_withgrid_simple():
-    t = hm.transform_frombuffer_withgrid(0, 10, 1, 1)
-    assert t == transform.from_origin(-1, 11, 1, 1)
+class TestHeatmapAreaBin(unittest.TestCase):
+    def test_transform_frombuffer_withgrid_simple(self):
+        t = hm.transform_frombuffer_withgrid(0, 10, 1, 1)
+        self.assertEqual(t, transform.from_origin(-1, 11, 1, 1))
 
+    def test_transform_frombuffer_withgrid_nobuffer(self):
+        t = hm.transform_frombuffer_withgrid(0, 10, 0, 1)
+        self.assertEqual(t, transform.from_origin(0, 10, 1, 1))
 
-def test_transform_frombuffer_withgrid_nobuffer():
-    t = hm.transform_frombuffer_withgrid(0, 10, 0, 1)
-    assert t == transform.from_origin(0, 10, 1, 1)
+    def test_transform_frombuffer_withgrid_smallgsd(self):
+        t = hm.transform_frombuffer_withgrid(0, 10, 0, 0.1)
+        self.assertEqual(t, transform.from_origin(0, 10, 0.1, 0.1))
 
+    def test_transform_frombuffer_withgrid_origin_snap_to_gsd(self):
+        t = hm.transform_frombuffer_withgrid(1, 9, 0, 2)
+        self.assertEqual(t, transform.from_origin(0, 10, 2, 2))
 
-def test_transform_frombuffer_withgrid_smallgsd():
-    t = hm.transform_frombuffer_withgrid(0, 10, 0, 0.1)
-    assert t == transform.from_origin(0, 10, 0.1, 0.1)
-
-
-def test_transform_frombuffer_withgrid_origin_snap_to_gsd():
-    t = hm.transform_frombuffer_withgrid(1, 9, 0, 2)
-    assert t == transform.from_origin(0, 10, 2, 2)
-
-
-def test_buffered_mask_full():
-    points = shapely.geometry.LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
-    t = hm.transform_frombuffer_withgrid(0, 1, 1, 1)
-    mask = hm.buffered_mask(points, t, buffer=1)
-    assert np.array_equal(np.full((3, 3), False), mask)
+    def test_buffered_mask_full(self):
+        points = shapely.geometry.LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
+        t = hm.transform_frombuffer_withgrid(0, 1, 1, 1)
+        mask = hm.buffered_mask(points, t, buffer=1)
+        self.assertTrue(np.array_equal(np.full((3, 3), False), mask))
