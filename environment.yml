@@ -18,5 +18,6 @@ dependencies:
   - pyproj
   - rasterio
   - scikit-image
+  - scikit-learn
   - shapely
   - tifftools

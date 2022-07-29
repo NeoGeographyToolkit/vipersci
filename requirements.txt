@@ -6,5 +6,6 @@ rasterio
 pandas
 pyproj
 scikit-image
+scikit-learn
 shapely
 tifftools

@@ -12,6 +12,7 @@ GDAL                     MIT            https://gdal.org/license.html
 rasterio                 BSD-3-Clause   https://github.com/rasterio/rasterio/blob/main/LICENSE.txt
 pandas                   BSD-3-Clause   https://github.com/pandas-dev/pandas/blob/main/LICENSE
 pyproj                   MIT            https://github.com/pyproj4/pyproj/blob/main/LICENSE
+scikit-image             BSD-3-Clause   https://github.com/scikit-learn/scikit-learn/blob/main/COPYING
 scikit-image             BSD-3-Clause   https://github.com/scikit-image/scikit-image/blob/main/LICENSE.txt
 shapely                  BSD-3-Clause   https://github.com/shapely/shapely/blob/main/LICENSE.txt
 tifftools                Apache-2       https://github.com/DigitalSlideArchive/tifftools/blob/master/LICENSE
