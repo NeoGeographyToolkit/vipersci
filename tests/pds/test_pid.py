@@ -209,6 +209,7 @@ class TestVISID(unittest.TestCase):
         vids = [vid3, vid4, vid1, vid2]
         self.assertEqual(sorted(vids), [vid1, vid2, vid3, vid4])
 
+
 class TestStrings(unittest.TestCase):
     def test_str_(self):
         test = "This is a VIPER Id: 220117-010101-aim"

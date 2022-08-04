@@ -1,6 +1,6 @@
 """
-This heatmaps module takes scalar values with 2D coordinates and creates a heatmap representation
-with individual points effectively averaged together.
+This heatmaps module takes scalar values with 2D coordinates and creates a heatmap
+representation with individual points effectively averaged together.
 """
 
 # Copyright 2022, United States Government as represented by the
@@ -287,7 +287,8 @@ def apply_gdal_colorrelief(
     in_filepath: str, out_filepath: str, colormap_filepath: str
 ) -> None:
     """
-    Creates a new false-color image from a 1-band source file using the provided colormap file.  Requires GDAL
+    Creates a new false-color image from a 1-band source file using the provided
+    colormap file.  Requires GDAL
 
     Parameters:
         in_filepath: path of existing 1-band geotiff file to color
@@ -296,7 +297,8 @@ def apply_gdal_colorrelief(
     """
     # TODO: convert to gdal library bindings or rasterio
     subprocess.run(
-        f"gdaldem color-relief {in_filepath} {colormap_filepath} {out_filepath} -alpha -q",
+        f"gdaldem color-relief {in_filepath} {colormap_filepath} {out_filepath}"
+        + "-alpha -q",
         shell=True,
     )
 
@@ -311,8 +313,10 @@ def write_geotiff_rasterio(
         out_filepath: Absolute filepath for writing
         dest_crs: The Rasterio CRS that applies to the data
         transform: The affine transform used for geolocating the data
-        source_crs: The Rasterio CRS the data was projected from, if applicable.  Used to calculate 'extent' in the returned info.
-        data: 2D array of data to write to the geotiff.  Multiple arrays will be written to separate bands in order
+        source_crs: The Rasterio CRS the data was projected from, if applicable.
+            Used to calculate 'extent' in the returned info.
+        data: 2D array of data to write to the geotiff.  Multiple arrays will be
+            written to separate bands in order
 
     Returns
         A dictionary that mimics the information provided by gdalinfo
@@ -340,7 +344,8 @@ def get_gdal_info_from_rasterio(
     input: rasterio.DatasetReader, source_crs: pyproj.crs.CRS
 ) -> Dict[str, Any]:
     """
-    Construct a block of gdal-info style json from the metadata about a rasterio dataset
+    Construct a block of gdal-info style json from the metadata about a rasterio
+    dataset
     Parameters:
         input: loaded rasterio dataset
     Returns:
@@ -445,13 +450,15 @@ def generate_area_bin_heatmap(
     bin_size: float = 1,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Generates a 1-band floating point geotiff heatmap by binning data into a grid and averaging the values
+    Generates a 1-band floating point geotiff heatmap by binning data into a grid and
+    averaging the values
 
     Parameters:
         x_coords: array of x coordinates. Should be projected
         y_coords: array of y coordinates. Should be projected
         values: array of scalar values at each provided location
-        crs: coordinate reference system used to project the locations to cartesian coordinates
+        crs: coordinate reference system used to project the locations to cartesian
+            coordinates
         bin_size: size of square bins in meters
 
     Returns:
@@ -465,13 +472,14 @@ def generate_area_bin_heatmap(
         x_coords: np.ndarray, y_coords: np.ndarray, padding=0, grid_size: float = 1
     ) -> Tuple[rasterio.Affine, rasterio.windows.Window, rasterio.coords.BoundingBox]:
         """
-        Given a set of coordinates and a desired grid size, build a transform representing a uniform
-        grid over the bounds of the coordinates
+        Given a set of coordinates and a desired grid size, build a transform
+        representing a uniform grid over the bounds of the coordinates
 
         Parameters
             x_coords: array of x coordinates
             y_coords: array of y coordinates
-            padding: square padding value to use around the bounding box of hte provided coordinates
+            padding: square padding value to use around the bounding box of the
+                provided coordinates
             grid_size: resolution of the grid
         """
         x_min = grid_size * math.floor(np.amin(x_coords) / grid_size) - padding
@@ -525,7 +533,8 @@ def area_bin(
         bin_size: size of square bins in meters
 
     Returns:
-        (averages, counts, transform): Average of the values contained in each bin, and a count of the values contained in each bin.
+        (averages, counts, transform): Average of the values contained in each bin, and
+            a count of the values contained in each bin.
     """
 
     # determine grid sizing from a window of dimension 1x1
