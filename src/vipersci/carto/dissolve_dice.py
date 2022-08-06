@@ -77,7 +77,7 @@ def main():
     # 0.5 - 1 m: Deep
     # > 1 m: Dry
     df['category'] = pd.cut(
-        df["Depth (m)"],
+        df["Depth (m)"].astype(float),
         (-1, 0, 0.5, 1, 10),
         labels=["Surficial", "Shallow", "Deep", "Dry"]
     ).astype(str)
