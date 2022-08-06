@@ -170,7 +170,7 @@ def telemetry_info(pid: pds.VISID):
     if comp is None:
         cclass = "Lossless"
         cratio = 1
-    elif comp is "SLoG":
+    elif comp == "SLoG":
         cclass = "Lossy"
         cratio = "??"
     else:
