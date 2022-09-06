@@ -5,12 +5,12 @@ Credits
 Development Lead
 ----------------
 
-* Ross Beyer <rbeyer@seti.org>
+* Ross Beyer <rbeyer@seti.org> (SETI / NASA Ames)
 
 Contributors
 ------------
 
-None yet. Why not be the first?
+* Evan Schiewe (NASA Ames / KBR, Inc.)
 
 
 Acknowledgments

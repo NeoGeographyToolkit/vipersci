@@ -28,12 +28,22 @@ models.
 # top level of this library.
 
 import logging
+import os
 from pathlib import Path
+from typing import Any, Generator, List, Sequence, Union
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
 logger = logging.getLogger(__name__)
+
+# type alias for the exhaustive variety of arguments that np.genfromtxt() takes.
+Readable = Union[
+    os.PathLike,
+    str,
+    List[str],
+    Generator[Union[str, bytes], Any, Any]
+]
 
 
 class DataSimulator:
@@ -45,11 +55,11 @@ class DataSimulator:
 
     def __init__(
         self,
-        det1: Path,
-        det2: Path,
-        bounds_error=True,
-        fill_value=np.nan,
-        rng=np.random.default_rng(),
+        det1: Readable,
+        det2: Readable,
+        bounds_error: bool = True,
+        fill_value: Any = np.nan,
+        rng: np.random.Generator = np.random.default_rng(),
     ):
         """
         :param det1: The path to the Detector 1 inverse model CSV file.
@@ -77,7 +87,12 @@ class DataSimulator:
         self.rng = rng
         return
 
-    def __call__(self, bd: np.ndarray, weh: np.ndarray, poisson=False):
+    def __call__(
+        self,
+        bd: Union[float, Sequence, np.ndarray],
+        weh: Union[float, Sequence, np.ndarray],
+        poisson: bool = False
+    ):
         """
         Returns simulated detector 1 and detector 2 values.
 
@@ -93,19 +108,11 @@ class DataSimulator:
         """
         is_arraylike = True if hasattr(bd, "__iter__") else False
 
-        try:
-            d1 = self.det1_model(np.column_stack((bd, weh)))
-            d2 = self.det2_model(np.column_stack((bd, weh)))
-        except ValueError as err:
-            logger.error(f"bd: {bd}, weh: {weh}")
-            raise err
+        d1 = self.det1_model(np.column_stack((bd, weh)))
+        d2 = self.det2_model(np.column_stack((bd, weh)))
 
         if poisson:
-            try:
-                d1, d2 = self.rng.poisson(lam=(d1, d2))
-            except ValueError as err:
-                logger.error(d1, d2)
-                raise err
+            d1, d2 = self.rng.poisson(lam=(d1, d2))
 
         if not is_arraylike:
             return d1.item(), d2.item()
@@ -113,10 +120,10 @@ class DataSimulator:
         return d1, d2
 
 
-def model(path: Path, **kwargs):
+def model(fname: Readable, **kwargs):
     """
     Returns a scipy.interpolate.RegularGridInterpolator "instance" created
-    from the data provided in the NSS file *path*.
+    from the data provided in the NSS file *fname*.
 
     The returned instance can be called with an ndarray of shape (..., 2)
     which contain the x, y coordinates at which to sample the data.
@@ -129,7 +136,7 @@ def model(path: Path, **kwargs):
     documentation for more information.
     """
 
-    arr, row_coords, col_coords = read_csv(path)
+    arr, row_coords, col_coords = read_csv(fname)
     # These are inverted to make calling the RGI instance more "natural" to
     # call as described in the docstring above.
     return RegularGridInterpolator(
@@ -137,12 +144,12 @@ def model(path: Path, **kwargs):
     )
 
 
-def read_csv(path: Path):
+def read_csv(fname: Readable):
     """
     Returns three objects: a 2D array of "data", an array of row coordinates,
     and an array of column coordinates.
 
-    The *path* is expected to be a CSV file provided by the NSS team which
+    The *fname* is expected to be a CSV file provided by the NSS team which
     describes either a forward or reverse model for detector counts.  These
     files are conceptually describing a graph.  These CSV files use the first
     row and first column as "headers" to describe the data within.  The first
@@ -151,7 +158,7 @@ def read_csv(path: Path):
     of the first column indicates the row values.  The remaining rectangular
     array are the data.
     """
-    f = np.genfromtxt(path, delimiter=",", missing_values="NaN")
+    f = np.genfromtxt(fname, delimiter=",", missing_values="NaN")
 
     arr = f[1:, 1:]
     col_coords = f[0, 1:]
@@ -170,12 +177,12 @@ def read_csv(path: Path):
 
 
 def uniform_weh(
-    measured,
-    c0=30.75,
-    a=0.0256,
-    b=1.0990,
-    bounds_error=True,
-    fill_value=np.nan,
+    measured: Union[float, Sequence, np.ndarray],
+    c0: float = 30.75,
+    a: float = 0.0256,
+    b: float = 1.0990,
+    bounds_error: bool = True,
+    fill_value: Any = np.nan,
 ):
     """Returns fraction of water equivalent hydrogen.
 
@@ -198,6 +205,8 @@ def uniform_weh(
     If provided, the value to use for points when *measured* triggers the
     *bounds_error*.
     """
+    is_arraylike = True if hasattr(measured, "__iter__") else False
+
     # Values of *measured* larger than C0 result in unrealistic negative
     # fractions.
     if bounds_error:
@@ -214,6 +223,10 @@ def uniform_weh(
     with np.errstate(divide="ignore", invalid="ignore"):
         arr = np.float_power(a * ((c0 / measured) - 1), b)
 
-    arr[np.logical_or(arr < 0, arr > 1)] = fill_value
+    if is_arraylike:
+        arr[np.logical_or(arr < 0, arr > 1)] = fill_value
+    else:
+        if arr < 0 or arr > 1:
+            arr = fill_value
 
     return arr

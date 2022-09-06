@@ -157,14 +157,60 @@ vipersci People
   employees or contractors, who have been given write access to the
   repository.
 
+Rules for Merging Pull Requests
+-------------------------------
 
-Deploying
----------
+Any change to resources in this repository must be through pull
+requests (PRs). This applies to all changes to documentation, code,
+binary files, etc. Even long term committers must use pull requests.
 
-A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run::
+In general, the submitter of a PR is responsible for making changes
+to the PR. Any changes to the PR can be suggested by others in the
+PR thread (or via PRs to the PR), but changes to the primary PR
+should be made by the PR author (unless they indicate otherwise in
+their comments). In order to merge a PR, it must satisfy these conditions:
 
-$ bump2version patch # possible: major / minor / patch
-$ git push
-$ git push --tags
+1. Have been open for 24 hours.
+2. Have one approval.
+3. If the PR has been open for 2 days without approval or comment, then it
+   may be merged without any approvals.
+
+Pull requests should sit for at least 24 hours to ensure that
+contributors in other timezones have time to review. Consideration
+should also be given to weekends and other holiday periods to ensure
+active committers all have reasonable time to become involved in
+the discussion and review process if they wish.
+
+In order to encourage involvement and review, we encourage at least
+one explicit approval from committers that are not the PR author.
+
+However, in order to keep development moving along with our low number of
+active contributors, if a PR has been open for 2 days without comment, then
+it could be committed without an approval.
+
+The default for each contribution is that it is accepted once no
+committer has an objection, and the above requirements are
+satisfied.
+
+In the case of an objection being raised in a pull request by another
+committer, all involved committers should seek to arrive at a
+consensus by way of addressing concerns being expressed by discussion,
+compromise on the proposed change, or withdrawal of the proposed
+change.
+
+Exceptions to the above are minor typo fixes or cosmetic changes
+that don't alter the meaning of a document. Those edits can be made
+via a PR and the requirement for being open 24 h is waived in this
+case.
+
+
+.. Deploying
+   ---------
+   
+   A reminder for the maintainers on how to deploy.
+   Make sure all your changes are committed (including an entry in HISTORY.rst).
+   Then run::
+   
+   $ bump2version patch # possible: major / minor / patch
+   $ git push
+   $ git push --tags
