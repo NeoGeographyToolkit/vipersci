@@ -38,6 +38,9 @@ class TestVIPERID(unittest.TestCase):
             (("220117", "010101", "ncl"), (
                 datetime.date(2022, 1, 17), datetime.time(1, 1, 1), "ncl"
             )),
+            (("220117", "010101", "ncl"), (
+                datetime.date(2022, 1, 17), datetime.time(1, 1, 1), "NavCam Left"
+            )),
             (("220117", "010101001", "aim"), (
                 datetime.datetime(2022, 1, 17, 1, 1, 1, 1000), "aim"
             )),
@@ -130,6 +133,10 @@ class TestVISID(unittest.TestCase):
             (
                 ("220117", "010101", "ncl", "a"),
                 (datetime.date(2022, 1, 17), datetime.time(1, 1, 1), "ncl", "a")
+            ),
+            (
+                ("220117", "010101", "ncl", "b"),
+                (datetime.date(2022, 1, 17), datetime.time(1, 1, 1), "ncl", 5)
             ),
             (
                 ("240330", "121212", "hap", "d"),

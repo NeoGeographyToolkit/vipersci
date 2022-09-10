@@ -68,6 +68,14 @@ vis_pid_re = re.compile(
 )
 
 
+def get_key(value, dictionary):
+    for k, v in dictionary.items():
+        if v == value:
+            return k
+    else:
+        raise KeyError(f"No value, {value}, was found in the dictionary.")
+
+
 class VIPERID:
     """A Class for VIPER Product IDs.
 
@@ -132,6 +140,8 @@ class VIPERID:
             match = inst_re.search(instrument)
             if match:
                 self.instrument = match[0]
+            elif instrument in instruments.values():
+                self.instrument = get_key(instrument, instruments)
             else:
                 raise ValueError(
                     f"{instrument} did not match regex: {inst_re.pattern}"
@@ -246,16 +256,26 @@ class VISID(VIPERID):
                     f"{args} did not match regex: {vis_pid_re.pattern}"
                 )
         elif len(args) == 4:
+            (date, time, instrument) = args[:3]
             if args[3] in vis_compression:
-                (date, time, instrument) = args[:3]
                 compression = args[3]
+            elif args[3] in vis_compression.values():
+                compression = get_key(args[3], vis_compression)
             else:
                 raise ValueError(
                     f"{args[3]} is not one of {vis_compression.keys()}"
                 )
         else:
-            raise IndexError("accepts 1 to 4 arguments")
+            raise IndexError("accepts 1 or 4 arguments")
 
+        if instrument in vis_instruments:
+            pass
+        elif instrument in vis_instruments.values():
+            instrument = get_key(instrument, vis_instruments)
+        else:
+            raise ValueError(
+                f"{instrument} is not a VIS instrument."
+            )
         super().__init__(date, time, instrument)
         self.compression = compression
 
