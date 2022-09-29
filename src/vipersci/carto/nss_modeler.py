@@ -105,8 +105,17 @@ def main():
     return
 
 
+bd_model = None
+weh_model = None
+
+
 def apply_models(
-    bd_model_file, weh_model_file, det1, det2, nodata_val=-1
+    bd_model_file: str,
+    weh_model_file: str,
+    det1: np.ndarray,
+    det2: np.ndarray,
+    nodata_val: float = -1,
+    use_cached_models: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Apply the provided burial depth and water equivalent hydrogen models to a set
@@ -117,14 +126,19 @@ def apply_models(
         weh_model_file: path to a WEH model CSV file
         det1: raw counts from detector 1
         det2: raw counts from detector 2
-        nodata_val: fill value for nodata regions
+        nodata_val: fill value for nodata regions. Defaults to -1
+        use_cached_models: If true, attempt to use the loaded models from a prior call. Defaults to False
 
     Returns:
         (bd_arr, weh_arr, uweh_arr): Values returned from the models for burial
             depth, water equivalent hydrogen, and uniform WEH
     """
-    bd_model = nss.model(bd_model_file, fill_value=nodata_val, bounds_error=False)
-    weh_model = nss.model(weh_model_file, fill_value=nodata_val, bounds_error=False)
+    global bd_model
+    global weh_model
+
+    if not use_cached_models or bd_model is None or weh_model is None:
+        bd_model = nss.model(bd_model_file, fill_value=nodata_val, bounds_error=False)
+        weh_model = nss.model(weh_model_file, fill_value=nodata_val, bounds_error=False)
 
     bd_arr = np.full_like(det1, nodata_val, dtype=np.double)
     weh_arr = np.full_like(det1, nodata_val, dtype=np.double)
