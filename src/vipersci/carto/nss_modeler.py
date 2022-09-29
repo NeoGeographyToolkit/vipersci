@@ -30,6 +30,7 @@ import argparse
 import logging
 from pathlib import Path
 import sys
+from typing import Tuple
 
 import numpy as np
 import rasterio
@@ -89,24 +90,8 @@ def main():
     det2 = det2_data.read(1, masked=True)
 
     nodata_val = -1
-    bd_model = nss.model(
-        args.bd_mod, fill_value=nodata_val, bounds_error=False
-    )
-    weh_model = nss.model(
-        args.weh_mod, fill_value=nodata_val, bounds_error=False
-    )
-
-    bd_arr = np.full_like(det1, nodata_val, dtype=np.double)
-    weh_arr = np.full_like(det1, nodata_val, dtype=np.double)
-
-    bd_arr[~det1.mask] = bd_model(np.column_stack(
-        (det1.compressed(), det2.compressed())
-    ))
-    weh_arr[~det1.mask] = weh_model(np.column_stack(
-        (det1.compressed(), det2.compressed())
-    ))
-    uweh_arr = nss.uniform_weh(
-        det1.filled(nodata_val), fill_value=nodata_val, bounds_error=False
+    bd_arr, weh_arr, uweh_arr = apply_models(
+        args.bd_mod, args.weh_mod, det1, det2, nodata_val=nodata_val
     )
 
     kwds = det1_data.profile
@@ -118,6 +103,43 @@ def main():
     write_tif(args.output, "uweh.tif", uweh_arr, kwds)
 
     return
+
+
+def apply_models(
+    bd_model_file, weh_model_file, det1, det2, nodata_val=-1
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Apply the provided burial depth and water equivalent hydrogen models to a set
+    of raw detector counts.
+
+    Params:
+        bd_model_file: path to a BD model CSV file
+        weh_model_file: path to a WEH model CSV file
+        det1: raw counts from detector 1
+        det2: raw counts from detector 2
+        nodata_val: fill value for nodata regions
+
+    Returns:
+        (bd_arr, weh_arr, uweh_arr): Values returned from the models for burial
+            depth, water equivalent hydrogen, and uniform WEH
+    """
+    bd_model = nss.model(bd_model_file, fill_value=nodata_val, bounds_error=False)
+    weh_model = nss.model(weh_model_file, fill_value=nodata_val, bounds_error=False)
+
+    bd_arr = np.full_like(det1, nodata_val, dtype=np.double)
+    weh_arr = np.full_like(det1, nodata_val, dtype=np.double)
+
+    bd_arr[~det1.mask] = bd_model(
+        np.column_stack((det1.compressed(), det2.compressed()))
+    )
+    weh_arr[~det1.mask] = weh_model(
+        np.column_stack((det1.compressed(), det2.compressed()))
+    )
+    uweh_arr = nss.uniform_weh(
+        det1.filled(nodata_val), fill_value=nodata_val, bounds_error=False
+    )
+
+    return bd_arr, weh_arr, uweh_arr
 
 
 def write_tif(path: Path, ending: str, arr: np.array, kwds: dict):
