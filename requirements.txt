@@ -1,6 +1,5 @@
 genshi
 geopandas
-gdal
 numpy
 rasterio
 pandas
