@@ -27,6 +27,8 @@ and the release date, in year-month-day format (see examples below).
 
 Unreleased
 ----------
-0.1.0 (2021-??-??)
 
-* First release on PyPI.
+
+0.1.0 (2022-10-05)
+------------------
+Initial release.

@@ -111,7 +111,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in CHANGELOG.rst.
-3. The pull request should work for Python 3.6, 3.7 and 3.8, and optionally for PyPy.
+3. The pull request should work for Python 3.7, 3.8 and 3.9, and optionally for PyPy.
    And make sure that the tests pass for all supported Python versions.
 
 
@@ -143,11 +143,13 @@ remains true:
     Administrator of the National Aeronautics and Space Administration.
     All rights reserved.
 
-There is an `Individual CLA <https://github.com/NeoGeographyToolkit/vipersci/blob/master/docs/vipersci_Individual_CLA.pdf>`_ and a `Corporate CLA
-<https://github.com/NeoGeographyToolkit/vipersci/blob/master/docs/ASP_Corporate_CLA.pdf>`_.
+There is an `Individual CLA
+<https://github.com/NeoGeographyToolkit/vipersci/blob/master/docs/vipersci_ARC-18843-1_Individual_CLA.pdf>`_ and a
+`Corporate CLA
+<https://github.com/NeoGeographyToolkit/vipersci/blob/master/docs/vipersci_ARC-18843-1_Corporate_CLA.pdf>`_.
 
 vipersci People
-----------
+---------------
 
 - A vipersci **Contributor** is any individual creating or commenting
   on an issue or pull request.  Anyone who has authored a PR that was

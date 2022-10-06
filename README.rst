@@ -2,11 +2,21 @@
 vipersci
 ========
 
-This VIPER Science package is software to support the activities of the 
+This vipersci package is software to support the activities of the
 Volatiles Investigating Polar Exploration Rover (VIPER) Science Team.
 
+This software will implement scientific models to convert instrument
+raw data to useful derived data (but not including any proprietary
+instrument details). This includes functionality for running the
+models "in reverse" in order to simulate instrument data for tests
+and mission simulations. This software will enable and support the
+creation of various geospatial data sets (maps) to help visualize
+and understand data from the spacecraft. It will also support the
+creation of PDS4 archive labels and structures for eventual data
+delivery to the Planetary Data System (PDS).
+
 At the moment, this repo is under significant development and change as we
-attempt to craft various pieces of code.  It is very messy and a work-in-progress.
+attempt to craft various pieces of code.  It is definitely a work-in-progress.
 
 The VIPER Science Team is developing this software "in the open"
 in order to adhere to the new `NASA Science Information Policy for
@@ -16,7 +26,7 @@ as much as is possible.
 
 
 * Free software: Apache 2 License
-..
+
 ..    * Documentation: https://vipersci.readthedocs.io.
 ..    * `PlanetaryPy`_ Affiliate Package.
 
@@ -30,7 +40,7 @@ Features
 Installation
 ------------
 
-Once this library releases, versions will be posted to PyPI and conda to easy installation.
+Versions will be posted to PyPI and conda to ease installation soon.
 
 For the moment, follow the "Get Started!" directions in the CONTRIBUTING.rst document.
 
@@ -61,9 +71,9 @@ Copyright (c) 2022, United States Government as represented by
 the Administrator of the National Aeronautics and Space
 Administration. All rights reserved.
 
-vipersci is licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License. You
-may obtain a copy of the License at
+The "vipersci" software is licensed under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with the
+License.  You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
