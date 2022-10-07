@@ -88,7 +88,7 @@ The area and path have different coordinate reference systems.
 
     if accumulated_length != path["geometry"].length:
         print(f"Sum of the counted lengths: {accumulated_length}")
-        print(f"This is different from the input total length!")
+        print("This is different from the input total length!")
 
     print(f'Total length: {path["geometry"].length}')
     print(accrual)

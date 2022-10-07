@@ -29,7 +29,6 @@ models.
 
 import logging
 import os
-from pathlib import Path
 from typing import Any, Generator, List, Sequence, Union
 
 import numpy as np
@@ -217,7 +216,7 @@ def uniform_weh(
 
         if np.any(measured <= 0):
             raise ValueError(
-                f"Value(s) in measured are less than or equal to zero."
+                "Value(s) in measured are less than or equal to zero."
             )
 
     with np.errstate(divide="ignore", invalid="ignore"):
