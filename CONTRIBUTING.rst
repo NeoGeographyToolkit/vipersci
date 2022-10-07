@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/https://github.com/NeoGeographyToolkit/vipersci/issues .
+Report bugs at https://github.com/NeoGeographyToolkit/vipersci/issues .
 
 If you are reporting a bug, please include:
 
@@ -65,8 +65,8 @@ Ready to contribute? Here's how to set up `vipersci` for local development.
     $ git clone git@github.com:your_name_here/vipersci.git
 
 3. Install your local copy into a virtual environment of your choice
-(there are many to choose from like conda, etc.). We will assume
-conda here, but any should work::
+   (there are many to choose from like conda, etc.). We will assume
+   conda here, but any should work::
 
     $ cd vipersci/
     $ conda env create -n vipersci -f environment_dev.yml
@@ -74,7 +74,8 @@ conda here, but any should work::
     $ mamba env update -f environment.yml
     $ pip install --no-deps -e .
 
-   The last `pip install` installs vipersci in "editable" mode which facilitates using the programs and testing.
+   The last `pip install` installs vipersci in "editable" mode which facilitates using the
+   programs and testing.
 
 4. Create a branch for local development::
 
