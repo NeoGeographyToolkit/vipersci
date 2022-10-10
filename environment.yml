@@ -14,9 +14,11 @@ dependencies:
   - geopandas
   - numpy
   - pandas
+  - psycopg2
   - pyproj
   - rasterio
   - scikit-image
   - scikit-learn
   - shapely
+  - sqlalchemy
   - tifftools
