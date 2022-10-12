@@ -32,7 +32,7 @@ from pathlib import Path
 from skimage.io import imread
 
 from vipersci.pds import pid as pds
-from vipersci.vis.pds.vis_create_raw import write_tiff
+from vipersci.vis.pds.create_raw import write_tiff
 from vipersci import util
 
 logger = logging.getLogger(__name__)
