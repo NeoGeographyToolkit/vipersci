@@ -59,7 +59,7 @@
 		</Internal_Reference>
       </Observing_System_Component>
       <Observing_System_Component>
-        <name>${inst_name}</name>
+        <name>${instrument_name}</name>
         <type>Instrument</type>
         <Internal_Reference>
 			<lid_reference>${inst_lid}</lid_reference>
@@ -99,7 +99,7 @@
 				<img:bad_pixel_replacement_table_id>${bad_pixel_table_id}</img:bad_pixel_replacement_table_id>
 			</img:Detector>
 			<img:Exposure>
-				<img:exposure_duration unit="s">${exposure}</img:exposure_duration>
+				<img:exposure_duration unit="microseconds">${exposure}</img:exposure_duration>
     			<img:exposure_type>${exposure_type}</img:exposure_type>
     		</img:Exposure>
 			<img:Illumination>
