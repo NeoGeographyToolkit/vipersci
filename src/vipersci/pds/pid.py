@@ -244,27 +244,48 @@ class VISID(VIPERID):
     def __init__(self, *args):
 
         if len(args) == 1:
-            match = vis_pid_re.search(str(args).lower())
-            if match:
-                parsed = match.groupdict()
-                date = parsed["date"]
-                time = parsed["time"]
-                instrument = parsed["instrument"]
-                compression = parsed["compression"]
+            if isinstance(args[0], dict):
+                if "start_time" in args[0] or "lobt" in args[0]:
+                    if args[0].keys() >= {"start_time", "lobt"}:
+                        if (
+                            datetime.datetime.fromtimestamp(
+                                args[0]["lobt"], tz=datetime.timezone.utc
+                            ) != args[0]["start_time"]
+                        ):
+                            raise ValueError(
+                                f"The start_time {args[0]['start_time']} does not "
+                                f"equal the lobt {args[0]['lobt']}"
+                            )
+                    if "lobt" in args[0]:
+                        dt = datetime.datetime.fromtimestamp(
+                            args[0]["lobt"], tz=datetime.timezone.utc
+                        )
+                    else:
+                        dt = args[0]["start_time"]
+
+                    date = dt.date()
+                    time = dt.time()
+                else:
+                    raise ValueError(
+                        "The dictionary had neither 'start_time' nor 'lobt' "
+                        "keys."
+                    )
+                instrument = args[0]["instrument_name"]
+                compression = args[0]["onboard_compression_ratio"]
             else:
-                raise ValueError(
-                    f"{args} did not match regex: {vis_pid_re.pattern}"
-                )
+                match = vis_pid_re.search(str(args).lower())
+                if match:
+                    parsed = match.groupdict()
+                    date = parsed["date"]
+                    time = parsed["time"]
+                    instrument = parsed["instrument"]
+                    compression = parsed["compression"]
+                else:
+                    raise ValueError(
+                        f"{args} did not match regex: {vis_pid_re.pattern}"
+                    )
         elif len(args) == 4:
-            (date, time, instrument) = args[:3]
-            if args[3] in vis_compression:
-                compression = args[3]
-            elif args[3] in vis_compression.values():
-                compression = get_key(args[3], vis_compression)
-            else:
-                raise ValueError(
-                    f"{args[3]} is not one of {vis_compression.keys()}"
-                )
+            (date, time, instrument, compression) = args
         else:
             raise IndexError("accepts 1 or 4 arguments")
 
@@ -276,6 +297,16 @@ class VISID(VIPERID):
             raise ValueError(
                 f"{instrument} is not a VIS instrument."
             )
+
+        if compression in vis_compression:
+            pass
+        elif compression in vis_compression.values():
+            compression = get_key(compression, vis_compression)
+        else:
+            raise ValueError(
+                f"{args[3]} is not one of {vis_compression.keys()}"
+            )
+
         super().__init__(date, time, instrument)
         self.compression = compression
 

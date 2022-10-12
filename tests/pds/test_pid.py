@@ -172,6 +172,15 @@ class TestVISID(unittest.TestCase):
             with self.subTest(truth=s[0], ccid=vid):
                 self.assertEqual(s[0], str(vid))
 
+    def test_init_dict(self):
+        d = dict(
+            lobt=1643241600,
+            instrument_name="NavCam Left",
+            onboard_compression_ratio=5
+        )
+        vid = pid.VISID(d)
+        self.assertEqual("220127-000000-ncl-b", str(vid))
+
     def test_init_bad_tuples(self):
         tuples = (
             (datetime.date(2024, 1, 1), datetime.time(1, 1, 1), "ncl", "z"),
@@ -190,6 +199,26 @@ class TestVISID(unittest.TestCase):
         for s in strings:
             with self.subTest(test=s):
                 self.assertRaises(ValueError, pid.VISID, s)
+
+    def test_init_bad_dict(self):
+        dicts = (
+            dict(
+                lobt=0,
+                instrument_name="NavCam Left",
+                onboard_compression_ratio=5
+            ),
+            dict(
+                lobt=1643241600,
+                start_time=datetime.datetime(
+                    2023, 1, 27, 0, 0, 0, tzinfo=datetime.timezone.utc
+                ),
+                instrument_name="NavCam Left",
+                onboard_compression_ratio=5
+            )
+        )
+        for d in dicts:
+            with self.subTest(test=d):
+                self.assertRaises(ValueError, pid.VISID, d)
 
     def test_init_wrong_arg_count(self):
         # (datetime.date(2024, 1, 1), datetime.time(1, 1, 1), "ncl")
