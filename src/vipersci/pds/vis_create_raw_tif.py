@@ -1,8 +1,6 @@
 """Creates Raw VIS TIFF files from source 16-bit images.
 
-At this time, this program allows a user to explicitly specify
-the Product ID, but in the future the Product ID will be generated
-based on image metadata.
+This program is meant to help manually build test data sets.
 """
 
 # Copyright 2022, United States Government as represented by the
@@ -31,10 +29,10 @@ import argparse
 import logging
 from pathlib import Path
 
-import numpy as np
-from skimage.io import imread, imsave
+from skimage.io import imread
 
 from vipersci.pds import pid as pds
+from vipersci.pds.vis_create_raw import write_tiff
 from vipersci import util
 
 logger = logging.getLogger(__name__)
@@ -47,6 +45,7 @@ def arg_parser():
     )
     parser.add_argument(
         "-p", "--product_id",
+        required=True,
         help="The desired Product ID of the output image."
     )
     parser.add_argument(
@@ -67,28 +66,10 @@ def main():
     args = arg_parser().parse_args()
     util.set_logger(args.verbose)
 
-    # Eventually, this will be replaced by data gathered from the
-    # telemetry stream.  For now, we fake
-
     pid = pds.VISID(args.product_id)
 
     image = imread(str(args.image))
 
-    if image.dtype != np.uint16:
-        raise ValueError(
-            f"The input image is not a uint16, it is {image.dtype}"
-        )
-
-    desc = f"VIPER {pds.vis_instruments[pid.instrument]} {pid}"
-
-    logger.info(desc)
-
-    imsave(
-        str(pid) + ".tif",
-        image,
-        check_contrast=False,
-        description=desc,
-        metadata=None
-    )
+    write_tiff(pid, image, args.output_dir)
 
     return

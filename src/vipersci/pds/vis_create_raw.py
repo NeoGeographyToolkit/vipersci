@@ -32,12 +32,20 @@ import hashlib
 from importlib import resources
 import logging
 import sys
+from typing import Union
 from pathlib import Path
 
 from genshi.template import MarkupTemplate
+import numpy as np
+import numpy.typing as npt
+from skimage.io import imsave
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from tifftools import read_tiff, Datatype
 
+
 import vipersci
+from vipersci.vis.db.raw_products import Raw_Product
 from vipersci.pds import pid as pds
 from vipersci import util
 
@@ -48,6 +56,12 @@ def arg_parser():
     parser = argparse.ArgumentParser(
         description=__doc__,
         parents=[util.parent_parser()]
+    )
+    parser.add_argument(
+        "-d", "--dburl",
+        default="postgresql://postgres:NotTheDefault@localhost/visdb",
+        help="Database with a raw_products table which will be written to. "
+             "Default: %(default)s"
     )
     parser.add_argument(
         "-t", "--template",
@@ -78,25 +92,8 @@ def main():
 
     pid, d = tif_info(args.tiff)
 
-    d["product_id"] = str(pid)
-    d["lid"] = f"urn:nasa:pds:viper_vis:raw:{pid}"
-    d["mission_lid"] = "urn:nasa:pds:viper"
-    d["mission_phase"] = "TEST"
-    d["sc_lid"] = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
-    d["inst_name"] = pds.vis_instruments[pid.instrument]
-    _inst = d["inst_name"].lower().replace(" ", "_")
-    d[
-        "inst_lid"
-    ] = f"urn:nasa:pds:context:instrument_host:spacecraft.viper.{_inst}"
-
-    # The attribute pds:purpose must be equal to one of the following values
-    # 'Calibration', 'Checkout', 'Engineering', 'Navigation',
-    # 'Observation Geometry', 'Science', or 'Supporting Observation'.
-    d["purpose"] = "Navigation"
-
     d.update(version_info(pid))
     d.update(telemetry_info(pid))
-    d.update(software_info())
 
     # loader = TemplateLoader()
     # tmpl = loader.load(str(args.input))
@@ -111,8 +108,69 @@ def main():
     out_path.write_text(stream.render())
 
 
+def create(
+    metadata: dict,
+    image: Union[npt.NDArray[np.uint16], Path] = None,
+    outdir: Path = Path.cwd(),
+    dburl: str = None,
+    template_path: Path = None
+):
+    if "product_id" not in metadata:
+        metadata["product_id"] = pds.VISID(metadata)
+
+    if isinstance(image, Path):
+        # Should we bother to test filename patterns against the pid?
+        tif_d = tif_info(image)
+    else:
+        tif_d = tif_info(write_tiff(metadata["product_id"], image, outdir))
+
+    for k in ("lines", "samples"):
+        if metadata[k] != tif_d[k]:
+            raise ValueError(
+                f"The value of {k} from the TIFF ({tif_d[k]}) does not "
+                f"match the value from the metadata ({metadata[k]})"
+            )
+
+    metadata.update(tif_d)
+    metadata.update(version_info(metadata["product_id"]))
+
+    metadata.update({
+        "software_name": "vipersci",
+        "software_version": vipersci.__version__,
+        "software_type": "Python",
+        "software_program_name": __name__
+    })
+
+    # Other items that I'm not sure where they come from, hard-coding for now:
+    metadata["mission_phase"] = "TEST"
+
+    # The attribute pds:purpose must be equal to one of the following values
+    # 'Calibration', 'Checkout', 'Engineering', 'Navigation',
+    # 'Observation Geometry', 'Science', or 'Supporting Observation'.
+    metadata["purpose"] = "Navigation"
+
+    if dburl is not None:
+        db_insert(metadata)
+
+    write_xml(metadata, outdir, template_path)
+
+    return
+
+
+def db_insert(metadata: dict, dburl: str):
+    rp = Raw_Product(**metadata)
+
+    engine = create_engine(dburl)
+
+    session_maker = sessionmaker(engine, future=True)
+    with session_maker.begin() as session:
+        session.add(rp)
+        session.commit()
+
+    return
+
+
 def tif_info(p: Path):
-    pid = pds.VISID(p.stem)
     dt = datetime.utcfromtimestamp(p.stat().st_mtime)
 
     md5 = hashlib.md5()
@@ -137,15 +195,15 @@ def tif_info(p: Path):
         dtype = f"Unsigned{end}2"
 
     d = {
-        "file_name": p.name,
+        "file_path": p.name,
         "file_creation_datetime": dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "file_checksum": md5.hexdigest(),
+        "md5_checksum": md5.hexdigest(),
         "byte_offset": tags[273]["data"][0],  # Tag 273 is StripOffsets
         "lines": tags[257]["data"][0],  # Tag 257 is ImageWidth,
         "samples": tags[256]["data"][0],  # Tag 256 is ImageWidth,
         "data_type": dtype,
     }
-    return pid, d
+    return d
 
 
 def version_info(pid: pds.VISID):
@@ -164,53 +222,52 @@ def version_info(pid: pds.VISID):
     return d
 
 
-def telemetry_info(pid: pds.VISID):
-    st = pid.datetime().strftime("%Y-%m-%dT%H:%M:%SZ")
-    comp = pds.vis_compression[pid.compression]
-    if comp is None:
-        cclass = "Lossless"
-        cratio = 1
-    elif comp == "SLoG":
-        cclass = "Lossy"
-        cratio = "??"
+def write_tiff(
+        pid: pds.VISID, image: npt.NDArray[np.uint16], outdir: Path = Path.cwd()
+):
+    if image.dtype != np.uint16:
+        raise ValueError(
+            f"The input image is not a uint16, it is {image.dtype}"
+        )
+
+    desc = f"VIPER {pds.vis_instruments[pid.instrument]} {pid}"
+
+    logger.info(desc)
+    outpath = (outdir / str(pid)).with_suffix(".tif")
+
+    imsave(
+        str(outpath),
+        image,
+        check_contrast=False,
+        description=desc,
+        metadata=None
+    )
+    return outpath
+
+
+def write_xml(
+    metadata: dict,
+    outdir: Path = Path.cwd(),
+    template_path: Path = None
+):
+    metadata["lid"] = f"urn:nasa:pds:viper_vis:raw:{metadata['product_id']}"
+    metadata["mission_lid"] = "urn:nasa:pds:viper"
+    metadata["sc_lid"] = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
+    _inst = pds.vis_instruments[
+        metadata["product_id"].instrument
+    ].lower().replace(" ", "_")
+    metadata["inst_lid"] = f"urn:nasa:pds:context:instrument_host:spacecraft.viper.{_inst}"
+
+    if template_path is None:
+        tmpl = MarkupTemplate(resources.read_text(
+            "vipersci.pds.data.template", "raw-template.xml"
+        ))
     else:
-        cclass = "Lossy"
-        cratio = comp
-
-    # Don't have a place for "Voltage Ramp" that I can find.
-    # Where do we put the IMG_ID?
-    d = {
-        "start_time": st,
-        "stop_time": st,
-        "bad_pixel_table_id": 1,
-        "exposure": 2,
-        "exposure_type": "Manual",  # Manual, Auto, or Test
-        "offset": 16324,
-        "gain": 63,  # combination of ADC Gain and PGA Gain
-        "lights": [
-            {"name": "NavLight Left", "wavelength": 450},
-            {"name": "NavLight Right", "wavelength": 450}
-        ],
-        "compression_class": cclass,
-        "compression_ratio": cratio,
-        "inst_temp": 30,
-    }
-    return d
-
-
-def software_info():
-    return {
-        "software": [
-            {
-                "name": "VIS processing software",
-                "version": vipersci.__version__,
-                "type": "Python",
-                "programs": [
-                    {"name": __name__}
-                ]
-            }
-        ],
-    }
+        tmpl = MarkupTemplate(template_path.read_text())
+    stream = tmpl.generate(**metadata)
+    out_path = (outdir / str(metadata["product_id"])).with_suffix(".xml")
+    out_path.write_text(stream.render())
+    return
 
 
 if __name__ == "__main__":
