@@ -47,34 +47,24 @@ def arg_parser():
         "--bd_mod",
         type=Path,
         required=True,
-        help="A CSV file provided by the NSS team with the Burial Depth "
-             "model."
+        help="A CSV file provided by the NSS team with the Burial Depth model.",
     )
+    parser.add_argument("--det1", type=Path, required=True, help="A GeoTIFF file.")
+    parser.add_argument("--det2", type=Path, required=True, help="A GeoTIFF file.")
     parser.add_argument(
-        "--det1",
-        type=Path,
-        required=True,
-        help="A GeoTIFF file."
-    )
-    parser.add_argument(
-        "--det2",
-        type=Path,
-        required=True,
-        help="A GeoTIFF file."
-    )
-    parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         default="nss_model_",
         type=Path,
         help="The output prefix.  Will create three TIFF files that end in "
-             "'bd.tif', 'weh.tif', and 'uweh.tif' and start with this. "
-             "Default: %(default)s"
+        "'bd.tif', 'weh.tif', and 'uweh.tif' and start with this. "
+        "Default: %(default)s",
     )
     parser.add_argument(
         "--weh_mod",
         type=Path,
         required=True,
-        help="A CSV file provided by the NSS team with the WEH model."
+        help="A CSV file provided by the NSS team with the WEH model.",
     )
 
     return parser
@@ -89,25 +79,8 @@ def main():
     det2 = det2_data.read(1, masked=True)
 
     nodata_val = -1
-    bd_model = nss.model(
-        args.bd_mod, fill_value=nodata_val, bounds_error=False
-    )
-    weh_model = nss.model(
-        args.weh_mod, fill_value=nodata_val, bounds_error=False
-    )
-
-    bd_arr = np.full_like(det1, nodata_val, dtype=np.double)
-    weh_arr = np.full_like(det1, nodata_val, dtype=np.double)
-
-    bd_arr[~det1.mask] = bd_model(np.column_stack(
-        (det1.compressed(), det2.compressed())
-    ))
-    weh_arr[~det1.mask] = weh_model(np.column_stack(
-        (det1.compressed(), det2.compressed())
-    ))
-    uweh_arr = nss.uniform_weh(
-        det1.filled(nodata_val), fill_value=nodata_val, bounds_error=False
-    )
+    modeler = nss.NssModeler(args.bd_mod, args.weh_mod, nodata_val)
+    bd_arr, weh_arr, uweh_arr = modeler(det1, det2)
 
     kwds = det1_data.profile
     kwds["nodata"] = nodata_val
@@ -121,9 +94,7 @@ def main():
 
 
 def write_tif(path: Path, ending: str, arr: np.array, kwds: dict):
-    with rasterio.open(
-        path.with_name(path.name + ending), "w", **kwds
-    ) as dst_dataset:
+    with rasterio.open(path.with_name(path.name + ending), "w", **kwds) as dst_dataset:
         dst_dataset.write(arr, 1)
     return
 
