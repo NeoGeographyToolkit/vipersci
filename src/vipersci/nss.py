@@ -37,12 +37,7 @@ from scipy.interpolate import RegularGridInterpolator
 logger = logging.getLogger(__name__)
 
 # type alias for the exhaustive variety of arguments that np.genfromtxt() takes.
-Readable = Union[
-    os.PathLike,
-    str,
-    List[str],
-    Generator[Union[str, bytes], Any, Any]
-]
+Readable = Union[os.PathLike, str, List[str], Generator[Union[str, bytes], Any, Any]]
 
 
 class DataSimulator:
@@ -77,12 +72,8 @@ class DataSimulator:
         The *bounds_error* and *fill_value* arguments are passed on to the
         model() function, please see its documentation for more information.
         """
-        self.det1_model = model(
-            det1, bounds_error=bounds_error, fill_value=fill_value
-        )
-        self.det2_model = model(
-            det2, bounds_error=bounds_error, fill_value=fill_value
-        )
+        self.det1_model = model(det1, bounds_error=bounds_error, fill_value=fill_value)
+        self.det2_model = model(det2, bounds_error=bounds_error, fill_value=fill_value)
         self.rng = rng
         return
 
@@ -90,7 +81,7 @@ class DataSimulator:
         self,
         bd: Union[float, Sequence, np.ndarray],
         weh: Union[float, Sequence, np.ndarray],
-        poisson: bool = False
+        poisson: bool = False,
     ):
         """
         Returns simulated detector 1 and detector 2 values.
@@ -117,6 +108,72 @@ class DataSimulator:
             return d1.item(), d2.item()
 
         return d1, d2
+
+
+class NssModeler:
+    """
+    The NssModeler object is initiated with model files,
+    and then can be called to apply the models to a set of detector 1 & 2
+    data to provide burial depth and water equivalent hydrogen values.
+    """
+
+    def __init__(
+        self,
+        bd_mod: Readable,
+        weh_mod: Readable,
+        fill_value: Any = np.nan,
+    ):
+        """
+        :param bd_mod: The path to the BD model CSV file.
+        :type bd_mod: Path
+        :param weh_mod: The path to the WEH model CSV file.
+        :type weh_mod: Path
+        :param fill_value: fill value for nodata regions
+
+        The *fill_value* arguments is passed on to the
+        model() function. Please see its documentation for more information.
+        """
+        self.det1_model = model(bd_mod, bounds_error=False, fill_value=fill_value)
+        self.det2_model = model(weh_mod, bounds_error=False, fill_value=fill_value)
+        self.fill_value = fill_value
+        return
+
+    def __call__(
+        self,
+        det1: Union[float, Sequence, np.ndarray],
+        det2: Union[float, Sequence, np.ndarray],
+    ):
+        """
+        Returns model-provided burial depth, water equivalent hydrogen, and
+        uniform water equivalent hydrogen values.
+
+        :param bd:  A single value or sequence of detector 1 values.
+        :param weh: A single value or sequence of detector 2 values.
+        :returns: A three-tuple of values or np.arrays.  If *det1* and *det2* are
+        singular elements, then a three-tuple is returned of the BD, WEH, and UWEH
+        values at that location.  If *det1* and *det2* contain more than
+        one value each, then the returned three-tuple will be a numpy array
+        of BD values, a numpy array of WEH values, and a numpy array of UWEH values.
+        """
+        is_arraylike = True if hasattr(det1, "__iter__") else False
+
+        bd_arr = np.full_like(det1, self.fill_value, dtype=np.double)
+        weh_arr = np.full_like(det1, self.fill_value, dtype=np.double)
+
+        bd_arr[~det1.mask] = self.bd_model(
+            np.column_stack((det1.compressed(), det2.compressed()))
+        )
+        weh_arr[~det1.mask] = self.weh_model(
+            np.column_stack((det1.compressed(), det2.compressed()))
+        )
+        uweh_arr = uniform_weh(
+            det1.filled(self.fill_value), fill_value=self.fill_value, bounds_error=False
+        )
+
+        if not is_arraylike:
+            return bd_arr.item(), weh_arr.item(), uweh_arr.item()
+
+        return bd_arr, weh_arr, uweh_arr
 
 
 def model(fname: Readable, **kwargs):
@@ -210,14 +267,10 @@ def uniform_weh(
     # fractions.
     if bounds_error:
         if np.any(measured > c0):
-            raise ValueError(
-                f"Value(s) in measured are greater than c0, {c0}."
-            )
+            raise ValueError(f"Value(s) in measured are greater than c0, {c0}.")
 
         if np.any(measured <= 0):
-            raise ValueError(
-                "Value(s) in measured are less than or equal to zero."
-            )
+            raise ValueError("Value(s) in measured are less than or equal to zero.")
 
     with np.errstate(divide="ignore", invalid="ignore"):
         arr = np.float_power(a * ((c0 / measured) - 1), b)
