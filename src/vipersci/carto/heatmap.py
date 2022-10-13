@@ -27,9 +27,9 @@ representation with individual points effectively averaged together.
 
 import math
 from multiprocessing import Pool
-import subprocess
+from itertools import chain
 import time
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple, Any, Sequence
 import logging
 
 import pyproj
@@ -47,7 +47,7 @@ def buffered_mask(
     transform: rasterio.Affine,
     buffer: float,
     all_touched=False,
-):
+) -> np.ndarray:
     """
     Returns a boolean numpy array from rasterio.features.geometry_mask() that
     indicates the shape of *linestring* buffered by *buffer* interpreted into
@@ -71,7 +71,6 @@ def buffered_mask(
         geometries = buffered.geoms
     logger.debug(f"Buffered geometries in {time.perf_counter() - start:.6f}s")
 
-    # logger.debug(type(geometries))
     logger.debug(buffered.bounds)
 
     window = rasterio.windows.from_bounds(*buffered.bounds, transform).round_lengths(
@@ -94,7 +93,9 @@ def buffered_mask(
     return mask
 
 
-def transform_frombuffer_withgrid(west: float, north: float, buffer: float, gsd: float):
+def transform_frombuffer_withgrid(
+    west: float, north: float, buffer: float, gsd: float
+) -> rasterio.Affine:
     """
     Returns a rasterio Affine transform based on the specified value of
     *gsd* (ground sample distance) and the location of a point north of *north*
@@ -116,21 +117,19 @@ def transform_frombuffer_withgrid(west: float, north: float, buffer: float, gsd:
     return transform
 
 
-def __run_samples(kde, sample_coords):
-    return kde.score_samples(sample_coords)
-
-
 def generate_density_heatmap(
-    x_coords: np.ndarray,
-    y_coords: np.ndarray,
-    values: np.ndarray,
+    x_coords: Sequence,  # list or np.ndarray
+    y_coords: Sequence,  # list or np.ndarray
+    values: Sequence,  # list or np.ndarray
     gsd: float = 1,  # in same units of x, y
     radius: float = 1,  # radius of "data disk", in units of x, y
     padding: float = None,  # in pixels
     nodata_value: float = 0,
     transform=None,
-    processes: int = 1,
-):
+    processes: int = None,
+    sample_bounds: shapely.geometry.Polygon = None,
+    frequencies: Sequence = None,  # list or np.ndarray
+) -> Tuple[rasterio.Affine, np.ndarray, np.ndarray]:
     """
     Perform tophat kernel density estimation to build a continuous heatmap
     representation of scalar values with 2d coordinates.
@@ -141,8 +140,10 @@ def generate_density_heatmap(
         values: values of the data points
         gsd: Coordinate interval at which to sample the output distribution,
             or the ground sample distance of the output arrays.
+            Defaults to 1.
         radius:  This is the kernel bandwidth used in the density estimation,
             and should be the sensing "radius" of the instrument.
+            Defaults to 1.
         padding: Square padding in pixels to add to the bounds of data when
             returning an array.  If None (the default), the value of *radius*
             converted to pixels will be used.
@@ -150,6 +151,13 @@ def generate_density_heatmap(
         transform: If a rasterio Affine transform is not supplied (the
             default), then one will be generated, and returned.
         processes: Number of processes to use when sampling the output distribution.
+            Defaults to None, allowing multiprocessing to decide how many to use.
+        sample_bounds: polygon bounding the region in which to actually sample data.
+            Defaults to None, sampling over the entire region.
+        frequencies: frequency values returned from a previous call to
+            generate_density_heatmap. Used when source has multiple data values
+            (ie, multiple detectors) sampled at the same rate and time.
+            Defaults to None, so frequencies will be computed.
 
     Returns:
         A tuple (transform, counts, avg)
@@ -158,9 +166,24 @@ def generate_density_heatmap(
             center location and *radius*) that overlap a given grid cell.
         avg: Averaged value of all the individual observations that overlap
             a given grid cell.
+        frequencies: Can be provided to subsequent generate_density_heatmap calls
+            on new data sampled at the same locations
 
     The *counts* and *avg* objects are numpy arrays.
     """
+
+    def as_ndarray(input: Sequence) -> np.ndarray:
+        """
+        Check the type of the input and return it as an np ndarray, converting if needed
+        Parameters:
+            input
+        Returns:
+            ndarray
+        """
+        if isinstance(input, list):
+            return np.asarray(input)
+        elif isinstance(input, np.ndarray):
+            return input
 
     if processes < 1:
         raise ValueError("Processes must be a positive integer.")
@@ -168,15 +191,13 @@ def generate_density_heatmap(
     if not (len(x_coords) == len(y_coords) == len(values)):
         raise ValueError("Input arrays must be of the same length.")
 
-    points = shapely.geometry.LineString(
-        tuple(zip(x_coords.tolist(), y_coords.tolist()))
-    )
+    x_coords_np = as_ndarray(x_coords)
+    y_coords_np = as_ndarray(y_coords)
+    values_np = as_ndarray(values)
 
-    if (
-        gsd > points.bounds[2] - points.bounds[0]
-        or gsd > points.bounds[3] - points.bounds[1]
-    ):
-        raise ValueError("GSD can not be larger than the bounds of the input data.")
+    points = shapely.geometry.LineString(np.stack((x_coords_np, y_coords_np), axis=1))
+    if sample_bounds is not None:
+        points = points.intersection(sample_bounds)
 
     if padding is None:
         buffer = radius
@@ -186,9 +207,13 @@ def generate_density_heatmap(
     logger.debug(f"buffer: {buffer}")
 
     if transform is None:
-        transform = transform_frombuffer_withgrid(
-            np.amin(x_coords), np.amax(y_coords), buffer, gsd
-        )
+        if sample_bounds is None:
+            minx = np.amin(x_coords_np)
+            maxy = np.amax(y_coords_np)
+        else:
+            minx = sample_bounds.bounds[0]
+            maxy = sample_bounds.bounds[3]
+        transform = transform_frombuffer_withgrid(minx, maxy, buffer, gsd)
     else:
         if transform.a != gsd or transform.e != gsd:
             raise ValueError(
@@ -202,7 +227,7 @@ def generate_density_heatmap(
     end = time.perf_counter()
     logger.debug(f"Created mask in {end - start:.6f}s")
 
-    train = np.column_stack([y_coords, x_coords])
+    train = np.column_stack([y_coords_np, x_coords_np])
     kde = KernelDensity(
         bandwidth=radius, metric="euclidean", kernel="tophat", algorithm="auto"
     )
@@ -220,92 +245,80 @@ def generate_density_heatmap(
     col_masked = np.ma.MaskedArray(col_coords, mask)
 
     x_tosample, y_tosample = rasterio.transform.xy(
-        transform, row_masked.compressed().tolist(), col_masked.compressed().tolist()
+        transform, row_masked.compressed(), col_masked.compressed()
     )
+
     sample_coords = np.column_stack([y_tosample, x_tosample])
     end = time.perf_counter()
     logger.debug(f"Created unmasked coordinates {end - start:.6f}s")
 
-    start = time.perf_counter()
-    if processes > 1:
+    if frequencies is None:
+        start = time.perf_counter()
         with Pool(processes=processes) as pool:
-            results = pool.starmap(
-                __run_samples,
-                zip([kde] * processes, np.array_split(sample_coords, processes)),
+            results = pool.imap(
+                kde.score_samples,
+                np.array_split(sample_coords, 1 if processes is None else processes),
             )
-        samples = np.concatenate(results)
-    else:
-        samples = kde.score_samples(sample_coords)
+            samples = np.fromiter(chain.from_iterable(results), dtype=float, count=len(sample_coords))
+        out_unweighted = np.exp(samples)
+        total_observations = len(train)
+        frequencies = out_unweighted * total_observations
+        frequencies = (frequencies > 1e-9) * frequencies
+        end = time.perf_counter()
+        logger.info(f"Sampled {samples.shape[0]} points in {end - start:.6f}s.")
 
     start = time.perf_counter()
-    kde.fit(train, sample_weight=values)
+    kde.fit(train, sample_weight=values_np)
     end = time.perf_counter()
     logger.debug(f"Trained weighted KDE in {end - start:.6f}s")
 
-    if processes > 1:
-        with Pool(processes=processes) as pool:
-            results = pool.starmap(
-                __run_samples,
-                zip([kde] * processes, np.array_split(sample_coords, processes)),
-            )
-        weighted_samples = np.concatenate(results)
-    else:
-        weighted_samples = kde.score_samples(sample_coords)
+    start = time.perf_counter()
+    with Pool(processes=processes) as pool:
+        results = pool.imap(
+            kde.score_samples,
+            np.array_split(sample_coords, 1 if processes is None else processes),
+        )
+        weighted_samples = np.fromiter(chain.from_iterable(results), dtype=float, count=len(sample_coords))
     end = time.perf_counter()
-    logger.info(f"Sampled {samples.shape[0]} points in {end - start:.6f}s.")
+    logger.info(
+        f"Sampled {weighted_samples.shape[0]} weighted points in {end - start:.6f}s."
+    )
 
     # compute our required stats
     start = time.perf_counter()
-    out_unweighted = np.exp(samples)
     out_weighted = np.exp(weighted_samples)
     out_weighted = (out_weighted > 1e-9) * out_weighted
-    total_counts = np.sum(values) * out_weighted
-    total_observations = len(train)
-    frequencies = out_unweighted * total_observations
-    frequencies = (frequencies > 1e-9) * frequencies
+    total_counts = np.sum(values_np) * out_weighted
+
     with np.errstate(divide="ignore", invalid="ignore"):
         avg_values = np.nan_to_num(total_counts / frequencies, posinf=0, copy=False)
+
     # frequencies starts as the height of cylinders with radius of bandwidth,
     # but the meaningful value is their volume
-    frequencies = frequencies * math.pi * math.pow(radius, 2)
-    frequencies = np.around(frequencies)
+    counts = np.around(frequencies * math.pi * math.pow(radius, 2))
+
     end = time.perf_counter()
     logger.info(f"Computed stats in {end - start:.6f}s")
 
-    out_avg = np.full_like(mask, nodata_value, dtype=np.double)
-    out_counts = np.full_like(mask, nodata_value, dtype=np.int32)
-    for x, y, avg, freq in zip(x_tosample, y_tosample, avg_values, frequencies):
+    out_avg = np.full_like(mask, nodata_value, dtype=np.float32)
+    out_counts = np.full_like(mask, nodata_value, dtype=np.uintc)
+    for x, y, avg, count in zip(x_tosample, y_tosample, avg_values, counts):
         r, c = rasterio.transform.rowcol(transform, x, y)
-        # logger.debug(f"row,col: {r}, {c} avg: {avg} freq: {freq}")
         out_avg[r, c] = avg
-        out_counts[r, c] = freq
+        out_counts[r, c] = count
 
-    return transform, out_counts, out_avg
-
-
-def apply_gdal_colorrelief(
-    in_filepath: str, out_filepath: str, colormap_filepath: str
-) -> None:
-    """
-    Creates a new false-color image from a 1-band source file using the provided
-    colormap file.  Requires GDAL
-
-    Parameters:
-        in_filepath: path of existing 1-band geotiff file to color
-        out_filepath: path to write new RGBA geotiff
-        colormap_filepath: path to a text colormap file
-    """
-    # TODO: convert to gdal library bindings or rasterio
-    subprocess.run(
-        f"gdaldem color-relief {in_filepath} {colormap_filepath} {out_filepath}"
-        + "-alpha -q",
-        shell=True,
-    )
+    return transform, out_counts, out_avg, frequencies
 
 
 def write_geotiff_rasterio(
-    out_filepath, dest_crs, transform, source_crs=None, nodata_value=0, *data
-):
+    out_filepath,
+    dest_crs,
+    transform,
+    *data,
+    source_crs=None,
+    nodata_value=0,
+    profile={},
+) -> Dict[str, Any]:
     """
     Writes 2D data to a geotiff file
 
@@ -313,26 +326,36 @@ def write_geotiff_rasterio(
         out_filepath: Absolute filepath for writing
         dest_crs: The Rasterio CRS that applies to the data
         transform: The affine transform used for geolocating the data
+        data: 2D array of data to write to the geotiff.  Multiple arrays will be written
+            to separate bands in order
         source_crs: The Rasterio CRS the data was projected from, if applicable.
             Used to calculate 'extent' in the returned info.
-        data: 2D array of data to write to the geotiff.  Multiple arrays will be
-            written to separate bands in order
-
+        nodata_value (int): the nodata value to use in the raster. Defaults to 0.
+        profile (dict): Additional profile data to use with rasterio.
+            Will be merged / updated with basic information about the raster itself.
+            Defaults to an empty dictionary (no additional data).
     Returns
         A dictionary that mimics the information provided by gdalinfo
     """
-    with rasterio.open(
-        out_filepath,
-        "w",
-        driver="GTiff",
-        height=data[0].shape[0],
-        width=data[0].shape[1],
-        count=len(data),
-        dtype=data[0].dtype,
-        crs=dest_crs,
-        transform=transform,
-        nodata=nodata_value,
-    ) as raster:
+    unified_profile = {
+        "driver": "GTiff",
+    }
+
+    unified_profile.update(profile)
+
+    unified_profile.update(
+        {
+            "height": data[0].shape[0],
+            "width": data[0].shape[1],
+            "count": len(data),
+            "dtype": data[0].dtype,
+            "crs": dest_crs,
+            "transform": transform,
+            "nodata": nodata_value,
+        }
+    )
+
+    with rasterio.open(out_filepath, "w", **unified_profile) as raster:
         for i, d in enumerate(data, start=1):
             raster.write(d, i)
         gdalinfo = get_gdal_info_from_rasterio(raster, source_crs)
@@ -344,8 +367,7 @@ def get_gdal_info_from_rasterio(
     input: rasterio.DatasetReader, source_crs: pyproj.crs.CRS
 ) -> Dict[str, Any]:
     """
-    Construct a block of gdal-info style json from the metadata about a rasterio
-    dataset
+    Construct a block of gdal-info style json from the metadata about a rasterio dataset
     Parameters:
         input: loaded rasterio dataset
     Returns:
@@ -426,23 +448,6 @@ def get_gdal_info_from_rasterio(
     return result
 
 
-def reproject(
-    x: np.ndarray, y: np.ndarray, crs: pyproj.crs.CRS
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Projects a set of x and y coordinates using the provided CRS
-
-        Parameters:
-            x: np array of x (longitude, easting) coordinates
-            y: np array of y (latitude, northing) coordinates
-            crs: pyproj CRS defining the projection
-        Returns:
-            x, y: projected coordinate arrays
-    """
-    proj = pyproj.Proj(crs)
-    return proj(longitude=x, latitude=y)
-
-
 def generate_area_bin_heatmap(
     x_coords: np.ndarray,
     y_coords: np.ndarray,
@@ -451,14 +456,13 @@ def generate_area_bin_heatmap(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Generates a 1-band floating point geotiff heatmap by binning data into a grid and
-    averaging the values
+        averaging the values
 
     Parameters:
         x_coords: array of x coordinates. Should be projected
         y_coords: array of y coordinates. Should be projected
         values: array of scalar values at each provided location
-        crs: coordinate reference system used to project the locations to cartesian
-            coordinates
+        crs: coordinate reference system used to project the locations to cartesian coordinates
         bin_size: size of square bins in meters
 
     Returns:
@@ -478,8 +482,8 @@ def generate_area_bin_heatmap(
         Parameters
             x_coords: array of x coordinates
             y_coords: array of y coordinates
-            padding: square padding value to use around the bounding box of the
-                provided coordinates
+            padding: square padding value to use around the bounding box of the provided
+                coordinates
             grid_size: resolution of the grid
         """
         x_min = grid_size * math.floor(np.amin(x_coords) / grid_size) - padding
@@ -533,8 +537,8 @@ def area_bin(
         bin_size: size of square bins in meters
 
     Returns:
-        (averages, counts, transform): Average of the values contained in each bin, and
-            a count of the values contained in each bin.
+        (averages, counts, transform): Average of the values contained in each bin,
+            and a count of the values contained in each bin.
     """
 
     # determine grid sizing from a window of dimension 1x1
