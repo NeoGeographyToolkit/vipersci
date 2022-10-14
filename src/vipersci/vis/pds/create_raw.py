@@ -30,6 +30,7 @@ import argparse
 from datetime import datetime, date
 import hashlib
 from importlib import resources
+import json
 import logging
 import sys
 from typing import Union
@@ -38,11 +39,10 @@ from pathlib import Path
 from genshi.template import MarkupTemplate
 import numpy as np
 import numpy.typing as npt
-from skimage.io import imsave
+from skimage.io import imread, imsave
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from tifftools import read_tiff, Datatype
-
 
 import vipersci
 from vipersci.vis.db.raw_products import Raw_Product
@@ -59,9 +59,15 @@ def arg_parser():
     )
     parser.add_argument(
         "-d", "--dburl",
-        default="postgresql://postgres:NotTheDefault@localhost/visdb",
         help="Database with a raw_products table which will be written to. "
-             "Default: %(default)s"
+             "If not given, no database will be written to.  Example: "
+             "postgresql://postgres:NotTheDefault@localhost/visdb"
+    )
+    parser.add_argument(
+        "--json",
+        type=Path,
+        required=True,
+        help="JSON file, with raw product meta-data."
     )
     parser.add_argument(
         "-t", "--template",
@@ -70,15 +76,23 @@ def arg_parser():
              "file distributed with the module."
     )
     parser.add_argument(
+        "--image",
+        type=Path,
+        help="Optional path to source image file which will be read and "
+             "converted into a TIFF product.  If no path is given, then "
+             "Only a .xml label will be written and no image."
+    )
+    parser.add_argument(
         "--tiff",
         type=Path,
-        help="Path to TIFF file that this label is to be created for."
+        help="Optional pre-existing TIFF file.  This file will be inspected "
+             "and an .xml label will be written."
     )
     parser.add_argument(
         "-o", "--output_dir",
         type=Path,
         default=Path.cwd(),
-        help="Output directory for label."
+        help="Output directory for label. Defaults to current working directory."
     )
     return parser
 
@@ -87,25 +101,19 @@ def main():
     args = arg_parser().parse_args()
     util.set_logger(args.verbose)
 
-    # Eventually, this will be replaced by data gathered from the
-    # telemetry stream.  For now, we fake
+    with open(args.json) as f:
+        metadata = json.load(f)
 
-    pid, d = tif_info(args.tiff)
-
-    d.update(version_info(pid))
-    d.update(telemetry_info(pid))
-
-    # loader = TemplateLoader()
-    # tmpl = loader.load(str(args.input))
-    if args.template is None:
-        tmpl = MarkupTemplate(resources.read_text(
-            "vipersci.pds.data.template", "raw-template.xml"
-        ))
+    if args.image is not None:
+        image = imread(str(args.image))
+    elif args.tiff is not None:
+        image = args.tiff
     else:
-        tmpl = MarkupTemplate(args.template.read_text())
-    stream = tmpl.generate(**d)
-    out_path = args.output_dir / args.tiff.with_suffix(".xml")
-    out_path.write_text(stream.render())
+        image = None
+
+    create(metadata, image, args.output_dir, args.dburl, args.template)
+
+    return
 
 
 def create(
@@ -115,26 +123,88 @@ def create(
     dburl: str = None,
     template_path: Path = None
 ):
-    if "product_id" not in metadata:
-        metadata["product_id"] = pds.VISID(metadata)
+    """
+    Creates a PDS4 XML label file in *outdir* based on the provided
+    meta-data.  Returns None.
 
-    if isinstance(image, Path):
-        # Should we bother to test filename patterns against the pid?
-        tif_d = tif_info(image)
+    If *image* is a numpy array, that array will be considered the
+    Array_2D_Image and will be written to a TIFF file with the same
+    naming scheme as the XML file in *outdir*.  If *image* is a
+    file path to a TIFF file, the TIFF file at that path will be
+    evaluated and its meta-dataadded to the XML label, as if that
+    file was the File_Area_Observational for the XML label.  If
+    *image* is None (the default), no TIFF file will be written,
+    and certain elements of the XML label (pertaining to the
+    File_Area_Observational) will be empty.
+
+    If a path is provided to *outdir* the XML and optional TIFF
+    file will be written there. Defaults to the current working
+    directory.
+
+    If *dburl* is given, information for the raw product will be
+    written to the raw_products table.  If not, no database activity
+    will occur.
+
+    If *template_path* is passed to the write_xml() function.
+    """
+    rp = make_raw_product(metadata, image, outdir)
+
+    if dburl is not None:
+        db_insert(rp, dburl)
+
+    write_xml(rp, outdir, template_path)
+
+    return
+
+
+def db_insert(raw_product: Raw_Product, dburl: str):
+    engine = create_engine(dburl)
+
+    session_maker = sessionmaker(engine, future=True)
+    with session_maker.begin() as session:
+        session.add(raw_product)
+        session.commit()
+
+    return
+
+
+def make_raw_product(
+    metadata: dict,
+    image: Union[npt.NDArray[np.uint16], Path] = None,
+    outdir: Path = Path.cwd(),
+) -> Raw_Product:
+    """
+    Returns a Raw_Product created from the provided meta-data, and
+    if *image* is a numpy array, it will also use write_tiff() to
+    create a TIFF data product in *outdir* (defaults to current
+    working directory).
+    """
+    rp = Raw_Product(**metadata)
+
+    if image is not None:
+        if isinstance(image, Path):
+            # Should we bother to test filename patterns against the pid?
+            tif_d = tif_info(image)
+        else:
+            tif_d = tif_info(
+                write_tiff(pds.VISID(rp.product_id), image, outdir))
+
+        for k in ("lines", "samples"):
+            if getattr(rp, k) != tif_d[k]:
+                raise ValueError(
+                    f"The value of {k} from the TIFF ({tif_d[k]}) does not "
+                    f"match the value from the metadata ({getattr(rp, k)})"
+                )
+
+        rp.update(tif_d)
     else:
-        tif_d = tif_info(write_tiff(metadata["product_id"], image, outdir))
+        rp.update({
+            "byte_offset": None,
+            "data_type": None
+        })
+    rp.update(version_info(rp.product_id))
 
-    for k in ("lines", "samples"):
-        if metadata[k] != tif_d[k]:
-            raise ValueError(
-                f"The value of {k} from the TIFF ({tif_d[k]}) does not "
-                f"match the value from the metadata ({metadata[k]})"
-            )
-
-    metadata.update(tif_d)
-    metadata.update(version_info(metadata["product_id"]))
-
-    metadata.update({
+    rp.update({
         "software_name": "vipersci",
         "software_version": vipersci.__version__,
         "software_type": "Python",
@@ -142,35 +212,19 @@ def create(
     })
 
     # Other items that I'm not sure where they come from, hard-coding for now:
-    metadata["mission_phase"] = "TEST"
+    rp.update({
+        "mission_phase": "TEST",
+        "purpose": "Navigation"
+    })
 
-    # The attribute pds:purpose must be equal to one of the following values
-    # 'Calibration', 'Checkout', 'Engineering', 'Navigation',
-    # 'Observation Geometry', 'Science', or 'Supporting Observation'.
-    metadata["purpose"] = "Navigation"
-
-    if dburl is not None:
-        db_insert(metadata)
-
-    write_xml(metadata, outdir, template_path)
-
-    return
+    return rp
 
 
-def db_insert(metadata: dict, dburl: str):
-    rp = Raw_Product(**metadata)
-
-    engine = create_engine(dburl)
-
-    session_maker = sessionmaker(engine, future=True)
-    with session_maker.begin() as session:
-        session.add(rp)
-        session.commit()
-
-    return
-
-
-def tif_info(p: Path):
+def tif_info(p: Path) -> dict:
+    """
+    Returns a dict containing meta-data from the TIFF file at the
+    provided path, *p*.
+    """
     dt = datetime.utcfromtimestamp(p.stat().st_mtime)
 
     md5 = hashlib.md5()
@@ -208,7 +262,7 @@ def tif_info(p: Path):
 
 def version_info(pid: pds.VISID):
     # This should reach into a database and do something smart to figure
-    # out how to populate this, but again, for now, hardcoding:
+    # out how to populate this, but for now, hardcoding:
     d = {
         "modification_details": [
             {
@@ -224,7 +278,11 @@ def version_info(pid: pds.VISID):
 
 def write_tiff(
         pid: pds.VISID, image: npt.NDArray[np.uint16], outdir: Path = Path.cwd()
-):
+) -> Path:
+    """
+    Returns the path where a TIFF with a name based on *pid* and the array
+    *image* was written in *outdir* (defaults to current working directory).
+    """
     if image.dtype != np.uint16:
         raise ValueError(
             f"The input image is not a uint16, it is {image.dtype}"
@@ -246,26 +304,27 @@ def write_tiff(
 
 
 def write_xml(
-    metadata: dict,
+    product: Raw_Product,
     outdir: Path = Path.cwd(),
     template_path: Path = None
 ):
-    metadata["lid"] = f"urn:nasa:pds:viper_vis:raw:{metadata['product_id']}"
-    metadata["mission_lid"] = "urn:nasa:pds:viper"
-    metadata["sc_lid"] = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
-    _inst = pds.vis_instruments[
-        metadata["product_id"].instrument
-    ].lower().replace(" ", "_")
-    metadata["inst_lid"] = f"urn:nasa:pds:context:instrument_host:spacecraft.viper.{_inst}"
+    """
+    Writes a PDS4 XML label in *outdir* based on the contents of
+    the *product* object, which must be of type Raw_Product.
+
+    The *template_path* can be a path to an appropriate template
+    XML file, but defaults to the raw-template.xml file provided
+    with this library.
+    """
 
     if template_path is None:
         tmpl = MarkupTemplate(resources.read_text(
-            "vipersci.pds.data.template", "raw-template.xml"
+            "vipersci.vis.pds.data", "raw-template.xml"
         ))
     else:
         tmpl = MarkupTemplate(template_path.read_text())
-    stream = tmpl.generate(**metadata)
-    out_path = (outdir / str(metadata["product_id"])).with_suffix(".xml")
+    stream = tmpl.generate(**product.label_dict())
+    out_path = (outdir / product.product_id).with_suffix(".xml")
     out_path.write_text(stream.render())
     return
 
