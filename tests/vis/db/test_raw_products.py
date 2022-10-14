@@ -23,10 +23,8 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-# from pathlib import Path
 from datetime import datetime, timedelta, timezone
 import unittest
-# from unittest.mock import patch
 
 from vipersci.vis.db import raw_products as trp
 
@@ -40,7 +38,7 @@ class TestRawProduct(unittest.TestCase):
             auto_exposure=False,
             bad_pixel_table_id=0,
             capture_id=0,
-            exposure_time=111,
+            exposure_duration=111,
             file_creation_datetime=datetime.now(timezone.utc),
             file_path="/path/to/dummy",
             hazlight_aft_port_on=False,
@@ -72,10 +70,18 @@ class TestRawProduct(unittest.TestCase):
             stereo=False,
             voltage_ramp=109,
         )
+        self.extras = dict(
+            foo="bar"
+        )
 
     def test_init(self):
         rp = trp.Raw_Product(**self.d)
         self.assertEqual("220127-000000-ncl-b", str(rp.product_id))
+
+        d = self.d
+        d.update(self.extras)
+        rpl = trp.Raw_Product(**d)
+        self.assertEqual("220127-000000-ncl-b", str(rpl.product_id))
 
         # for k in dir(rp):
         #     if k.startswith(("_", "validate_")):
@@ -120,3 +126,21 @@ class TestRawProduct(unittest.TestCase):
     def test_purpose(self):
         rp = trp.Raw_Product(**self.d)
         self.assertRaises(ValueError, setattr, rp, "purpose", "dummy")
+
+    def test_update(self):
+        rp = trp.Raw_Product(**self.d)
+        k = "foo"
+        self.assertTrue(k not in rp.labelmeta)
+
+        rp.update(self.extras)
+        self.assertTrue(k in rp.labelmeta)
+
+        rp.update({"mission_phase": "foo"})
+        self.assertEqual(rp.mission_phase, "foo")
+
+    def test_labeldict(self):
+        din = self.d
+        din.update(self.extras)
+        rp = trp.Raw_Product(**din)
+        d = rp.label_dict()
+        self.assertEqual(d["samples"], rp.samples)

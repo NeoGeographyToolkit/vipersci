@@ -30,11 +30,12 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import orm
 from sqlalchemy.orm import validates
 from sqlalchemy import (
-    Integer, String, Column, Boolean, Float, Identity, DateTime
+    DateTime, Integer, String, Column, Boolean, Float, Identity
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from vipersci.pds.pid import VISID, vis_instruments, vis_compression
+from vipersci.pds.datetime import isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
 
 
@@ -70,8 +71,8 @@ class Raw_Product(Base):
         Integer, nullable=False, doc="The captureId from the command sequence."
         # TODO: learn more about captureIds to provide better doc here.
     )
-    _exposure_time = Column(
-        "exposure_time",
+    _exposure_duration = Column(
+        "exposure_duration",
         Integer,
         nullable=False,
         doc="The exposure time in microseconds, the result of decoding the "
@@ -222,7 +223,19 @@ class Raw_Product(Base):
         doc="The VOLTAGE_RAMP parameter from the MCSE Image Header."
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **allargs):
+
+        keys = list(self.__table__.columns.keys())
+        kwargs = dict()
+        for k, v in allargs.items():
+            if k in keys:
+                kwargs[k] = v
+
+        for k in kwargs.keys():
+            del allargs[k]
+
+        self.labelmeta = allargs
+
         if kwargs.keys() >= {"start_time", "lobt"}:
             if (
                 datetime.fromtimestamp(kwargs["lobt"], tz=timezone.utc) !=
@@ -291,7 +304,7 @@ class Raw_Product(Base):
                 "instrument_name, and onboard_compression_ratio."
             )
 
-        after_super_init_keys = ("exposure_time", )
+        after_super_init_keys = ("exposure_duration", )
         after_super_init = {}
         for k in after_super_init_keys:
             if k in kwargs:
@@ -340,13 +353,13 @@ class Raw_Product(Base):
         self.start_time = datetime.fromtimestamp(lobt, tz=timezone.utc)
 
     @hybrid_property
-    def exposure_time(self):
-        return self._exposure_time
+    def exposure_duration(self):
+        return self._exposure_duration
 
-    @exposure_time.setter
-    def exposure_time(self, value: int):
+    @exposure_duration.setter
+    def exposure_duration(self, value: int):
         """Takes an exposure time in microseconds."""
-        self._exposure_time = value
+        self._exposure_duration = value
         self.stop_time = self.start_time + timedelta(microseconds=value)
 
     @validates("purpose")
@@ -370,3 +383,47 @@ class Raw_Product(Base):
         if value not in s:
             raise ValueError(f"onboard_compression_type must be one of {s}")
         return value
+
+    def label_dict(self):
+        """Returns a dictionary suitable for label generation."""
+        _inst = self.instrument_name.lower().replace(" ", "_")
+        _sclid = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
+        onoff = {True: "On", False: "Off"}
+        pid = VISID(self.product_id)
+        d = dict(
+            lid=f"urn:nasa:pds:viper_vis:raw:{self.product_id}",
+            mission_lid="urn:nasa:pds:viper",
+            sc_lid=_sclid,
+            inst_lid=f"{_sclid}.{_inst}",
+            gain_number=(self.adc_gain * self.pga_gain),
+            exposure_type="Auto" if self.auto_exposure else "Manual",
+            led_wavelength=453,  # nm
+            luminaires={
+                "NavLight Left": onoff[self.navlight_left_on],
+                "NavLight Right": onoff[self.navlight_right_on],
+                "HazLight Aft Port": onoff[self.hazlight_aft_port_on],
+                "HazLight Aft Starboard": onoff[self.hazlight_aft_starboard_on],
+                "HazLight Center Port": onoff[self.hazlight_center_port_on],
+                "HazLight Center Starboard": onoff[self.hazlight_center_starboard_on],
+                "HazLight Fore Port": onoff[self.hazlight_fore_port_on],
+                "HazLight Fore Starboard": onoff[self.hazlight_fore_starboard_on],
+            },
+            compression_class="Lossless" if pid.compression == "a" else "Lossy",
+        )
+        for c in self.__table__.columns:
+            if isinstance(getattr(self, c.name), datetime):
+                d[c.name] = isozformat(getattr(self, c.name))
+            else:
+                d[c.name] = getattr(self, c.name)
+
+        d.update(self.labelmeta)
+
+        return d
+
+    def update(self, other):
+        keys = list(self.__table__.columns.keys())
+        for k, v in other.items():
+            if k in keys:
+                setattr(self, k, v)
+            else:
+                self.labelmeta[k] = v
