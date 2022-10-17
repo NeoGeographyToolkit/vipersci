@@ -75,12 +75,12 @@ class TestRawProduct(unittest.TestCase):
         )
 
     def test_init(self):
-        rp = trp.Raw_Product(**self.d)
+        rp = trp.RawProduct(**self.d)
         self.assertEqual("220127-000000-ncl-b", str(rp.product_id))
 
         d = self.d
         d.update(self.extras)
-        rpl = trp.Raw_Product(**d)
+        rpl = trp.RawProduct(**d)
         self.assertEqual("220127-000000-ncl-b", str(rpl.product_id))
 
         # for k in dir(rp):
@@ -92,43 +92,43 @@ class TestRawProduct(unittest.TestCase):
     def test_init_errors(self):
         d = self.d.copy()
         d["start_time"] = self.startUTC + timedelta(hours=1)
-        self.assertRaises(ValueError, trp.Raw_Product, **d)
+        self.assertRaises(ValueError, trp.RawProduct, **d)
 
         d = self.d.copy()
         del d["instrument_name"]
-        self.assertRaises(ValueError, trp.Raw_Product, **d)
+        self.assertRaises(ValueError, trp.RawProduct, **d)
 
         d = self.d.copy()
         d["product_id"] = "220127-010000-ncl-b"
-        self.assertRaises(ValueError, trp.Raw_Product, **d)
+        self.assertRaises(ValueError, trp.RawProduct, **d)
 
         d = self.d.copy()
         d["product_id"] = "220127-000000-ncr-b"
-        self.assertRaises(ValueError, trp.Raw_Product, **d)
+        self.assertRaises(ValueError, trp.RawProduct, **d)
 
         d = self.d.copy()
         d["product_id"] = "220127-000000-ncl-b"
         d["onboard_compression_ratio"] = 999
-        self.assertRaises(ValueError, trp.Raw_Product, **d)
+        self.assertRaises(ValueError, trp.RawProduct, **d)
 
     def test_mcam_id(self):
-        rp = trp.Raw_Product(**self.d)
+        rp = trp.RawProduct(**self.d)
         self.assertRaises(ValueError, setattr, rp, "mcam_id", 5)
 
     def test_onboard_compression_type(self):
-        rp = trp.Raw_Product(**self.d)
+        rp = trp.RawProduct(**self.d)
         self.assertRaises(ValueError, setattr, rp, "onboard_compression_type", "dummy")
 
     def test_product_id(self):
-        rp = trp.Raw_Product(**self.d)
+        rp = trp.RawProduct(**self.d)
         self.assertRaises(NotImplementedError, setattr, rp, "product_id", "dummy")
 
     def test_purpose(self):
-        rp = trp.Raw_Product(**self.d)
+        rp = trp.RawProduct(**self.d)
         self.assertRaises(ValueError, setattr, rp, "purpose", "dummy")
 
     def test_update(self):
-        rp = trp.Raw_Product(**self.d)
+        rp = trp.RawProduct(**self.d)
         k = "foo"
         self.assertTrue(k not in rp.labelmeta)
 
@@ -141,7 +141,7 @@ class TestRawProduct(unittest.TestCase):
     def test_labeldict(self):
         din = self.d
         din.update(self.extras)
-        rp = trp.Raw_Product(**din)
+        rp = trp.RawProduct(**din)
         d = rp.label_dict()
         self.assertEqual(d["samples"], rp.samples)
 
@@ -151,7 +151,7 @@ class TestRawProduct(unittest.TestCase):
         din["exposureTime"] = 400
         del din["samples"]
         din["imageWidth"] = 4
-        rp = trp.Raw_Product(**din)
+        rp = trp.RawProduct(**din)
         print(rp.exposure_duration)
         print(rp.start_time)
         print(rp.stop_time)
@@ -184,7 +184,7 @@ class TestRawProduct(unittest.TestCase):
             "temperature": 0,
             "voltageRamp": 0
         }
-        rp = trp.Raw_Product(
+        rp = trp.RawProduct(
             yamcs_name=name,
             yamcs_generation_time=generation_time,
             **d,

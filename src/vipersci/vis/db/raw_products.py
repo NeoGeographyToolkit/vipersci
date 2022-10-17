@@ -30,13 +30,17 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import orm
 from sqlalchemy.orm import synonym, validates
 from sqlalchemy import (
-    DateTime, Integer, String, Column, Boolean, Float, Identity
+    DateTime,
+    Integer,
+    String,
+    Column,
+    Boolean,
+    Float,
+    Identity,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from vipersci.pds.pid import (
-    VISID, vis_instruments, vis_compression
-)
+from vipersci.pds.pid import VISID, vis_instruments, vis_compression
 from vipersci.pds.datetime import isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
 
@@ -44,9 +48,10 @@ from vipersci.vis.header import pga_gain as header_pga_gain
 Base = orm.declarative_base()
 
 
-class Raw_Product(Base):
+class RawProduct(Base):
     """An object to represent rows in the Raw_Products table for VIS.
     """
+
     # This class is derived from SQLAlchemy's orm.declarative_base()
     # which means that it has a variety of class properties that are
     # then swept up into properties on the instantiated object via
@@ -63,14 +68,15 @@ class Raw_Product(Base):
     # names) are implemented as synonyms. Aside from the leading "id" column,
     # the remainder are in alphabetical order, since there are so many.
 
-
     id = Column(Integer, Identity(start=1), primary_key=True)
     adc_gain = Column(
         Integer, nullable=False, doc="ADC_GAIN from the MCSE Image Header."
     )
     adcGain = synonym("adc_gain")
     auto_exposure = Column(
-        Boolean, nullable=False, doc="AUTO_EXPOSURE from the MCSE Image Header."
+        Boolean,
+        nullable=False,
+        doc="AUTO_EXPOSURE from the MCSE Image Header.",
     )
     autoExposure = synonym("auto_exposure")
     bad_pixel_table_id = Column(
@@ -84,7 +90,9 @@ class Raw_Product(Base):
     )
     cameraId = synonym("mcam_id")
     capture_id = Column(
-        Integer, nullable=False, doc="The captureId from the command sequence."
+        Integer,
+        nullable=False,
+        doc="The captureId from the command sequence."
         # TODO: learn more about captureIds to provide better doc here.
     )
     captureId = synonym("capture_id")
@@ -93,19 +101,19 @@ class Raw_Product(Base):
         Integer,
         nullable=False,
         doc="The exposure time in microseconds, the result of decoding the "
-            "EXP_STEP and EXP paramaters from the MCSE Image Header."
+        "EXP_STEP and EXP paramaters from the MCSE Image Header.",
     )
     exposureTime = synonym("exposure_duration")  # Yamcs parameter name.
     file_creation_datetime = Column(
         DateTime(timezone=True),
         nullable=False,
-        doc="The time at which file_name was created."
+        doc="The time at which file_name was created.",
     )
     file_path = Column(
         String,
         nullable=False,
         doc="The absolute path (POSIX style) that contains the Array_2D_Image "
-            "that this metadata refers to."
+        "that this metadata refers to.",
     )
     # Not sure where we're getting info for these light booleans yet.
     hazlight_aft_port_on = Column(Boolean, nullable=False)
@@ -118,21 +126,19 @@ class Raw_Product(Base):
         Integer,
         nullable=False,
         doc="The IMG_ID from the MCSE Image Header used for CCU storage and "
-            "retrieval."
+        "retrieval.",
     )
     imageHeight = synonym("lines")
     imageId = synonym("image_id")
     imageWidth = synonym("samples")
     instrument_name = Column(
-        String,
-        nullable=False,
-        doc="The full name of the instrument."
+        String, nullable=False, doc="The full name of the instrument."
     )
     instrument_temperature = Column(
         Float,
         nullable=False,
         doc="The TEMPERATURE from the MCSE Image Header.  TBD how to convert "
-            "this 16-bit integer into degrees C."
+        "this 16-bit integer into degrees C.",
     )
     # There is a sensor in the camera body (PT1000) which is apparently not
     # connected (sigh).  And there is also a sensor external to each camera
@@ -140,13 +146,13 @@ class Raw_Product(Base):
     lines = Column(
         Integer,
         nullable=False,
-        doc="The imageHeight parameter from the Yamcs imageHeader."
+        doc="The imageHeight parameter from the Yamcs imageHeader.",
     )
     _lobt = Column(
         "lobt",
         Integer,
         nullable=False,
-        doc="The TIME_TAG from the MCSE Image Header."
+        doc="The TIME_TAG from the MCSE Image Header.",
     )
     mcam_id = Column(
         Integer, nullable=False, doc="The MCAM_ID from the MCSE Image Header."
@@ -154,7 +160,7 @@ class Raw_Product(Base):
     md5_checksum = Column(
         String,
         nullable=False,
-        doc="The md5 checksum of the file described by file_path."
+        doc="The md5 checksum of the file described by file_path.",
     )
     mission_phase = Column(
         String,
@@ -166,7 +172,7 @@ class Raw_Product(Base):
     offset = Column(
         Integer,
         nullable=False,
-        doc="The OFFSET parameter from the MCSE Image Header."
+        doc="The OFFSET parameter from the MCSE Image Header.",
     )
     onboard_compression_ratio = Column(
         Float,
@@ -202,15 +208,17 @@ class Raw_Product(Base):
     padding = Column(
         Integer,
         nullable=False,
-        doc="The padding parameter from the Yamcs imageHeader."
+        doc="The padding parameter from the Yamcs imageHeader.",
     )
     pga_gain = Column(
         Float,
         nullable=False,
         doc="The translated floating point multiplier derived from PGA_GAIN "
-            "from the MCSE Image Header."
+        "from the MCSE Image Header.",
     )
-    ppaGain = synonym("pga_gain")  # Surely, this is a Yamcs typo, should be pgaGain
+    ppaGain = synonym(
+        "pga_gain"
+    )  # Surely, this is a Yamcs typo, should be pgaGain
     processing_info = Column(
         Integer,
         nullable=False,
@@ -222,13 +230,13 @@ class Raw_Product(Base):
         String,
         nullable=False,
         doc="This is the value for the PDS "
-            "Observation_Area/Primary_Result_Summary/purpose parameter, it "
-            "has a restricted set of allowable values."
+        "Observation_Area/Primary_Result_Summary/purpose parameter, it "
+        "has a restricted set of allowable values.",
     )
     samples = Column(
         Integer,
         nullable=False,
-        doc="The imageWidth parameter from the Yamcs imageHeader."
+        doc="The imageWidth parameter from the Yamcs imageHeader.",
     )
     software_name = Column(String, nullable=False)
     software_version = Column(String, nullable=False)
@@ -246,26 +254,24 @@ class Raw_Product(Base):
     voltage_ramp = Column(
         Integer,
         nullable=False,
-        doc="The VOLTAGE_RAMP parameter from the MCSE Image Header."
+        doc="The VOLTAGE_RAMP parameter from the MCSE Image Header.",
     )
     voltageRamp = synonym("voltage_ramp")
-    yamcs_generation_time=Column(
+    yamcs_generation_time = Column(
         DateTime(timezone=True),
         nullable=False,
-        doc="The generation time of the source record from Yamcs."
+        doc="The generation time of the source record from Yamcs.",
     )
     yamcs_name = Column(
-        String,
-        nullable=False,
-        doc="The parameter name from Yamcs."
+        String, nullable=False, doc="The parameter name from Yamcs."
     )
 
     def __init__(self, **kwargs):
 
         if kwargs.keys() >= {"start_time", "lobt"}:
             if (
-                datetime.fromtimestamp(kwargs["lobt"], tz=timezone.utc) !=
-                kwargs["start_time"]
+                datetime.fromtimestamp(kwargs["lobt"], tz=timezone.utc)
+                != kwargs["start_time"]
             ):
                 raise ValueError(
                     f"The start_time {kwargs['start_time']} does not equal "
@@ -329,8 +335,8 @@ class Raw_Product(Base):
                 )
 
             if (
-                self.instrument_name is not None and
-                vis_instruments[pid.instrument] != self.instrument_name
+                self.instrument_name is not None
+                and vis_instruments[pid.instrument] != self.instrument_name
             ):
                 raise ValueError(
                     f"The product_id instrument code ({pid.instrument}) and "
@@ -339,8 +345,9 @@ class Raw_Product(Base):
                 )
 
             if (
-                self.onboard_compression_ratio is not None and
-                vis_compression[pid.compression] != self.onboard_compression_ratio
+                self.onboard_compression_ratio is not None
+                and vis_compression[pid.compression]
+                != self.onboard_compression_ratio
             ):
                 raise ValueError(
                     f"The product_id compression code ({pid.compression}) and "
@@ -349,26 +356,41 @@ class Raw_Product(Base):
                 )
 
         elif (
-            self.start_time is not None and
-            self.instrument_name is not None and
-            self.onboard_compression_ratio is not None
+            self.start_time is not None
+            and self.instrument_name is not None
+            and self.onboard_compression_ratio is not None
         ):
             pid = VISID(
                 self.start_time.date(),
                 self.start_time.time(),
                 self.instrument_name,
-                self.onboard_compression_ratio
+                self.onboard_compression_ratio,
             )
         else:
+            got = dict()
+            for k in (
+                "product_id",
+                "start_time",
+                "instrument_name",
+                "onboard_compression_ratio",
+            ):
+                v = getattr(self, k)
+                if v is not None:
+                    got[k] = v
+
             raise ValueError(
                 "Either product_id must be given, or each of start_time, "
-                "instrument_name, and onboard_compression_ratio."
+                f"instrument_name, and onboard_compression_ratio. Got: {got}"
             )
 
         self._pid = str(pid)
         for k, v in after_super_init.items():
             setattr(self, k, v)
 
+        # Is this really a good idea?  Not sure.  This instance variable plus
+        # label_dict() and update() allow other key/value pairs to be carried around
+        # in this object, which is handy.  If these are well enough known, perhaps
+        # they should just be pre-defined properties and not left to chance?
         self.labelmeta = otherargs
 
         return
@@ -389,13 +411,14 @@ class Raw_Product(Base):
         # has all manner of other implications.  So at this time, this can only be
         # set when this object is instantiated.
         raise NotImplementedError(
-            "product_id cannot be set directly after instantiation.")
+            "product_id cannot be set directly after instantiation."
+        )
 
-    @validates('pga_gain')
+    @validates("pga_gain")
     def validate_pga_gain(self, key, value):
         return header_pga_gain(value)
 
-    @validates('mcam_id')
+    @validates("mcam_id")
     def validate_mcam_id(self, key, value: int):
         s = {0, 1, 2, 3, 4}
         if value not in s:
@@ -430,7 +453,7 @@ class Raw_Product(Base):
             "Navigation",
             "Observation Geometry",
             "Science",
-            "Supporting Observation"
+            "Supporting Observation",
         }
         if value not in s:
             raise ValueError(f"purpose must be one of {s}")
@@ -447,7 +470,7 @@ class Raw_Product(Base):
         """Returns a dictionary suitable for label generation."""
         _inst = self.instrument_name.lower().replace(" ", "_")
         _sclid = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
-        onoff = {True: "On", False: "Off"}
+        onoff = {True: "On", False: "Off", None: "Unknown"}
         pid = VISID(self.product_id)
         d = dict(
             lid=f"urn:nasa:pds:viper_vis:raw:{self.product_id}",
@@ -461,13 +484,21 @@ class Raw_Product(Base):
                 "NavLight Left": onoff[self.navlight_left_on],
                 "NavLight Right": onoff[self.navlight_right_on],
                 "HazLight Aft Port": onoff[self.hazlight_aft_port_on],
-                "HazLight Aft Starboard": onoff[self.hazlight_aft_starboard_on],
+                "HazLight Aft Starboard": onoff[
+                    self.hazlight_aft_starboard_on
+                ],
                 "HazLight Center Port": onoff[self.hazlight_center_port_on],
-                "HazLight Center Starboard": onoff[self.hazlight_center_starboard_on],
+                "HazLight Center Starboard": onoff[
+                    self.hazlight_center_starboard_on
+                ],
                 "HazLight Fore Port": onoff[self.hazlight_fore_port_on],
-                "HazLight Fore Starboard": onoff[self.hazlight_fore_starboard_on],
+                "HazLight Fore Starboard": onoff[
+                    self.hazlight_fore_starboard_on
+                ],
             },
-            compression_class="Lossless" if pid.compression == "a" else "Lossy",
+            compression_class="Lossless"
+            if pid.compression == "a"
+            else "Lossy",
         )
         for c in self.__table__.columns:
             if isinstance(getattr(self, c.name), datetime):

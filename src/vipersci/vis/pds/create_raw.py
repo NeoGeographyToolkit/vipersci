@@ -45,7 +45,7 @@ from sqlalchemy.orm import sessionmaker
 from tifftools import read_tiff, Datatype
 
 import vipersci
-from vipersci.vis.db.raw_products import Raw_Product
+from vipersci.vis.db.raw_products import RawProduct
 from vipersci.pds import pid as pds
 from vipersci import util
 
@@ -172,14 +172,14 @@ def make_raw_product(
     metadata: dict,
     image: Union[npt.NDArray[np.uint16], Path] = None,
     outdir: Path = Path.cwd(),
-) -> Raw_Product:
+) -> RawProduct:
     """
     Returns a Raw_Product created from the provided meta-data, and
     if *image* is a numpy array, it will also use write_tiff() to
     create a TIFF data product in *outdir* (defaults to current
     working directory).
     """
-    rp = Raw_Product(**metadata)
+    rp = RawProduct(**metadata)
 
     if image is not None:
         if isinstance(image, Path):
@@ -304,7 +304,7 @@ def write_tiff(
 
 
 def write_xml(
-    product: Raw_Product,
+    product: RawProduct,
     outdir: Path = Path.cwd(),
     template_path: Path = None
 ):
