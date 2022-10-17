@@ -144,3 +144,51 @@ class TestRawProduct(unittest.TestCase):
         rp = trp.Raw_Product(**din)
         d = rp.label_dict()
         self.assertEqual(d["samples"], rp.samples)
+
+    def test_synonym(self):
+        din = self.d
+        del din["exposure_duration"]
+        din["exposureTime"] = 400
+        del din["samples"]
+        din["imageWidth"] = 4
+        rp = trp.Raw_Product(**din)
+        print(rp.exposure_duration)
+        print(rp.start_time)
+        print(rp.stop_time)
+        rp.exposureTime = 500
+        print(rp.exposure_duration)
+        print(rp.samples)
+
+    def test_fromyamcs(self):
+        name = "/ViperGround/Images/ImageData/Navcam_left_slog"
+        generation_time = datetime.now(timezone.utc)
+        d = {
+            "adcGain": 0,
+            "autoExposure": 0,
+            "cameraId": 0,
+            "captureId": 1,
+            "exposureTime": 111,
+            "imageDepth": 1,
+            "imageHeight": 2048,
+            "imageId": 0,
+            "imageWidth": 2048,
+            "immediateDownloadInfo": 10,
+            "lobt": 1700921056,
+            "offset": 0,
+            "outputImageMask": 2,
+            "outputImageType": "JBIG2_IMAGE",
+            "padding": 0,
+            "ppaGain": 0,
+            "processingInfo": 20,
+            "stereo": 1,
+            "temperature": 0,
+            "voltageRamp": 0
+        }
+        rp = trp.Raw_Product(
+            yamcs_name=name,
+            yamcs_generation_time=generation_time,
+            **d,
+            onboard_compression_ratio=16
+        )
+        self.assertEqual(rp.yamcs_name, name)
+        self.assertEqual(rp.samples, d["imageWidth"])

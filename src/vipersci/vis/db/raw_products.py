@@ -28,13 +28,15 @@
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import orm
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import synonym, validates
 from sqlalchemy import (
     DateTime, Integer, String, Column, Boolean, Float, Identity
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from vipersci.pds.pid import VISID, vis_instruments, vis_compression
+from vipersci.pds.pid import (
+    VISID, vis_instruments, vis_compression
+)
 from vipersci.pds.datetime import isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
 
@@ -45,19 +47,32 @@ Base = orm.declarative_base()
 class Raw_Product(Base):
     """An object to represent rows in the Raw_Products table for VIS.
     """
-    # Note that SQLAlchemy will default the table name to the name of the
-    # class. We want the class to provide a single instance (object) whereas
-    # the table is the full table of all of these objects. To that end, we
-    # use the plural for the table name and the singular for the class name.
+    # This class is derived from SQLAlchemy's orm.declarative_base()
+    # which means that it has a variety of class properties that are
+    # then swept up into properties on the instantiated object via
+    # super().__init__().
+
+    # The table represents many of these objects, so the __tablename__ is
+    # plural while the Class name is singular.
     __tablename__ = "raw_products"
+
+    # The Column() names below should use "snake_case" for the names that are
+    # committed to the database as column names.  Furthermore, those names
+    # should be similar, if not identical, to the PDS4 Class and Attribute
+    # names that they represent.  Other names (like Yamcs parameter camelCase
+    # names) are implemented as synonyms. Aside from the leading "id" column,
+    # the remainder are in alphabetical order, since there are so many.
+
 
     id = Column(Integer, Identity(start=1), primary_key=True)
     adc_gain = Column(
         Integer, nullable=False, doc="ADC_GAIN from the MCSE Image Header."
     )
+    adcGain = synonym("adc_gain")
     auto_exposure = Column(
         Boolean, nullable=False, doc="AUTO_EXPOSURE from the MCSE Image Header."
     )
+    autoExposure = synonym("auto_exposure")
     bad_pixel_table_id = Column(
         Integer,
         nullable=False,
@@ -67,10 +82,12 @@ class Raw_Product(Base):
         # image.  It is not clear how to obtain this information from Yamcs,
         # or even what might be recorded, so this column's value is TBD.
     )
+    cameraId = synonym("mcam_id")
     capture_id = Column(
         Integer, nullable=False, doc="The captureId from the command sequence."
         # TODO: learn more about captureIds to provide better doc here.
     )
+    captureId = synonym("capture_id")
     _exposure_duration = Column(
         "exposure_duration",
         Integer,
@@ -78,6 +95,7 @@ class Raw_Product(Base):
         doc="The exposure time in microseconds, the result of decoding the "
             "EXP_STEP and EXP paramaters from the MCSE Image Header."
     )
+    exposureTime = synonym("exposure_duration")  # Yamcs parameter name.
     file_creation_datetime = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -102,6 +120,9 @@ class Raw_Product(Base):
         doc="The IMG_ID from the MCSE Image Header used for CCU storage and "
             "retrieval."
     )
+    imageHeight = synonym("lines")
+    imageId = synonym("image_id")
+    imageWidth = synonym("samples")
     instrument_name = Column(
         String,
         nullable=False,
@@ -113,9 +134,9 @@ class Raw_Product(Base):
         doc="The TEMPERATURE from the MCSE Image Header.  TBD how to convert "
             "this 16-bit integer into degrees C."
     )
-    # There may also be another sensor in the camera body (PT1000) and
-    # externally to each camera body (AD590), will need to track down their
-    # Yamcs feeds.
+    # There is a sensor in the camera body (PT1000) which is apparently not
+    # connected (sigh).  And there is also a sensor external to each camera
+    # body (AD590), need to track down its Yamcs feed.
     lines = Column(
         Integer,
         nullable=False,
@@ -173,6 +194,8 @@ class Raw_Product(Base):
         doc="The outputImageType from the Yamcs imageHeader."
         # TODO: learn more about outputImageType to provide better doc here.
     )
+    outputImageMask = synonym("output_image_mask")
+    outputImageType = synonym("output_image_type")
     _pid = Column(
         "product_id", String, nullable=False, doc="The PDS Product ID."
     )
@@ -187,12 +210,14 @@ class Raw_Product(Base):
         doc="The translated floating point multiplier derived from PGA_GAIN "
             "from the MCSE Image Header."
     )
+    ppaGain = synonym("pga_gain")  # Surely, this is a Yamcs typo, should be pgaGain
     processing_info = Column(
         Integer,
         nullable=False,
         doc="The processingInfo parameter from the Yamcs imageHeader."
         # TODO: learn more about processingInfo to provide better doc here.
     )
+    processingInfo = synonym("processing_info")
     purpose = Column(
         String,
         nullable=False,
@@ -217,24 +242,25 @@ class Raw_Product(Base):
         # TODO: learn more about stereo to provide better doc here.
     )
     stop_time = Column(DateTime(timezone=True), nullable=False)
+    temperature = synonym("instrument_temperature")
     voltage_ramp = Column(
         Integer,
         nullable=False,
         doc="The VOLTAGE_RAMP parameter from the MCSE Image Header."
     )
+    voltageRamp = synonym("voltage_ramp")
+    yamcs_generation_time=Column(
+        DateTime(timezone=True),
+        nullable=False,
+        doc="The generation time of the source record from Yamcs."
+    )
+    yamcs_name = Column(
+        String,
+        nullable=False,
+        doc="The parameter name from Yamcs."
+    )
 
-    def __init__(self, **allargs):
-
-        keys = list(self.__table__.columns.keys())
-        kwargs = dict()
-        for k, v in allargs.items():
-            if k in keys:
-                kwargs[k] = v
-
-        for k in kwargs.keys():
-            del allargs[k]
-
-        self.labelmeta = allargs
+    def __init__(self, **kwargs):
 
         if kwargs.keys() >= {"start_time", "lobt"}:
             if (
@@ -246,91 +272,124 @@ class Raw_Product(Base):
                     f"the lobt {kwargs['lobt']}"
                 )
 
-        if "product_id" in kwargs:
-            pid = VISID(kwargs["product_id"])
-
-            if "lobt" in kwargs:
-                dt = datetime.fromtimestamp(kwargs["lobt"], tz=timezone.utc )
-                if pid.datetime() != dt:
-                    raise ValueError(
-                        f"The product_id datetime ({pid.datetime()}) and the "
-                        f"provided lobt ({dt}) disagree."
-                    )
-
-            if "start_time" in kwargs and pid.datetime() != kwargs["start_time"]:
-                raise ValueError(
-                    f"The product_id datetime ({pid.datetime()}) and the "
-                    f"provided start_time ({kwargs['start_time']}) disagree."
-                )
-
-            if (
-                "instrument_name" in kwargs and not (
-                    vis_instruments[pid.instrument] == kwargs["instrument_name"] or
-                    pid.instrument == kwargs["instrument_name"]
-                )
-            ):
-                raise ValueError(
-                    f"The product_id instrument code ({pid.instrument}) and "
-                    f"the provided instrument_name "
-                    f"({kwargs['instrument_name']}) disagree."
-                )
-
-            if (
-                "onboard_compression_ratio" in kwargs and not (
-                    vis_compression[pid.compression] == kwargs[
-                        "onboard_compression_ratio"
-                    ] or
-                    pid.compression == kwargs["onboard_compression_ratio"]
-                )
-            ):
-                raise ValueError(
-                    f"The product_id compression code ({pid.compression}) and "
-                    f"the provided onboard_compression_ratio "
-                    f"({kwargs['onboard_compression_ratio']}) disagree."
-                )
-
-            # Final cleanup so that super() works later.
-            del kwargs["product_id"]
-        elif (
-                ("start_time" in kwargs or "lobt" in kwargs) and
-                kwargs.keys() >= {
-                    "instrument_name", "onboard_compression_ratio"
-                }
-        ):
-            pid = VISID(kwargs)
-        else:
-            raise ValueError(
-                "Either product_id must be given, or each of start_time, "
-                "instrument_name, and onboard_compression_ratio."
-            )
-
-        after_super_init_keys = ("exposure_duration", )
+        # Some Columns are interdependent, and must be set after the Columns
+        # they are dependent on exist in self.
+        # Or maybe we just do an assurance pass after-the-fact?  That way
+        # we don't have to mess with synonyms here?
+        after_super_init_keys = ("exposure_duration", "exposureTime")
         after_super_init = {}
         for k in after_super_init_keys:
             if k in kwargs:
                 after_super_init[k] = kwargs[k]
                 del kwargs[k]
 
-        super().__init__(**kwargs)
+        # If present, product_id needs some special handling:
+        if "product_id" in kwargs:
+            pid = VISID(kwargs["product_id"])
+            del kwargs["product_id"]
+        else:
+            pid = False
+
+        rpargs = dict()
+        otherargs = dict()
+        for k, v in kwargs.items():
+            if k in self.__table__.columns or k in self.__mapper__.synonyms:
+                rpargs[k] = v
+            else:
+                otherargs[k] = v
+
+        # Instantiate early, so that the parent orm_declarative Base can
+        # resolve all of the synonyms.
+        super().__init__(**rpargs)
+
+        # Ensure instrument_name consistency and existance.
+        if "instrument_name" in kwargs:
+            self.instrument_name = VISID.instrument_name(self.instrument_name)
+        elif "yamcs_name" in kwargs:
+            maybe_name = self.yamcs_name.split("/")[-1].replace("_", " ")
+            if maybe_name.endswith((" icer", " jpeg", " slog")):
+                maybe_name = maybe_name[:-5]
+
+            self.instrument_name = VISID.instrument_name(maybe_name)
+
+        # Ensure product_id consistency
+        if pid:
+
+            if "lobt" in kwargs:
+                if pid.datetime() != self.lobt:
+                    raise ValueError(
+                        f"The product_id datetime ({pid.datetime()}) and the "
+                        f"provided lobt ({kwargs['lobt']}) disagree."
+                    )
+
+            if "start_time" in kwargs and pid.datetime() != self.start_time:
+                raise ValueError(
+                    f"The product_id datetime ({pid.datetime()}) and the "
+                    f"provided start_time ({kwargs['start_time']}) disagree."
+                )
+
+            if (
+                self.instrument_name is not None and
+                vis_instruments[pid.instrument] != self.instrument_name
+            ):
+                raise ValueError(
+                    f"The product_id instrument code ({pid.instrument}) and "
+                    f"the provided instrument_name "
+                    f"({self.instrument_name}) disagree."
+                )
+
+            if (
+                self.onboard_compression_ratio is not None and
+                vis_compression[pid.compression] != self.onboard_compression_ratio
+            ):
+                raise ValueError(
+                    f"The product_id compression code ({pid.compression}) and "
+                    f"the provided onboard_compression_ratio "
+                    f"({self.onboard_compression_ratio}) disagree."
+                )
+
+        elif (
+            self.start_time is not None and
+            self.instrument_name is not None and
+            self.onboard_compression_ratio is not None
+        ):
+            pid = VISID(
+                self.start_time.date(),
+                self.start_time.time(),
+                self.instrument_name,
+                self.onboard_compression_ratio
+            )
+        else:
+            raise ValueError(
+                "Either product_id must be given, or each of start_time, "
+                "instrument_name, and onboard_compression_ratio."
+            )
 
         self._pid = str(pid)
         for k, v in after_super_init.items():
             setattr(self, k, v)
 
+        self.labelmeta = otherargs
+
         return
 
     @hybrid_property
     def product_id(self):
+        # Really am going back and forth about whether this should be returned as
+        # a full VISID object or just as the string as it is now.
         return self._pid
 
     @product_id.setter
     def product_id(self, pid):
-        # vid = VISID(pid)
-        # self._pid = str(vid)
-        # self.start_time = vid.datetime()
-        # self.instrument_name = vis_instruments[vid.instrument]
-        # self.compression_ratio = vis_compression[vid.compression]
-        raise NotImplementedError("product_id cannot be set directly.")
+        # In this class, the source of product_id information really is what
+        # comes from Yamcs, and so this should not be monkeyed with.  Theoretically
+        # changing this would imply changes to start time, lobt, stop time,
+        # intrument name and onboard_compression_ratio directly, but those changes then
+        # also divorce this object from the Yamcs parameters that it came from and
+        # has all manner of other implications.  So at this time, this can only be
+        # set when this object is instantiated.
+        raise NotImplementedError(
+            "product_id cannot be set directly after instantiation.")
 
     @validates('pga_gain')
     def validate_pga_gain(self, key, value):
@@ -421,9 +480,8 @@ class Raw_Product(Base):
         return d
 
     def update(self, other):
-        keys = list(self.__table__.columns.keys())
         for k, v in other.items():
-            if k in keys:
+            if k in self.__table__.columns or k in self.__mapper__.synonyms:
                 setattr(self, k, v)
             else:
                 self.labelmeta[k] = v
