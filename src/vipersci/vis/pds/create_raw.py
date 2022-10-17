@@ -102,7 +102,17 @@ def main():
     util.set_logger(args.verbose)
 
     with open(args.json) as f:
-        metadata = json.load(f)
+        jsondata = json.load(f)
+
+    # I'm not sure where these are coming from, let's hard-code them for now:
+    metadata = {
+        "mission_phase": "TEST",
+        "purpose": "Navigation",
+        "onboard_compression_ratio": 64
+    }
+
+    # This allows values in jsondata to override the hard-coded values above.
+    metadata.update(jsondata)
 
     if args.image is not None:
         image = imread(str(args.image))
@@ -114,6 +124,49 @@ def main():
     create(metadata, image, args.output_dir, args.dburl, args.template)
 
     return
+
+
+class Creator:
+    """
+    This object can be instantiated with an output directory, *outdir*, and optional
+    *dburl* and *template_path* directories, which the object maintains.
+
+    This object can simply be called which results in a raw product being created,
+    written to disk and possibly added to the database.
+
+    This is basically a persistent version of the create() function, so that a
+    database connection can be kept alive (during a Yamcs subscription, for example),
+    and just called with new data.
+
+    All of the arguments to initialize the object are optional:  If *outdir* is not
+    given, the current working directory will be used (beware!).  If *dburl* is not
+    given, no writes to a database will occur.  If *template_path* is not given, a
+    default from this library will be used.
+    """
+
+    def __init__(
+        self, outdir: Path = Path.cwd(), dburl: str = None, template_path: Path = None
+    ):
+        self.outdir = outdir
+
+        if dburl is None:
+            self.engine = None
+        else:
+            self.engine = create_engine(dburl)
+
+        self.tmpl = _template(template_path)
+
+    def __call__(
+        self, metadata: dict, image: npt.NDArray[np.uint16] = None
+    ):
+        rp = make_raw_product(metadata, image, self.outdir)
+
+        if self.engine is not None:
+            db_insert(rp, None, engine=self.engine)
+
+        write_xml(rp, self.outdir, self.tmpl)
+
+        return
 
 
 def create(
@@ -157,8 +210,10 @@ def create(
     return
 
 
-def db_insert(raw_product: Raw_Product, dburl: str):
-    engine = create_engine(dburl)
+def db_insert(raw_product: RawProduct, dburl: str, engine=None):
+
+    if engine is None:
+        engine = create_engine(dburl)
 
     session_maker = sessionmaker(engine, future=True)
     with session_maker.begin() as session:
@@ -209,12 +264,6 @@ def make_raw_product(
         "software_version": vipersci.__version__,
         "software_type": "Python",
         "software_program_name": __name__
-    })
-
-    # Other items that I'm not sure where they come from, hard-coding for now:
-    rp.update({
-        "mission_phase": "TEST",
-        "purpose": "Navigation"
     })
 
     return rp
@@ -317,16 +366,21 @@ def write_xml(
     with this library.
     """
 
-    if template_path is None:
-        tmpl = MarkupTemplate(resources.read_text(
-            "vipersci.vis.pds.data", "raw-template.xml"
-        ))
-    else:
-        tmpl = MarkupTemplate(template_path.read_text())
+    tmpl = _template(template_path)
     stream = tmpl.generate(**product.label_dict())
     out_path = (outdir / product.product_id).with_suffix(".xml")
     out_path.write_text(stream.render())
     return
+
+def _template(path: Path):
+    if path is None:
+        tmpl = MarkupTemplate(resources.read_text(
+            "vipersci.vis.pds.data", "raw-template.xml"
+        ))
+    else:
+        tmpl = MarkupTemplate(path.read_text())
+
+    return tmpl
 
 
 if __name__ == "__main__":
