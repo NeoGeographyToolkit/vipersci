@@ -32,11 +32,25 @@ vis_instruments = dict(
     ncr="NavCam Right",
     hfp="HazCam Forward Port",
     hfs="HazCam Forward Starboard",
-    has="HazCam Aft Starboard",
     hap="HazCam Aft Port",
+    has="HazCam Aft Starboard",
     acl="AftCam Left",
     acr="AftCam Right",
 )
+vis_instrument_aliases = {
+    "navcam left": "ncl",
+    "navcam right": "ncr",
+    "aftcam left": "acl",
+    "aftcam right": "acr",
+    "hazcam forward port": "hfp",
+    "hazcam forward starboard": "hfs",
+    "hazcam aft port": "hap",
+    "hazcam aft starboard": "has",
+    "hazcam front left": "hfp",
+    "hazcam front right": "hfs",
+    "hazcam back left": "hap",
+    "hazcam back right": "has",
+}
 instruments.update(vis_instruments)
 vis_compression = dict(
     a=None,  # Lossless compression
@@ -291,8 +305,8 @@ class VISID(VIPERID):
 
         if instrument in vis_instruments:
             pass
-        elif instrument in vis_instruments.values():
-            instrument = get_key(instrument, vis_instruments)
+        elif instrument.casefold() in vis_instrument_aliases:
+            instrument = vis_instrument_aliases[instrument.casefold()]
         else:
             raise ValueError(
                 f"{instrument} is not a VIS instrument."
@@ -329,3 +343,15 @@ class VISID(VIPERID):
                 return super().__lt__(other)
         else:
             return NotImplemented
+
+    @staticmethod
+    def instrument_name(name):
+        """Returns fullname of VIS instrument based on *name*."""
+        if name.casefold() in vis_instruments:
+            return vis_instruments[name.casefold()]
+        elif name.casefold() in vis_instrument_aliases:
+            return vis_instruments[vis_instrument_aliases[name.casefold()]]
+        else:
+            raise ValueError(
+                f"No instrument name based on {name} could be found."
+            )
