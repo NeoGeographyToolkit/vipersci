@@ -27,22 +27,24 @@ that will eventually be extracted from telemetry.
 # top level of this library.
 
 import argparse
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import hashlib
 from importlib import resources
+import io
 import json
 import logging
 import sys
 from typing import Union
 from pathlib import Path
+from warnings import warn
 
 from genshi.template import MarkupTemplate
 import numpy as np
 import numpy.typing as npt
-from skimage.io import imread, imsave
+from skimage.io import imread, imsave  # maybe just imageio here?
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from tifftools import read_tiff, Datatype
+from sqlalchemy.orm import Session, sessionmaker
+from tifftools import read_tiff
 
 import vipersci
 from vipersci.vis.db.raw_products import RawProduct
@@ -121,7 +123,12 @@ def main():
     else:
         image = None
 
-    create(metadata, image, args.output_dir, args.dburl, args.template)
+    if args.dburl is None:
+        create(metadata, image, args.output_dir, None, args.template)
+    else:
+        engine = create_engine(args.dburl)
+        session_maker = sessionmaker(engine, future=True)
+        create(metadata, image, args.output_dir, session_maker, args.template)
 
     return
 
@@ -129,7 +136,7 @@ def main():
 class Creator:
     """
     This object can be instantiated with an output directory, *outdir*, and optional
-    *dburl* and *template_path* directories, which the object maintains.
+    *session* and *template_path* directories, which the object maintains.
 
     This object can simply be called which results in a raw product being created,
     written to disk and possibly added to the database.
@@ -139,41 +146,66 @@ class Creator:
     and just called with new data.
 
     All of the arguments to initialize the object are optional:  If *outdir* is not
-    given, the current working directory will be used (beware!).  If *dburl* is not
+    given, the current working directory will be used (beware!).  If *session* is not
     given, no writes to a database will occur.  If *template_path* is not given, a
     default from this library will be used.
     """
 
     def __init__(
-        self, outdir: Path = Path.cwd(), dburl: str = None, template_path: Path = None
+        self, outdir: Path = Path.cwd(), session: Session = None, template_path: Path = None
     ):
         self.outdir = outdir
-
-        if dburl is None:
-            self.engine = None
-        else:
-            self.engine = create_engine(dburl)
-
-        self.tmpl = _template(template_path)
+        self.session = session
+        self.tmpl_path = template_path
 
     def __call__(
         self, metadata: dict, image: npt.NDArray[np.uint16] = None
     ):
         rp = make_raw_product(metadata, image, self.outdir)
+        logger.info(f"{rp.product_id} created.")
 
-        if self.engine is not None:
-            db_insert(rp, None, engine=self.engine)
+        write_xml(rp.label_dict(), self.outdir, self.tmpl_path)
 
-        write_xml(rp, self.outdir, self.tmpl)
+        if self.session is not None:
+            with self.session.begin() as s:
+                s.add(rp)
 
         return
+
+    def from_yamcs_parameters(self, data):
+        for parameter in data.parameters:
+            logger.info(f"{parameter.generation_time} - {parameter.name}")
+            # These are hard-coded until I figure out where they come from.
+            d = {
+                "bad_pixel_table_id": 0,
+                "hazlight_aft_port_on": False,
+                "hazlight_aft_starboard_on": False,
+                "hazlight_center_port_on": False,
+                "hazlight_center_starboard_on": False,
+                "hazlight_fore_port_on": False,
+                "hazlight_fore_starboard_on": False,
+                "navlight_left_on": False,
+                "navlight_right_on": False,
+                "mission_phase": "TEST",
+                "purpose": "Navigation",
+                "onboard_compression_ratio": 64,
+                "onboard_compression_type": parameter.name[-4:].upper()
+            }
+            d.update(parameter.eng_value['imageHeader'])
+            d["yamcs_name"] = parameter.name
+            d["yamcs_generation_time"] = parameter.generation_time
+
+            with io.BytesIO(parameter.eng_value['imageData']) as f:
+                im = imread(f)
+
+            self.__call__(d, im)
 
 
 def create(
     metadata: dict,
     image: Union[npt.NDArray[np.uint16], Path] = None,
     outdir: Path = Path.cwd(),
-    dburl: str = None,
+    session: Session = None,
     template_path: Path = None
 ):
     """
@@ -194,7 +226,7 @@ def create(
     file will be written there. Defaults to the current working
     directory.
 
-    If *dburl* is given, information for the raw product will be
+    If *session* is given, information for the raw product will be
     written to the raw_products table.  If not, no database activity
     will occur.
 
@@ -202,23 +234,11 @@ def create(
     """
     rp = make_raw_product(metadata, image, outdir)
 
-    if dburl is not None:
-        db_insert(rp, dburl)
+    write_xml(rp.label_dict(), outdir, template_path)
 
-    write_xml(rp, outdir, template_path)
-
-    return
-
-
-def db_insert(raw_product: RawProduct, dburl: str, engine=None):
-
-    if engine is None:
-        engine = create_engine(dburl)
-
-    session_maker = sessionmaker(engine, future=True)
-    with session_maker.begin() as session:
-        session.add(raw_product)
-        session.commit()
+    if session is not None:
+        with session.begin() as s:
+            s.add(rp)
 
     return
 
@@ -274,7 +294,7 @@ def tif_info(p: Path) -> dict:
     Returns a dict containing meta-data from the TIFF file at the
     provided path, *p*.
     """
-    dt = datetime.utcfromtimestamp(p.stat().st_mtime)
+    dt = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc)
 
     md5 = hashlib.md5()
     with open(p, "rb") as f:
@@ -289,17 +309,17 @@ def tif_info(p: Path) -> dict:
     else:
         end = "LSB"
 
-    if tags[258]["datatype"] != 3:
+    if tags[258]["data"][0] != 16:
         raise ValueError(
-            f"TIFF file has datatype {Datatype[tags[258]['datatype']]} "
-            f"expecting UINT16 - unsigned short."
+            f"TIFF file has {tags[258]['data'][0]} BitsPerSample "
+            f"expecting 16."
         )
     else:
         dtype = f"Unsigned{end}2"
 
     d = {
         "file_path": p.name,
-        "file_creation_datetime": dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "file_creation_datetime": dt,
         "md5_checksum": md5.hexdigest(),
         "byte_offset": tags[273]["data"][0],  # Tag 273 is StripOffsets
         "lines": tags[257]["data"][0],  # Tag 257 is ImageWidth,
@@ -333,7 +353,8 @@ def write_tiff(
     *image* was written in *outdir* (defaults to current working directory).
     """
     if image.dtype != np.uint16:
-        raise ValueError(
+        # raise ValueError(
+        warn(
             f"The input image is not a uint16, it is {image.dtype}"
         )
 
@@ -353,7 +374,7 @@ def write_tiff(
 
 
 def write_xml(
-    product: RawProduct,
+    product: dict,
     outdir: Path = Path.cwd(),
     template_path: Path = None
 ):
@@ -365,22 +386,17 @@ def write_xml(
     XML file, but defaults to the raw-template.xml file provided
     with this library.
     """
-
-    tmpl = _template(template_path)
-    stream = tmpl.generate(**product.label_dict())
-    out_path = (outdir / product.product_id).with_suffix(".xml")
-    out_path.write_text(stream.render())
-    return
-
-def _template(path: Path):
-    if path is None:
+    if template_path is None:
         tmpl = MarkupTemplate(resources.read_text(
             "vipersci.vis.pds.data", "raw-template.xml"
         ))
     else:
-        tmpl = MarkupTemplate(path.read_text())
+        tmpl = MarkupTemplate(template_path.read_text())
 
-    return tmpl
+    stream = tmpl.generate(**product)
+    out_path = (outdir / product["product_id"]).with_suffix(".xml")
+    out_path.write_text(stream.render())
+    return
 
 
 if __name__ == "__main__":
