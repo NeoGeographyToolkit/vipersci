@@ -111,9 +111,11 @@ class TestRawProduct(unittest.TestCase):
         d["onboard_compression_ratio"] = 999
         self.assertRaises(ValueError, trp.RawProduct, **d)
 
-    def test_mcam_id(self):
-        rp = trp.RawProduct(**self.d)
-        self.assertRaises(ValueError, setattr, rp, "mcam_id", 5)
+    # Commented out while this exception has been converted to a warning until we
+    # sort out the Yamcs parameter.
+    # def test_mcam_id(self):
+    #     rp = trp.RawProduct(**self.d)
+    #     self.assertRaises(ValueError, setattr, rp, "mcam_id", 5)
 
     def test_onboard_compression_type(self):
         rp = trp.RawProduct(**self.d)

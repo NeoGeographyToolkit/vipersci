@@ -26,6 +26,7 @@
 # top level of this library.
 
 from datetime import datetime, timedelta, timezone
+from warnings import warn
 
 from sqlalchemy import orm
 from sqlalchemy.orm import synonym, validates
@@ -58,7 +59,7 @@ class RawProduct(Base):
     # super().__init__().
 
     # The table represents many of these objects, so the __tablename__ is
-    # plural while the Class name is singular.
+    # plural while the class name is singular.
     __tablename__ = "raw_products"
 
     # The Column() names below should use "snake_case" for the names that are
@@ -88,7 +89,9 @@ class RawProduct(Base):
         # image.  It is not clear how to obtain this information from Yamcs,
         # or even what might be recorded, so this column's value is TBD.
     )
-    cameraId = synonym("mcam_id")
+    cameraId = synonym(
+        "mcam_id"
+    )  # This value maybe isn't the mcam_id since it is 0-7 from Yamcs?
     capture_id = Column(
         Integer,
         nullable=False,
@@ -278,15 +281,12 @@ class RawProduct(Base):
                     f"the lobt {kwargs['lobt']}"
                 )
 
-        # Some Columns are interdependent, and must be set after the Columns
-        # they are dependent on exist in self.
-        # Or maybe we just do an assurance pass after-the-fact?  That way
-        # we don't have to mess with synonyms here?
-        after_super_init_keys = ("exposure_duration", "exposureTime")
-        after_super_init = {}
-        for k in after_super_init_keys:
+        # Exposure duration sets the stop_time, so we must extract it before
+        # super().__init() or complications may arise.
+        exp_dur = None
+        for k in ("exposureTime", "exposure_duration"):
             if k in kwargs:
-                after_super_init[k] = kwargs[k]
+                exp_dur = kwargs[k]
                 del kwargs[k]
 
         # If present, product_id needs some special handling:
@@ -308,7 +308,11 @@ class RawProduct(Base):
         # resolve all of the synonyms.
         super().__init__(**rpargs)
 
-        # Ensure instrument_name consistency and existance.
+        # Ensure stop_time consistency by setting this *after* start_time is set in
+        # super().__init__()
+        self.exposure_duration = exp_dur
+
+        # Ensure instrument_name consistency and existence.
         if "instrument_name" in kwargs:
             self.instrument_name = VISID.instrument_name(self.instrument_name)
         elif "yamcs_name" in kwargs:
@@ -384,8 +388,6 @@ class RawProduct(Base):
             )
 
         self._pid = str(pid)
-        for k, v in after_super_init.items():
-            setattr(self, k, v)
 
         # Is this really a good idea?  Not sure.  This instance variable plus
         # label_dict() and update() allow other key/value pairs to be carried around
@@ -422,7 +424,8 @@ class RawProduct(Base):
     def validate_mcam_id(self, key, value: int):
         s = {0, 1, 2, 3, 4}
         if value not in s:
-            raise ValueError(f"mcam_id must be one of {s}")
+            # raise ValueError(f"mcam_id must be one of {s}, but is {value}")
+            warn(f"mcam_id must be one of {s}, but is {value}")
         return value
 
     @hybrid_property
@@ -444,6 +447,27 @@ class RawProduct(Base):
         self._exposure_duration = value
         self.stop_time = self.start_time + timedelta(microseconds=value)
 
+    @validates(
+        "file_creation_datetime",
+        "start_time",
+        "stop_time",
+        "yamcs_generation_time",
+    )
+    def validate_datetime_asutc(self, key, value):
+        if isinstance(value, datetime):
+            if value.utcoffset() is None:
+                raise ValueError(f"{key} must be tz aware.")
+            dt = value
+        elif isinstance(value, str):
+            try:
+                dt = datetime.fromisoformat(value)
+            except ValueError:
+                dt = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+        else:
+            raise ValueError(f"{key} must be a datetime or an ISO 8601 formatted string.")
+
+        return dt.astimezone(timezone.utc)
+
     @validates("purpose")
     def validate_purpose(self, key, value: str):
         s = {
@@ -463,7 +487,9 @@ class RawProduct(Base):
     def validate_onboard_compression_type(self, key, value: str):
         s = {"ICER", "Lossless", "None"}
         if value not in s:
-            raise ValueError(f"onboard_compression_type must be one of {s}")
+            raise ValueError(
+                f"onboard_compression_type must be one of {s}, but was {value}."
+            )
         return value
 
     def label_dict(self):
