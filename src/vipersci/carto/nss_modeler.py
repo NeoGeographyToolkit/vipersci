@@ -79,7 +79,7 @@ def main():
     det2 = det2_data.read(1, masked=True)
 
     nodata_val = -1
-    modeler = nss.NssModeler(args.bd_mod, args.weh_mod, nodata_val)
+    modeler = nss.DataModeler(args.bd_mod, args.weh_mod, nodata_val)
     bd_arr, weh_arr, uweh_arr = modeler(det1, det2)
 
     kwds = det1_data.profile

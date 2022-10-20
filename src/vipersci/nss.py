@@ -110,9 +110,9 @@ class DataSimulator:
         return d1, d2
 
 
-class NssModeler:
+class DataModeler:
     """
-    The NssModeler object is initiated with model files,
+    The DataModeler object is initiated with model files,
     and then can be called to apply the models to a set of detector 1 & 2
     data to provide burial depth and water equivalent hydrogen values.
     """
