@@ -88,7 +88,8 @@ def arg_parser():
         "--tiff",
         type=Path,
         help="Optional pre-existing TIFF file.  This file will be inspected "
-             "and an .xml label will be written."
+             "and an .xml label will be written.  If --image is given, this will "
+             "be ignored."
     )
     parser.add_argument(
         "-o", "--output_dir",
@@ -230,7 +231,8 @@ def create(
     written to the raw_products table.  If not, no database activity
     will occur.
 
-    If *template_path* is passed to the write_xml() function.
+    The *template_path* argument is passed to the write_xml() function, please see
+    its documentation for details.
     """
     rp = make_raw_product(metadata, image, outdir)
 
@@ -258,7 +260,6 @@ def make_raw_product(
 
     if image is not None:
         if isinstance(image, Path):
-            # Should we bother to test filename patterns against the pid?
             tif_d = tif_info(image)
         else:
             tif_d = tif_info(
