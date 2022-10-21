@@ -31,13 +31,13 @@ from warnings import warn
 from sqlalchemy import orm
 from sqlalchemy.orm import synonym, validates
 from sqlalchemy import (
-    DateTime,
-    Integer,
-    String,
-    Column,
     Boolean,
+    Column,
+    DateTime,
     Float,
     Identity,
+    Integer,
+    String,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -175,7 +175,8 @@ class RawProduct(Base):
     offset = Column(
         Integer,
         nullable=False,
-        doc="The OFFSET parameter from the MCSE Image Header.",
+        doc="The OFFSET parameter from the MCSE Image Header describing the dark "
+        "level offset.",
     )
     onboard_compression_ratio = Column(
         Float,
@@ -212,6 +213,7 @@ class RawProduct(Base):
         Integer,
         nullable=False,
         doc="The padding parameter from the Yamcs imageHeader.",
+        # Not sure what this value means or where it comes from.
     )
     pga_gain = Column(
         Float,
@@ -266,7 +268,10 @@ class RawProduct(Base):
         doc="The generation time of the source record from Yamcs.",
     )
     yamcs_name = Column(
-        String, nullable=False, doc="The parameter name from Yamcs."
+        String,
+        nullable=False,
+        doc="The full parameter name from Yamcs that this product data came from, "
+        "formatted like a / separated string."
     )
 
     def __init__(self, **kwargs):
@@ -281,8 +286,11 @@ class RawProduct(Base):
                     f"the lobt {kwargs['lobt']}"
                 )
 
-        # Exposure duration sets the stop_time, so we must extract it before
-        # super().__init() or complications may arise.
+        # Exposure duration is a hybrid_property that also sets the stop_time,
+        # if super().__init() processes exposure duration while self.start_time
+        # is still None, then object initiation will fail.  Removing it from
+        # the parameters we pass to super().__init() and then setting it
+        # after avoids this error condition.
         exp_dur = None
         for k in ("exposureTime", "exposure_duration"):
             if k in kwargs:
@@ -398,6 +406,25 @@ class RawProduct(Base):
         return
 
     @hybrid_property
+    def exposure_duration(self):
+        return self._exposure_duration
+
+    @exposure_duration.setter
+    def exposure_duration(self, value: int):
+        """Takes an exposure time in microseconds."""
+        self._exposure_duration = value
+        self.stop_time = self.start_time + timedelta(microseconds=value)
+
+    @hybrid_property
+    def lobt(self):
+        return self._lobt
+
+    @lobt.setter
+    def lobt(self, lobt):
+        self._lobt = lobt
+        self.start_time = datetime.fromtimestamp(lobt, tz=timezone.utc)
+
+    @hybrid_property
     def product_id(self):
         # Really am going back and forth about whether this should be returned as
         # a full VISID object or just as the string as it is now.
@@ -428,25 +455,6 @@ class RawProduct(Base):
             warn(f"mcam_id must be one of {s}, but is {value}")
         return value
 
-    @hybrid_property
-    def lobt(self):
-        return self._lobt
-
-    @lobt.setter
-    def lobt(self, lobt):
-        self._lobt = lobt
-        self.start_time = datetime.fromtimestamp(lobt, tz=timezone.utc)
-
-    @hybrid_property
-    def exposure_duration(self):
-        return self._exposure_duration
-
-    @exposure_duration.setter
-    def exposure_duration(self, value: int):
-        """Takes an exposure time in microseconds."""
-        self._exposure_duration = value
-        self.stop_time = self.start_time + timedelta(microseconds=value)
-
     @validates(
         "file_creation_datetime",
         "start_time",
@@ -468,6 +476,15 @@ class RawProduct(Base):
 
         return dt.astimezone(timezone.utc)
 
+    @validates("onboard_compression_type")
+    def validate_onboard_compression_type(self, key, value: str):
+        s = {"ICER", "Lossless", "None"}
+        if value not in s:
+            raise ValueError(
+                f"onboard_compression_type must be one of {s}, but was {value}."
+            )
+        return value
+
     @validates("purpose")
     def validate_purpose(self, key, value: str):
         s = {
@@ -481,15 +498,6 @@ class RawProduct(Base):
         }
         if value not in s:
             raise ValueError(f"purpose must be one of {s}")
-        return value
-
-    @validates("onboard_compression_type")
-    def validate_onboard_compression_type(self, key, value: str):
-        s = {"ICER", "Lossless", "None"}
-        if value not in s:
-            raise ValueError(
-                f"onboard_compression_type must be one of {s}, but was {value}."
-            )
         return value
 
     def label_dict(self):
