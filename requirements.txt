@@ -3,8 +3,10 @@ geopandas
 numpy
 rasterio
 pandas
+psycopg2
 pyproj
 scikit-image
 scikit-learn
 shapely
+sqlalchemy
 tifftools

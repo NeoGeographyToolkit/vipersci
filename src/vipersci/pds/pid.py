@@ -32,11 +32,25 @@ vis_instruments = dict(
     ncr="NavCam Right",
     hfp="HazCam Forward Port",
     hfs="HazCam Forward Starboard",
-    has="HazCam Aft Starboard",
     hap="HazCam Aft Port",
+    has="HazCam Aft Starboard",
     acl="AftCam Left",
     acr="AftCam Right",
 )
+vis_instrument_aliases = {
+    "navcam left": "ncl",
+    "navcam right": "ncr",
+    "aftcam left": "acl",
+    "aftcam right": "acr",
+    "hazcam forward port": "hfp",
+    "hazcam forward starboard": "hfs",
+    "hazcam aft port": "hap",
+    "hazcam aft starboard": "has",
+    "hazcam front left": "hfp",
+    "hazcam front right": "hfs",
+    "hazcam back left": "hap",
+    "hazcam back right": "has",
+}
 instruments.update(vis_instruments)
 vis_compression = dict(
     a=None,  # Lossless compression
@@ -244,38 +258,69 @@ class VISID(VIPERID):
     def __init__(self, *args):
 
         if len(args) == 1:
-            match = vis_pid_re.search(str(args).lower())
-            if match:
-                parsed = match.groupdict()
-                date = parsed["date"]
-                time = parsed["time"]
-                instrument = parsed["instrument"]
-                compression = parsed["compression"]
+            if isinstance(args[0], dict):
+                if "start_time" in args[0] or "lobt" in args[0]:
+                    if args[0].keys() >= {"start_time", "lobt"}:
+                        if (
+                            datetime.datetime.fromtimestamp(
+                                args[0]["lobt"], tz=datetime.timezone.utc
+                            ) != args[0]["start_time"]
+                        ):
+                            raise ValueError(
+                                f"The start_time {args[0]['start_time']} does not "
+                                f"equal the lobt {args[0]['lobt']}"
+                            )
+                    if "lobt" in args[0]:
+                        dt = datetime.datetime.fromtimestamp(
+                            args[0]["lobt"], tz=datetime.timezone.utc
+                        )
+                    else:
+                        dt = args[0]["start_time"]
+
+                    date = dt.date()
+                    time = dt.time()
+                else:
+                    raise ValueError(
+                        "The dictionary had neither 'start_time' nor 'lobt' "
+                        "keys."
+                    )
+                instrument = args[0]["instrument_name"]
+                compression = args[0]["onboard_compression_ratio"]
             else:
-                raise ValueError(
-                    f"{args} did not match regex: {vis_pid_re.pattern}"
-                )
+                match = vis_pid_re.search(str(args).lower())
+                if match:
+                    parsed = match.groupdict()
+                    date = parsed["date"]
+                    time = parsed["time"]
+                    instrument = parsed["instrument"]
+                    compression = parsed["compression"]
+                else:
+                    raise ValueError(
+                        f"{args} did not match regex: {vis_pid_re.pattern}"
+                    )
         elif len(args) == 4:
-            (date, time, instrument) = args[:3]
-            if args[3] in vis_compression:
-                compression = args[3]
-            elif args[3] in vis_compression.values():
-                compression = get_key(args[3], vis_compression)
-            else:
-                raise ValueError(
-                    f"{args[3]} is not one of {vis_compression.keys()}"
-                )
+            (date, time, instrument, compression) = args
         else:
             raise IndexError("accepts 1 or 4 arguments")
 
         if instrument in vis_instruments:
             pass
-        elif instrument in vis_instruments.values():
-            instrument = get_key(instrument, vis_instruments)
+        elif instrument.casefold() in vis_instrument_aliases:
+            instrument = vis_instrument_aliases[instrument.casefold()]
         else:
             raise ValueError(
                 f"{instrument} is not a VIS instrument."
             )
+
+        if compression in vis_compression:
+            pass
+        elif compression in vis_compression.values():
+            compression = get_key(compression, vis_compression)
+        else:
+            raise ValueError(
+                f"{args[3]} is not one of {vis_compression.keys()}"
+            )
+
         super().__init__(date, time, instrument)
         self.compression = compression
 
@@ -298,3 +343,15 @@ class VISID(VIPERID):
                 return super().__lt__(other)
         else:
             return NotImplemented
+
+    @staticmethod
+    def instrument_name(name):
+        """Returns fullname of VIS instrument based on *name*."""
+        if name.casefold() in vis_instruments:
+            return vis_instruments[name.casefold()]
+        elif name.casefold() in vis_instrument_aliases:
+            return vis_instruments[vis_instrument_aliases[name.casefold()]]
+        else:
+            raise ValueError(
+                f"No instrument name based on {name} could be found."
+            )
