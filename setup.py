@@ -12,6 +12,7 @@ setup(
             "accrual=vipersci.carto.accrual:main",
             "dice_buffer=vipersci.carto.dice_buffer:main",
             "dissolve_dice=vipersci.carto.dissolve_dice:main",
+            "nirvss_simulator=vipersci.carto.nirvss_simulator:main",
             "nss_modeler=vipersci.carto.nss_modeler:main",
             "nss_simulator=vipersci.carto.nss_simulator:main",
             "tri2gpkg=vipersci.carto.tri2gpkg:main",
