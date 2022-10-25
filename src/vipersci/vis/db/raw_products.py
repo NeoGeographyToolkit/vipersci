@@ -50,8 +50,7 @@ Base = orm.declarative_base()
 
 
 class RawProduct(Base):
-    """An object to represent rows in the Raw_Products table for VIS.
-    """
+    """An object to represent rows in the Raw_Products table for VIS."""
 
     # This class is derived from SQLAlchemy's orm.declarative_base()
     # which means that it has a variety of class properties that are
@@ -206,9 +205,7 @@ class RawProduct(Base):
     )
     outputImageMask = synonym("output_image_mask")
     outputImageType = synonym("output_image_type")
-    _pid = Column(
-        "product_id", String, nullable=False, doc="The PDS Product ID."
-    )
+    _pid = Column("product_id", String, nullable=False, doc="The PDS Product ID.")
     padding = Column(
         Integer,
         nullable=False,
@@ -221,9 +218,7 @@ class RawProduct(Base):
         doc="The translated floating point multiplier derived from PGA_GAIN "
         "from the MCSE Image Header.",
     )
-    ppaGain = synonym(
-        "pga_gain"
-    )  # Surely, this is a Yamcs typo, should be pgaGain
+    ppaGain = synonym("pga_gain")  # Surely, this is a Yamcs typo, should be pgaGain
     processing_info = Column(
         Integer,
         nullable=False,
@@ -271,7 +266,7 @@ class RawProduct(Base):
         String,
         nullable=False,
         doc="The full parameter name from Yamcs that this product data came from, "
-        "formatted like a / separated string."
+        "formatted like a / separated string.",
     )
 
     def __init__(self, **kwargs):
@@ -358,8 +353,7 @@ class RawProduct(Base):
 
             if (
                 self.onboard_compression_ratio is not None
-                and vis_compression[pid.compression]
-                != self.onboard_compression_ratio
+                and vis_compression[pid.compression] != self.onboard_compression_ratio
             ):
                 raise ValueError(
                     f"The product_id compression code ({pid.compression}) and "
@@ -472,7 +466,9 @@ class RawProduct(Base):
             except ValueError:
                 dt = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
         else:
-            raise ValueError(f"{key} must be a datetime or an ISO 8601 formatted string.")
+            raise ValueError(
+                f"{key} must be a datetime or an ISO 8601 formatted string."
+            )
 
         return dt.astimezone(timezone.utc)
 
@@ -518,21 +514,13 @@ class RawProduct(Base):
                 "NavLight Left": onoff[self.navlight_left_on],
                 "NavLight Right": onoff[self.navlight_right_on],
                 "HazLight Aft Port": onoff[self.hazlight_aft_port_on],
-                "HazLight Aft Starboard": onoff[
-                    self.hazlight_aft_starboard_on
-                ],
+                "HazLight Aft Starboard": onoff[self.hazlight_aft_starboard_on],
                 "HazLight Center Port": onoff[self.hazlight_center_port_on],
-                "HazLight Center Starboard": onoff[
-                    self.hazlight_center_starboard_on
-                ],
+                "HazLight Center Starboard": onoff[self.hazlight_center_starboard_on],
                 "HazLight Fore Port": onoff[self.hazlight_fore_port_on],
-                "HazLight Fore Starboard": onoff[
-                    self.hazlight_fore_starboard_on
-                ],
+                "HazLight Fore Starboard": onoff[self.hazlight_fore_starboard_on],
             },
-            compression_class="Lossless"
-            if pid.compression == "a"
-            else "Lossy",
+            compression_class="Lossless" if pid.compression == "a" else "Lossy",
         )
         for c in self.__table__.columns:
             if isinstance(getattr(self, c.name), datetime):

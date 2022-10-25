@@ -37,13 +37,13 @@ def parent_parser() -> argparse.ArgumentParser:
         "--verbose",
         action="count",
         default=0,
-        help="Displays additional information."
+        help="Displays additional information.",
     )
     parent.add_argument(
-        '--version',
-        action='version',
+        "--version",
+        action="version",
         version=f"vipersci Software version {vipersci.__version__}",
-        help="Show library version number."
+        help="Show library version number.",
     )
     return parent
 

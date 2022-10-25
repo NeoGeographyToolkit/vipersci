@@ -40,18 +40,13 @@ logger = logging.getLogger(__name__)
 def arg_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "-i", "--interval",
+        "-i",
+        "--interval",
         type=float,
         default=1.0,
-        help="The time interval in seconds to interpolate the provided "
-             "traverse at."
+        help="The time interval in seconds to interpolate the provided " "traverse at.",
     )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=Path,
-        help="Output CSV file."
-    )
+    parser.add_argument("-o", "--output", type=Path, help="Output CSV file.")
     parser.add_argument(
         "json",
         type=Path,
@@ -83,19 +78,15 @@ def main():
         # print(f"Points: {row.geometry.coords[0]} == {last_point.coords[0]} ")
         # print(f"Times: {row.start_time} != {last_time}")
         if (
-            row.geometry.coords[0] == last_point.coords[0] and
-            row.start_time != last_time
+            row.geometry.coords[0] == last_point.coords[0]
+            and row.start_time != last_time
         ):
-            time_intervals = interval_count(
-                last_time, row.start_time, args.interval
-            )
+            time_intervals = interval_count(last_time, row.start_time, args.interval)
             for s in range(time_intervals):
                 t = last_time + (s * args.interval)
                 points.append({"time": t, "x": last_point.x, "y": last_point.y})
 
-        time_intervals = interval_count(
-            row.start_time, row.end_time, args.interval
-        )
+        time_intervals = interval_count(row.start_time, row.end_time, args.interval)
         for s in range(time_intervals):
             t = row.start_time + (s * args.interval)
             p = row.geometry.interpolate(s / time_intervals, normalized=True)
@@ -103,7 +94,7 @@ def main():
         last_time = row.end_time
         last_point = Point(row.geometry.coords[-1])
 
-    with open(args.output, 'w', newline='') as csvfile:
+    with open(args.output, "w", newline="") as csvfile:
         fieldnames = ["time", "x", "y"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()

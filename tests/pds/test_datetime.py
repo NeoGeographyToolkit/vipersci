@@ -30,11 +30,8 @@ from vipersci.pds import datetime as pdsdt
 
 
 class TestIsoZ(unittest.TestCase):
-
     def test_isozformat(self):
-        dt = datetime.datetime(
-            2022, 10, 1, 13, 20, 0, tzinfo=datetime.timezone.utc
-        )
+        dt = datetime.datetime(2022, 10, 1, 13, 20, 0, tzinfo=datetime.timezone.utc)
         self.assertEqual(pdsdt.isozformat(dt), "2022-10-01T13:20:00Z")
 
         no_tz = dt.replace(tzinfo=None)

@@ -39,11 +39,7 @@ logger = logging.getLogger(__name__)
 
 def arg_parser():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-o",
-        "--out",
-        help="Output GeoPackage filename"
-    )
+    parser.add_argument("-o", "--out", help="Output GeoPackage filename")
     parser.add_argument(
         "gpkg", help="The geospatial file containing polygon geometries."
     )
@@ -59,13 +55,12 @@ def main():
     print("Read in file.")
 
     if (df.has_z).any():
-        df['geometry'] = df.apply(
+        df["geometry"] = df.apply(
             lambda row: shapely.ops.transform(
-                lambda x, y, z=None: (x, y),
-                row["geometry"]
+                lambda x, y, z=None: (x, y), row["geometry"]
             ),
             axis=1,
-            result_type="expand"
+            result_type="expand",
         )
 
         print("Converted geometries to 2D.")
@@ -76,10 +71,10 @@ def main():
     # 0 - 0.5 m: Shallow
     # 0.5 - 1 m: Deep
     # > 1 m: Dry
-    df['category'] = pd.cut(
+    df["category"] = pd.cut(
         df["Depth (m)"].astype(float),
         (-1, 0, 0.5, 1, 10),
-        labels=["Surficial", "Shallow", "Deep", "Dry"]
+        labels=["Surficial", "Shallow", "Deep", "Dry"],
     ).astype(str)
 
     print("Added categories.")
