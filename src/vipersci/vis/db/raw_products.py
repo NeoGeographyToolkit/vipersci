@@ -27,6 +27,7 @@
 
 from datetime import datetime, timedelta, timezone
 from warnings import warn
+import xml.etree.ElementTree as ET
 
 from sqlalchemy import orm
 from sqlalchemy.orm import synonym, validates
@@ -42,11 +43,22 @@ from sqlalchemy import (
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from vipersci.pds.pid import VISID, vis_instruments, vis_compression
-from vipersci.pds.datetime import isozformat
+from vipersci.pds.datetime import fromisozformat, isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
 
 
 Base = orm.declarative_base()
+
+luminaire_names = {
+    "NavLight Left": "navlight_left_on",
+    "NavLight Right": "navlight_right_on",
+    "HazLight Aft Port": "hazlight_aft_port_on",
+    "HazLight Aft Starboard": "hazlight_aft_starboard_on",
+    "HazLight Center Port": "hazlight_center_port_on",
+    "HazLight Center Starboard": "hazlight_center_starboard_on",
+    "HazLight Fore Port": "hazlight_fore_port_on",
+    "HazLight Fore Starboard": "hazlight_fore_starboard_on",
+}
 
 
 class RawProduct(Base):
@@ -496,6 +508,112 @@ class RawProduct(Base):
             raise ValueError(f"purpose must be one of {s}")
         return value
 
+    @classmethod
+    def from_xml(cls, text: str):
+        """
+        Returns an instantiated RawProduct object from parsing the provided *text*
+        as XML.
+        """
+        d = {}
+
+        # This namespace dict allows us to use more compact strings to denote the
+        # namespaces.  This should eventually get pulled up to some top-level
+        # module.
+        ns = {
+            "pds": "http://pds.nasa.gov/pds4/pds/v1",
+            "disp": "http://pds.nasa.gov/pds4/disp/v1",
+            "img": "http://pds.nasa.gov/pds4/img/v1",
+            "msn": "http://pds.nasa.gov/pds4/msn/v1",
+            "proc": "http://pds.nasa.gov/pds4/proc/v1",
+        }
+
+        root = ET.fromstring(text)
+        lid = root.find(
+            "./pds:Identification_Area/pds:logical_identifier", ns
+        ).text.split(":")
+        if lid[3] != "viper_vis":
+            raise ValueError(
+                f"XML text has a logical_identifier which is not viper_vis: {lid[3]}"
+            )
+
+        if lid[4] != "raw":
+            raise ValueError(
+                f"XML text has a logical_identifier which is not raw: {lid[4]}"
+            )
+        d["product_id"] = lid[5]
+
+        d["auto_exposure"] = (
+            True if root.find(".//img:exposure_type", ns).text == "Auto" else False
+        )
+        d["bad_pixel_table_id"] = int(
+            root.find(".//img:bad_pixel_replacement_table_id", ns).text
+        )
+        exp_dur = root.find(".//img:exposure_duration", ns)
+        if exp_dur.get("unit") != "microseconds":
+            raise ValueError(
+                "The img:exposure_duration element does not have units of "
+                f"microseconds, has {exp_dur.get('unit')}"
+            )
+        d["exposure_duration"] = int(exp_dur.text)
+        d["file_creation_datetime"] = fromisozformat(
+            root.find(".//pds:creation_date_time", ns).text
+        )
+        d["file_path"] = root.find(".//pds:file_name", ns).text
+
+        for k, v in luminaire_names.items():
+            light = root.find(f".//img:LED_Illumination_Source[img:name='{k}']", ns)
+            d[v] = (
+                True if light.find("img:illumination_state", ns).text == "On" else False
+            )
+
+        osc = root.find(".//pds:Observing_System_Component[pds:type='Instrument']", ns)
+        d["instrument_name"] = osc.find("pds:name", ns).text
+
+        temp = root.find(".//img:temperature_value", ns)
+        if temp.get("unit") != "K":
+            raise ValueError(
+                "The img:temperature_value element does not have units of K, has "
+                f"{temp.get('unit')}"
+            )
+        d["instrument_temperature"] = float(temp.text)
+
+        aa = root.find(".//pds:Axis_Array[pds:axis_name='Line']", ns)
+        d["lines"] = int(aa.find("./pds:elements", ns).text)
+        d["md5_checksum"] = root.find(".//pds:md5_checksum", ns).text
+        d["mission_phase"] = root.find(".//msn:mission_phase_name", ns).text
+        d["offset"] = root.find(".//img:analog_offset", ns).text
+
+        ocr = root.find(".//img:onboard_compression_ratio", ns)
+        if ocr is not None:
+            d["onboard_compression_ratio"] = float(ocr.text)
+
+        d["onboard_compression_type"] = root.find(
+            ".//img:onboard_compression_type", ns
+        ).text
+
+        d["purpose"] = root.find(".//pds:purpose", ns).text
+
+        aa = root.find(".//pds:Axis_Array[pds:axis_name='Sample']", ns)
+        d["samples"] = int(aa.find("./pds:elements", ns).text)
+
+        sw = root.find(".//proc:Software", ns)
+        d["software_name"] = sw.find("./proc:name", ns).text
+        d["software_version"] = sw.find("./proc:software_version_id", ns).text
+        d["software_type"] = sw.find("./proc:software_type", ns).text
+        d["software_program_name"] = sw.find(
+            "./proc:Software_Program/proc:name", ns
+        ).text
+
+        # Start times must be on the whole second, which is why we don't use
+        # fromisozformat() here.
+        d["start_time"] = datetime.strptime(
+            root.find(".//pds:start_date_time", ns).text, "%Y-%m-%dT%H:%M:%SZ"
+        ).replace(tzinfo=timezone.utc)
+
+        d["stop_time"] = fromisozformat(root.find(".//pds:stop_date_time", ns).text)
+
+        return cls(**d)
+
     def label_dict(self):
         """Returns a dictionary suitable for label generation."""
         _inst = self.instrument_name.lower().replace(" ", "_")
@@ -510,18 +628,12 @@ class RawProduct(Base):
             gain_number=(self.adc_gain * self.pga_gain),
             exposure_type="Auto" if self.auto_exposure else "Manual",
             led_wavelength=453,  # nm
-            luminaires={
-                "NavLight Left": onoff[self.navlight_left_on],
-                "NavLight Right": onoff[self.navlight_right_on],
-                "HazLight Aft Port": onoff[self.hazlight_aft_port_on],
-                "HazLight Aft Starboard": onoff[self.hazlight_aft_starboard_on],
-                "HazLight Center Port": onoff[self.hazlight_center_port_on],
-                "HazLight Center Starboard": onoff[self.hazlight_center_starboard_on],
-                "HazLight Fore Port": onoff[self.hazlight_fore_port_on],
-                "HazLight Fore Starboard": onoff[self.hazlight_fore_starboard_on],
-            },
+            luminaires={},
             compression_class="Lossless" if pid.compression == "a" else "Lossy",
         )
+        for k, v in luminaire_names.items():
+            d["luminaires"][k] = onoff[getattr(self, v)]
+
         for c in self.__table__.columns:
             if isinstance(getattr(self, c.name), datetime):
                 d[c.name] = isozformat(getattr(self, c.name))
