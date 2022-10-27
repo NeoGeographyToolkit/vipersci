@@ -108,4 +108,7 @@ class TestInfo(unittest.TestCase):
 
     def test_datetime(self):
         p = pid.VIPERID("231121-010101-acl")
-        self.assertEqual(p.datetime(), datetime.datetime(2023, 11, 21, 1, 1, 1))
+        self.assertEqual(
+            p.datetime(),
+            datetime.datetime(2023, 11, 21, 1, 1, 1, tzinfo=datetime.timezone.utc)
+        )

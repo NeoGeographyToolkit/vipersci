@@ -224,7 +224,8 @@ class VIPERID:
         if len(self.time) == 9:
             fmt += "%f"
             time_string += "000"
-        return datetime.datetime.strptime(time_string, fmt)
+        dt = datetime.datetime.strptime(time_string, fmt)
+        return dt.replace(tzinfo=datetime.timezone.utc)
 
 
 class VISID(VIPERID):
