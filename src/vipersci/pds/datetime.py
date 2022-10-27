@@ -28,6 +28,19 @@ ISO 8601 handling to deal with trailing "Z" characters instead of +0.
 import datetime
 
 
+def fromisozformat(date_string):
+    """
+    Return a datetime corresponding to *date_string* in one of the formats emitted by
+    isozformat().  This datetime will be a timezone-aware datetime.
+    """
+    try:
+        dt = datetime.datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        dt = datetime.datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+    return dt.replace(tzinfo=datetime.timezone.utc)
+
+
 def isozformat(date_time, sep="T", timespec="auto"):
     """
     Return a string representing the UTC date and time in ISO 8601 format with
