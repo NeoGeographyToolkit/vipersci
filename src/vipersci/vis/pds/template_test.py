@@ -44,24 +44,11 @@ logger = logging.getLogger(__name__)
 
 def arg_parser():
     parser = argparse.ArgumentParser(
-        description=__doc__,
-        parents=[util.parent_parser()]
+        description=__doc__, parents=[util.parent_parser()]
     )
-    parser.add_argument(
-        "-j", "--json",
-        type=Path,
-        help="Path to .json file to load. "
-    )
-    parser.add_argument(
-        "input",
-        type=Path,
-        help="Genshi XML file template."
-    )
-    parser.add_argument(
-        "output",
-        type=Path,
-        help="Output XML label."
-    )
+    parser.add_argument("-j", "--json", type=Path, help="Path to .json file to load.")
+    parser.add_argument("input", type=Path, help="Genshi XML file template.")
+    parser.add_argument("output", type=Path, help="Output XML label.")
     return parser
 
 

@@ -71,15 +71,13 @@ time_re = re.compile(r"(2[0-3]|[01]\d)([0-5]\d)([0-5]\d)(\d{3})?")  # hhmmssfff
 inst_re = re.compile("|".join(instruments.keys()))
 
 pid_re = re.compile(
-    fr"(?P<date>{date_re.pattern})-"
-    fr"(?P<time>{time_re.pattern})-"
-    fr"(?P<instrument>{inst_re.pattern})"
+    rf"(?P<date>{date_re.pattern})-"
+    rf"(?P<time>{time_re.pattern})-"
+    rf"(?P<instrument>{inst_re.pattern})"
 )
 
 vis_comp_re = re.compile("|".join(vis_compression.keys()))
-vis_pid_re = re.compile(
-    pid_re.pattern + fr"-(?P<compression>{vis_comp_re.pattern})"
-)
+vis_pid_re = re.compile(pid_re.pattern + rf"-(?P<compression>{vis_comp_re.pattern})")
 
 
 def get_key(value, dictionary):
@@ -111,9 +109,7 @@ class VIPERID:
                 self.time = parsed["time"]
                 self.instrument = parsed["instrument"]
             else:
-                raise ValueError(
-                    f"{args} did not match regex: {pid_re.pattern}"
-                )
+                raise ValueError(f"{args} did not match regex: {pid_re.pattern}")
         else:
             if len(args) == 2:
                 if isinstance(args[0], datetime.datetime):
@@ -121,8 +117,7 @@ class VIPERID:
                     time = args[0].time()
                 else:
                     raise ValueError(
-                        "For two arguments, the first must be a datetime"
-                        "object."
+                        "For two arguments, the first must be a datetime" "object."
                     )
                 instrument = args[1]
 
@@ -157,9 +152,7 @@ class VIPERID:
             elif instrument in instruments.values():
                 self.instrument = get_key(instrument, instruments)
             else:
-                raise ValueError(
-                    f"{instrument} did not match regex: {inst_re.pattern}"
-                )
+                raise ValueError(f"{instrument} did not match regex: {inst_re.pattern}")
         return
 
     def __str__(self):
@@ -179,11 +172,7 @@ class VIPERID:
 
     def __lt__(self, other):
         if isinstance(other, self.__class__):
-            return (
-                self.date,
-                self.time,
-                self.instrument,
-            ) < (
+            return (self.date, self.time, self.instrument,) < (
                 other.date,
                 other.time,
                 other.instrument,
@@ -197,17 +186,13 @@ class VIPERID:
             if datetime.date(2000, 1, 1) <= date < datetime.date(2100, 1, 1):
                 datestr = date.strftime("%y%m%d")
             else:
-                raise ValueError(
-                    "Date must be between the year 2000 and 2100."
-                )
+                raise ValueError("Date must be between the year 2000 and 2100.")
         else:
             match = date_re.search(date)
             if match:
                 datestr = match[0]
             else:
-                raise ValueError(
-                    f"{date} did not match regex: {date_re.pattern}"
-                )
+                raise ValueError(f"{date} did not match regex: {date_re.pattern}")
 
         return datestr
 
@@ -229,9 +214,7 @@ class VIPERID:
             if match:
                 timestr = match[0]
             else:
-                raise ValueError(
-                    f"{time} did not match regex: {time_re.pattern}"
-                )
+                raise ValueError(f"{time} did not match regex: {time_re.pattern}")
 
         return timestr
 
@@ -264,7 +247,8 @@ class VISID(VIPERID):
                         if (
                             datetime.datetime.fromtimestamp(
                                 args[0]["lobt"], tz=datetime.timezone.utc
-                            ) != args[0]["start_time"]
+                            )
+                            != args[0]["start_time"]
                         ):
                             raise ValueError(
                                 f"The start_time {args[0]['start_time']} does not "
@@ -281,8 +265,7 @@ class VISID(VIPERID):
                     time = dt.time()
                 else:
                     raise ValueError(
-                        "The dictionary had neither 'start_time' nor 'lobt' "
-                        "keys."
+                        "The dictionary had neither 'start_time' nor 'lobt' " "keys."
                     )
                 instrument = args[0]["instrument_name"]
                 compression = args[0]["onboard_compression_ratio"]
@@ -308,18 +291,14 @@ class VISID(VIPERID):
         elif instrument.casefold() in vis_instrument_aliases:
             instrument = vis_instrument_aliases[instrument.casefold()]
         else:
-            raise ValueError(
-                f"{instrument} is not a VIS instrument."
-            )
+            raise ValueError(f"{instrument} is not a VIS instrument.")
 
         if compression in vis_compression:
             pass
         elif compression in vis_compression.values():
             compression = get_key(compression, vis_compression)
         else:
-            raise ValueError(
-                f"{args[3]} is not one of {vis_compression.keys()}"
-            )
+            raise ValueError(f"{args[3]} is not one of {vis_compression.keys()}")
 
         super().__init__(date, time, instrument)
         self.compression = compression
@@ -329,10 +308,7 @@ class VISID(VIPERID):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return (
-                super().__eq__(other)
-                and self.compression == other.compression
-            )
+            return super().__eq__(other) and self.compression == other.compression
         return False
 
     def __lt__(self, other):
@@ -352,6 +328,4 @@ class VISID(VIPERID):
         elif name.casefold() in vis_instrument_aliases:
             return vis_instruments[vis_instrument_aliases[name.casefold()]]
         else:
-            raise ValueError(
-                f"No instrument name based on {name} could be found."
-            )
+            raise ValueError(f"No instrument name based on {name} could be found.")

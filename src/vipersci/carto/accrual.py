@@ -41,22 +41,20 @@ from shapely.geometry import LineString, box
 def arg_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "-a", "--areas",
+        "-a",
+        "--areas",
         help="The geospatial file containing polygons or multi-polygons to "
-             "evaluate the path against.  There should be one (multi)polygon "
-             "for each category."
+        "evaluate the path against.  There should be one (multi)polygon "
+        "for each category.",
     )
     parser.add_argument(
         "--iloc",
         default=0,
         type=int,
         help="If the path file has more than one geometry, select this "
-             "indexed geometry."
+        "indexed geometry.",
     )
-    parser.add_argument(
-        "path",
-        help="A geospatial file that contains geometries."
-    )
+    parser.add_argument("path", help="A geospatial file that contains geometries.")
     return parser
 
 

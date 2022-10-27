@@ -38,21 +38,18 @@ from shapely.ops import unary_union
 def arg_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "-b", "--buffer",
+        "-b",
+        "--buffer",
         type=float,
         help="A positive distance has an effect of dilation; a negative "
-             "distance, erosion."
+        "distance, erosion.",
     )
-    parser.add_argument(
-        "-o",
-        "--out",
-        help="Output GeoPackage filename."
-    )
+    parser.add_argument("-o", "--out", help="Output GeoPackage filename.")
     parser.add_argument(
         "gpkg",
         help="The geospatial file with regions to evaluate.  This file "
-             "Must have only four geometries, with a category fields of "
-             "Deep, Dry, Shallow, and Surficial."
+        "Must have only four geometries, with a category fields of "
+        "Deep, Dry, Shallow, and Surficial.",
     )
 
     return parser
@@ -72,8 +69,7 @@ def main():
 
     if args.buffer == 0:
         parser.error(
-            "The buffer value is zero, which would result in no change to "
-            "the map."
+            "The buffer value is zero, which would result in no change to the map."
         )
     elif args.buffer < 0:
         # Since we are shrinking the geometries, we must first put them
@@ -87,9 +83,9 @@ def main():
                 # The rest do:
                 i = isr_order.index(cat)
                 expanded.append(
-                    categories.loc[
-                        list(isr_order[0:i + 1])
-                    ].dissolve()["geometry"].iloc[0]
+                    categories.loc[list(isr_order[0 : i + 1])]
+                    .dissolve()["geometry"]
+                    .iloc[0]
                 )
 
         categories.set_geometry(expanded, inplace=True)
@@ -99,10 +95,8 @@ def main():
     print("Buffering complete.")
 
     for cutting in isr_order[:3]:  # The last geom won't reduce any others.
-        for geom in isr_order[isr_order.index(cutting) + 1:]:
-            buffered.loc[geom] = buffered.loc[geom].difference(
-                buffered.loc[cutting]
-            )
+        for geom in isr_order[isr_order.index(cutting) + 1 :]:
+            buffered.loc[geom] = buffered.loc[geom].difference(buffered.loc[cutting])
 
     # The differencing may have resulted in a GeometryCollection instead
     # of a clean MultiPolygon.

@@ -30,7 +30,6 @@ from vipersci.vis.db import raw_products as trp
 
 
 class TestRawProduct(unittest.TestCase):
-
     def setUp(self):
         self.startUTC = datetime(2022, 1, 27, 0, 0, 0, tzinfo=timezone.utc)
         self.d = dict(
@@ -70,9 +69,7 @@ class TestRawProduct(unittest.TestCase):
             stereo=False,
             voltage_ramp=109,
         )
-        self.extras = dict(
-            foo="bar"
-        )
+        self.extras = dict(foo="bar")
 
     def test_init(self):
         rp = trp.RawProduct(**self.d)
@@ -184,7 +181,7 @@ class TestRawProduct(unittest.TestCase):
             "processingInfo": 20,
             "stereo": 1,
             "temperature": 0,
-            "voltageRamp": 0
+            "voltageRamp": 0,
         }
         rp = trp.RawProduct(
             yamcs_name=name,

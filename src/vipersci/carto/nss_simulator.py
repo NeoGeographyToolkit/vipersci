@@ -53,46 +53,43 @@ def arg_parser():
     # Sooo many inputs each time.  Kind of a mess.
     # Should definitely set up @file config reading.
     parser.add_argument(
-        "-b", "--burial_depth",
+        "-b",
+        "--burial_depth",
         type=Path,
         required=True,
-        help="A GeoTIFF map whose pixels are the burial depth of the water "
-             "layer. "
+        help="A GeoTIFF map whose pixels are the burial depth of the water " "layer. ",
     )
     parser.add_argument(
         "--det1",
         type=Path,
         required=True,
         help="A CSV file provided by the NSS team with the Detector 1 "
-             "two-layer model."
+        "two-layer model.",
     )
     parser.add_argument(
         "--det2",
         type=Path,
         required=True,
         help="A CSV file provided by the NSS team with the Detector 2 "
-             "two-layer model."
+        "two-layer model.",
     )
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         type=Path,
         required=True,
         help="The output CSV file or if -t is not given, this will be used "
-             "as the prefix for the two output maps, which will end in "
-             "_d1.tif and _d2.tif ."
+        "as the prefix for the two output maps, which will end in "
+        "_d1.tif and _d2.tif .",
     )
+    parser.add_argument("-t", "--traverse", type=Path, help="Input CSV file.")
     parser.add_argument(
-        "-t",
-        "--traverse",
-        type=Path,
-        help="Input CSV file."
-    )
-    parser.add_argument(
-        "-w", "--weh",
+        "-w",
+        "--weh",
         type=Path,
         required=True,
         help="A GeoTIFF map whose pixels are the water-equivalent-hydrogen "
-             "percentage."
+        "percentage.",
     )
 
     return parser
@@ -100,14 +97,14 @@ def arg_parser():
 
 class LocationSimulator:
     def __init__(
-            self,
-            bd_map: Path,
-            weh_map: Path,
-            det1: Path,
-            det2: Path,
-            bounds_error=True,
-            fill_value=np.nan,
-            rng=np.random.default_rng(),
+        self,
+        bd_map: Path,
+        weh_map: Path,
+        det1: Path,
+        det2: Path,
+        bounds_error=True,
+        fill_value=np.nan,
+        rng=np.random.default_rng(),
     ):
         """
         :param bd_map: The path to the Burial Depth map.
@@ -123,11 +120,7 @@ class LocationSimulator:
         self.weh_aff, self.weh_arr = self._init_map(weh_map)
 
         self.ds = nss.DataSimulator(
-            det1,
-            det2,
-            bounds_error=bounds_error,
-            fill_value=fill_value,
-            rng=rng
+            det1, det2, bounds_error=bounds_error, fill_value=fill_value, rng=rng
         )
         return
 
@@ -181,10 +174,7 @@ def main():
                 )
 
         ds = nss.DataSimulator(
-            args.det1,
-            args.det2,
-            bounds_error=False,
-            fill_value=None
+            args.det1, args.det2, bounds_error=False, fill_value=None
         )
 
         d1, d2 = ds(bd_data.read(1).flatten(), weh_data.read(1).flatten())
@@ -205,18 +195,14 @@ def main():
             args.det1,
             args.det2,
             bounds_error=False,
-            fill_value=None
+            fill_value=None,
         )
 
-        with open(
-            args.traverse, newline=''
-        ) as csvin, open(
-            args.output, 'w', newline=''
+        with open(args.traverse, newline="") as csvin, open(
+            args.output, "w", newline=""
         ) as csvout:
             reader = csv.DictReader(csvin)  # expecting at least x and y cols.
-            fieldnames = reader.fieldnames + [
-                "det1", "det2", "det1pois", "det2pois"
-            ]
+            fieldnames = reader.fieldnames + ["det1", "det2", "det1pois", "det2pois"]
             writer = csv.DictWriter(csvout, fieldnames=fieldnames)
             writer.writeheader()
 
@@ -227,9 +213,7 @@ def main():
                 # print(coords)
                 # print(coords.shape)
                 row["det1"], row["det2"] = simulator(coords)
-                row["det1pois"], row["det2pois"] = simulator(
-                    coords, poisson=True
-                )
+                row["det1pois"], row["det2pois"] = simulator(coords, poisson=True)
 
                 writer.writerow(row)
 

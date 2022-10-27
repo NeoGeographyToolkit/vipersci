@@ -40,24 +40,23 @@ logger = logging.getLogger(__name__)
 
 def arg_parser():
     parser = argparse.ArgumentParser(
-        description=__doc__,
-        parents=[util.parent_parser()]
+        description=__doc__, parents=[util.parent_parser()]
     )
     parser.add_argument(
-        "-p", "--product_id",
+        "-p",
+        "--product_id",
         required=True,
-        help="The desired Product ID of the output image."
+        help="The desired Product ID of the output image.",
     )
     parser.add_argument(
-        "-o", "--output_dir",
+        "-o",
+        "--output_dir",
         type=Path,
         default=Path.cwd(),
-        help="Output directory for TIFF file."
+        help="Output directory for TIFF file.",
     )
     parser.add_argument(
-        "image",
-        type=Path,
-        help="Input image file, must be an unsigned 16-bit image."
+        "image", type=Path, help="Input image file, must be an unsigned 16-bit image."
     )
     return parser
 

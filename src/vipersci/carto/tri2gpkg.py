@@ -44,11 +44,13 @@ This file format is not particularly a standard, but is simple to process.
 # top level of this library.
 
 import argparse
+
 # import csv
 from pathlib import Path
 
 import geopandas
 from pyproj import CRS, Transformer
+
 # from osgeo import ogr, osr
 from shapely.geometry import Polygon
 
@@ -70,75 +72,80 @@ def arg_parser():
         "-o", "--output", help="Optional name of output file.", required=False
     )
     parser.add_argument(
-        "-c", "--csv", action="store_true", required=False,
-        help="Will output a GeoCSV instead of a GeoPackage file."
+        "-c",
+        "--csv",
+        action="store_true",
+        required=False,
+        help="Will output a GeoCSV instead of a GeoPackage file.",
     )
     parser.add_argument(
-        "-s", "--site", choices=sites.keys(), required=False,
+        "-s",
+        "--site",
+        choices=sites.keys(),
+        required=False,
         help="Specifying a site, sets the latitude and longitude for the "
-             "center of projection."
+        "center of projection.",
     )
     parser.add_argument(
         "--s_srs",
         default="+proj=cart +a=1737400 +b=1737400",
-        help="The source CRS or SRS of the .tri10 data."
+        help="The source CRS or SRS of the .tri10 data.",
     )
     parser.add_argument(
         "--t_srs",
         help="The CRS or SRS of the output file.  The various -s options are "
-             "short-hands for this."
+        "short-hands for this.",
     )
     parser.add_argument(
-        "-v", "--value_names",
+        "-v",
+        "--value_names",
         default="Depth (m)",
         help="This text will be used as the title of the data value field in "
-             "the output file.  If there are commas, this text is split on "
-             "the commas and whitespace stripped, to produce a list of value "
-             "fields in the output."
+        "the output file.  If there are commas, this text is split on "
+        "the commas and whitespace stripped, to produce a list of value "
+        "fields in the output.",
     )
     parser.add_argument(
         "--value_columns",
         default="9",
         help="This should be a comma-separated list of integers (or just one) "
-             "specifying which columns from the .tri file get the names from "
-             "-v.  The first 9 columns (zero is the first) have facet "
-             "coordinates, so typically this value (or list) starts at 9."
+        "specifying which columns from the .tri file get the names from "
+        "-v.  The first 9 columns (zero is the first) have facet "
+        "coordinates, so typically this value (or list) starts at 9.",
     )
     parser.add_argument(
         "--value_file",
         help="If provided another whitespace-separated file will be read in, "
-             "and the value(s) from the column(s) indicated by --value_columns "
-             "will be used as the value(s)."
+        "and the value(s) from the column(s) indicated by --value_columns "
+        "will be used as the value(s).",
     )
     parser.add_argument(
         "--replace_with_zero",
         help="If there is a value that should be replaced with zero, it can "
-             "be provided here.  If the --value_name is 'Depth (m)' this will "
-             "automatically be set to '-1'.  If you want to override that, "
-             "you can set '--replace_with_zero 0'."
+        "be provided here.  If the --value_name is 'Depth (m)' this will "
+        "automatically be set to '-1'.  If you want to override that, "
+        "you can set '--replace_with_zero 0'.",
     )
     parser.add_argument(
         "--keep_z",
         action="store_true",
         help="Will retain the Z value in the output geometries, otherwise "
-             "collapses to 2D geometries."
+        "collapses to 2D geometries.",
     )
     parser.add_argument(
         "--keep_all_facets",
         action="store_true",
         help="Will retain all of the triangular facets of the original .tri10 "
-             "file, which will result in a very large file.  By default, "
-             "adjoining facets with identical values will be merged into "
-             "larger polygons."
+        "file, which will result in a very large file.  By default, "
+        "adjoining facets with identical values will be merged into "
+        "larger polygons.",
     )
     parser.add_argument("file", help=".tri10 file")
     return parser
 
 
 def arg_checks(args):
-    value_keys = list(
-        map(lambda x: x.strip(), args.value_names.strip().split(","))
-    )
+    value_keys = list(map(lambda x: x.strip(), args.value_names.strip().split(",")))
     col_idxs = list(
         map(lambda x: int(x.strip()), args.value_columns.strip().split(","))
     )
@@ -178,9 +185,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        (
-            value_keys, col_idxs, t_srs, outfile, replace_with_zero
-        ) = arg_checks(args)
+        (value_keys, col_idxs, t_srs, outfile, replace_with_zero) = arg_checks(args)
     except ValueError as err:
         parser.error(str(err))
 

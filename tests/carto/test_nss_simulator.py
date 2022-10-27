@@ -45,18 +45,12 @@ class TestLocationSimulator(unittest.TestCase):
         )
 
     def testInit(self):
-        with patch(
-                "vipersci.nss.read_csv",
-                return_value=(self.arr, self.rc, self.cc)
-        ):
+        with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
             ds = nss.DataSimulator(Path("dummy1"), Path("dummy2"))
             self.assertIsInstance(ds, nss.DataSimulator)
 
     def testCall(self):
-        with patch(
-                "vipersci.nss.read_csv",
-                return_value=(self.arr, self.rc, self.cc)
-        ):
+        with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
             ds = nss.DataSimulator(Path("dummy1"), Path("dummy2"))
             self.assertRaises(ValueError, ds, 5, 5)
             d1, d2 = ds(0.3, 20)

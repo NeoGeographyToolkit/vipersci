@@ -43,18 +43,20 @@ class TestUniformWEH(unittest.TestCase):
         np.testing.assert_allclose(
             np.array([0.03972452, 0.00900205]),
             nss.uniform_weh(np.array((10, 20))),
-            rtol=1e-06
+            rtol=1e-06,
         )
 
 
 class TestModel(unittest.TestCase):
     def setUp(self) -> None:
-        self.text = list((
-            "-99, 0, 0.5, 1",
-            "60, 1, 2, 3",
-            "30, 10, 20, 30",
-            "10, 100, 200, 300",
-        ))
+        self.text = list(
+            (
+                "-99, 0, 0.5, 1",
+                "60, 1, 2, 3",
+                "30, 10, 20, 30",
+                "10, 100, 200, 300",
+            )
+        )
         self.rc = np.array([10, 30, 60])
         self.cc = np.array([0, 0.5, 1])
         self.arr = np.array(
@@ -73,10 +75,7 @@ class TestModel(unittest.TestCase):
         np.testing.assert_array_equal(self.arr, arr)
 
     def test_model(self):
-        with patch(
-            "vipersci.nss.read_csv",
-            return_value=(self.arr, self.rc, self.cc)
-        ):
+        with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
             m = nss.model(Path("dummy"))
             self.assertIsInstance(m, RegularGridInterpolator)
             np.testing.assert_array_equal(np.array(88), m((0.3, 20)))
@@ -95,18 +94,12 @@ class TestSimulator(unittest.TestCase):
         )
 
     def testInit(self):
-        with patch(
-                "vipersci.nss.read_csv",
-                return_value=(self.arr, self.rc, self.cc)
-        ):
+        with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
             ds = nss.DataSimulator(Path("dummy1"), Path("dummy2"))
             self.assertIsInstance(ds, nss.DataSimulator)
 
     def testCall(self):
-        with patch(
-                "vipersci.nss.read_csv",
-                return_value=(self.arr, self.rc, self.cc)
-        ):
+        with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
             ds = nss.DataSimulator(Path("dummy1"), Path("dummy2"))
             self.assertRaises(ValueError, ds, 5, 5)
             d1, d2 = ds(0.3, 20)

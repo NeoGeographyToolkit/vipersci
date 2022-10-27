@@ -56,46 +56,48 @@ logger = logging.getLogger(__name__)
 
 def arg_parser():
     parser = argparse.ArgumentParser(
-        description=__doc__,
-        parents=[util.parent_parser()]
+        description=__doc__, parents=[util.parent_parser()]
     )
     parser.add_argument(
-        "-d", "--dburl",
+        "-d",
+        "--dburl",
         help="Database with a raw_products table which will be written to. "
-             "If not given, no database will be written to.  Example: "
-             "postgresql://postgres:NotTheDefault@localhost/visdb"
+        "If not given, no database will be written to.  Example: "
+        "postgresql://postgres:NotTheDefault@localhost/visdb",
     )
     parser.add_argument(
         "--json",
         type=Path,
         required=True,
-        help="JSON file, with raw product meta-data."
+        help="JSON file, with raw product meta-data.",
     )
     parser.add_argument(
-        "-t", "--template",
+        "-t",
+        "--template",
         type=Path,
         help="Genshi XML file template.  Will default to the raw-template.xml "
-             "file distributed with the module."
+        "file distributed with the module.",
     )
     parser.add_argument(
         "--image",
         type=Path,
         help="Optional path to source image file which will be read and "
-             "converted into a TIFF product.  If no path is given, then "
-             "Only a .xml label will be written and no image."
+        "converted into a TIFF product.  If no path is given, then "
+        "Only a .xml label will be written and no image.",
     )
     parser.add_argument(
         "--tiff",
         type=Path,
         help="Optional pre-existing TIFF file.  This file will be inspected "
-             "and an .xml label will be written.  If --image is given, this will "
-             "be ignored."
+        "and an .xml label will be written.  If --image is given, this will "
+        "be ignored.",
     )
     parser.add_argument(
-        "-o", "--output_dir",
+        "-o",
+        "--output_dir",
         type=Path,
         default=Path.cwd(),
-        help="Output directory for label. Defaults to current working directory."
+        help="Output directory for label. Defaults to current working directory.",
     )
     return parser
 
@@ -111,7 +113,7 @@ def main():
     metadata = {
         "mission_phase": "TEST",
         "purpose": "Navigation",
-        "onboard_compression_ratio": 64
+        "onboard_compression_ratio": 64,
     }
 
     # This allows values in jsondata to override the hard-coded values above.
@@ -153,15 +155,16 @@ class Creator:
     """
 
     def __init__(
-        self, outdir: Path = Path.cwd(), session: Session = None, template_path: Path = None
+        self,
+        outdir: Path = Path.cwd(),
+        session: Session = None,
+        template_path: Path = None,
     ):
         self.outdir = outdir
         self.session = session
         self.tmpl_path = template_path
 
-    def __call__(
-        self, metadata: dict, image: npt.NDArray[np.uint16] = None
-    ):
+    def __call__(self, metadata: dict, image: npt.NDArray[np.uint16] = None):
         rp = make_raw_product(metadata, image, self.outdir)
         logger.info(f"{rp.product_id} created.")
 
@@ -190,13 +193,13 @@ class Creator:
                 "mission_phase": "TEST",
                 "purpose": "Navigation",
                 "onboard_compression_ratio": 64,
-                "onboard_compression_type": parameter.name[-4:].upper()
+                "onboard_compression_type": parameter.name[-4:].upper(),
             }
-            d.update(parameter.eng_value['imageHeader'])
+            d.update(parameter.eng_value["imageHeader"])
             d["yamcs_name"] = parameter.name
             d["yamcs_generation_time"] = parameter.generation_time
 
-            with io.BytesIO(parameter.eng_value['imageData']) as f:
+            with io.BytesIO(parameter.eng_value["imageData"]) as f:
                 im = imread(f)
 
             self.__call__(d, im)
@@ -207,7 +210,7 @@ def create(
     image: Union[npt.NDArray[np.uint16], Path] = None,
     outdir: Path = Path.cwd(),
     session: Session = None,
-    template_path: Path = None
+    template_path: Path = None,
 ):
     """
     Creates a PDS4 XML label file in *outdir* based on the provided
@@ -262,8 +265,7 @@ def make_raw_product(
         if isinstance(image, Path):
             tif_d = tif_info(image)
         else:
-            tif_d = tif_info(
-                write_tiff(pds.VISID(rp.product_id), image, outdir))
+            tif_d = tif_info(write_tiff(pds.VISID(rp.product_id), image, outdir))
 
         for k in ("lines", "samples"):
             if getattr(rp, k) != tif_d[k]:
@@ -274,18 +276,17 @@ def make_raw_product(
 
         rp.update(tif_d)
     else:
-        rp.update({
-            "byte_offset": None,
-            "data_type": None
-        })
+        rp.update({"byte_offset": None, "data_type": None})
     rp.update(version_info(rp.product_id))
 
-    rp.update({
-        "software_name": "vipersci",
-        "software_version": vipersci.__version__,
-        "software_type": "Python",
-        "software_program_name": __name__
-    })
+    rp.update(
+        {
+            "software_name": "vipersci",
+            "software_version": vipersci.__version__,
+            "software_type": "Python",
+            "software_program_name": __name__,
+        }
+    )
 
     return rp
 
@@ -312,8 +313,7 @@ def tif_info(p: Path) -> dict:
 
     if tags[258]["data"][0] != 16:
         raise ValueError(
-            f"TIFF file has {tags[258]['data'][0]} BitsPerSample "
-            f"expecting 16."
+            f"TIFF file has {tags[258]['data'][0]} BitsPerSample " f"expecting 16."
         )
     else:
         dtype = f"Unsigned{end}2"
@@ -338,16 +338,16 @@ def version_info(pid: pds.VISID):
             {
                 "version": 0.1,
                 "date": date.today().isoformat(),
-                "description": "Illegal version number for testing"
+                "description": "Illegal version number for testing",
             }
         ],
-        "vid": 0.1
+        "vid": 0.1,
     }
     return d
 
 
 def write_tiff(
-        pid: pds.VISID, image: npt.NDArray[np.uint16], outdir: Path = Path.cwd()
+    pid: pds.VISID, image: npt.NDArray[np.uint16], outdir: Path = Path.cwd()
 ) -> Path:
     """
     Returns the path where a TIFF with a name based on *pid* and the array
@@ -355,30 +355,18 @@ def write_tiff(
     """
     if image.dtype != np.uint16:
         # raise ValueError(
-        warn(
-            f"The input image is not a uint16, it is {image.dtype}"
-        )
+        warn(f"The input image is not a uint16, it is {image.dtype}")
 
     desc = f"VIPER {pds.vis_instruments[pid.instrument]} {pid}"
 
     logger.info(desc)
     outpath = (outdir / str(pid)).with_suffix(".tif")
 
-    imsave(
-        str(outpath),
-        image,
-        check_contrast=False,
-        description=desc,
-        metadata=None
-    )
+    imsave(str(outpath), image, check_contrast=False, description=desc, metadata=None)
     return outpath
 
 
-def write_xml(
-    product: dict,
-    outdir: Path = Path.cwd(),
-    template_path: Path = None
-):
+def write_xml(product: dict, outdir: Path = Path.cwd(), template_path: Path = None):
     """
     Writes a PDS4 XML label in *outdir* based on the contents of
     the *product* object, which must be of type Raw_Product.
@@ -388,9 +376,9 @@ def write_xml(
     with this library.
     """
     if template_path is None:
-        tmpl = MarkupTemplate(resources.read_text(
-            "vipersci.vis.pds.data", "raw-template.xml"
-        ))
+        tmpl = MarkupTemplate(
+            resources.read_text("vipersci.vis.pds.data", "raw-template.xml")
+        )
     else:
         tmpl = MarkupTemplate(template_path.read_text())
 

@@ -94,8 +94,7 @@ def mcam_id(value: int):
 
 
 def pga_gain(value: Union[int, float]):
-    """Returns the PGA Gain as a decimal value.
-    """
+    """Returns the PGA Gain as a decimal value."""
 
     try:
         if isinstance(value, float):

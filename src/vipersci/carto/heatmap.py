@@ -130,7 +130,12 @@ def generate_density_heatmap(
     processes: int = None,
     sample_bounds: shapely.geometry.Polygon = None,
     frequencies: Sequence = None,  # list or np.ndarray
-) -> Tuple[rasterio.Affine, NDArray[np.float32], NDArray[np.uintc], NDArray[np.float32]]:
+) -> Tuple[
+    rasterio.Affine,
+    NDArray[np.float32],
+    NDArray[np.uintc],
+    NDArray[np.float32],
+]:
     """
     Perform tophat kernel density estimation to build a continuous heatmap
     representation of scalar values with 2d coordinates.
@@ -260,7 +265,11 @@ def generate_density_heatmap(
                 kde.score_samples,
                 np.array_split(sample_coords, 1 if processes is None else processes),
             )
-            samples = np.fromiter(chain.from_iterable(results), dtype=float, count=len(sample_coords))
+            samples = np.fromiter(
+                chain.from_iterable(results),
+                dtype=float,
+                count=len(sample_coords),
+            )
         out_unweighted = np.exp(samples)
         total_observations = len(train)
         frequencies = out_unweighted * total_observations
@@ -279,7 +288,9 @@ def generate_density_heatmap(
             kde.score_samples,
             np.array_split(sample_coords, 1 if processes is None else processes),
         )
-        weighted_samples = np.fromiter(chain.from_iterable(results), dtype=float, count=len(sample_coords))
+        weighted_samples = np.fromiter(
+            chain.from_iterable(results), dtype=float, count=len(sample_coords)
+        )
     end = time.perf_counter()
     logger.info(
         f"Sampled {weighted_samples.shape[0]} weighted points in {end - start:.6f}s."
@@ -379,7 +390,10 @@ def get_gdal_info_from_rasterio(
         "size": [input.shape[0], input.shape[1]],
         "coordinateSystem": {"proj4": input.crs.to_proj4()},
         "geoTransform": geotransform,
-        "resolution": {"xResolution": geotransform[1], "yResolution": geotransform[5]},
+        "resolution": {
+            "xResolution": geotransform[1],
+            "yResolution": geotransform[5],
+        },
         "driverShortName": input.driver,
         "metadata": {
             "IMAGE_STRUCTURE": {
