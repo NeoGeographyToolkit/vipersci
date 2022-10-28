@@ -43,6 +43,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from vipersci.pds.pid import VISID, vis_instruments, vis_compression
+from vipersci.pds.xml import ns
 from vipersci.pds.datetime import fromisozformat, isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
 
@@ -515,17 +516,6 @@ class RawProduct(Base):
         as XML.
         """
         d = {}
-
-        # This namespace dict allows us to use more compact strings to denote the
-        # namespaces.  This should eventually get pulled up to some top-level
-        # module.
-        ns = {
-            "pds": "http://pds.nasa.gov/pds4/pds/v1",
-            "disp": "http://pds.nasa.gov/pds4/disp/v1",
-            "img": "http://pds.nasa.gov/pds4/img/v1",
-            "msn": "http://pds.nasa.gov/pds4/msn/v1",
-            "proc": "http://pds.nasa.gov/pds4/proc/v1",
-        }
 
         root = ET.fromstring(text)
         lid = root.find(
