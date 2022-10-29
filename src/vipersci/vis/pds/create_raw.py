@@ -276,8 +276,7 @@ def make_raw_product(
 
         rp.update(tif_d)
     else:
-        rp.update({"byte_offset": None, "data_type": None})
-    rp.update(version_info(rp.product_id))
+        rp.update({"file_byte_offset": None, "file_data_type": None})
 
     rp.update(
         {
@@ -319,18 +318,18 @@ def tif_info(p: Path) -> dict:
         dtype = f"Unsigned{end}2"
 
     d = {
-        "file_path": p.name,
+        "file_byte_offset": tags[273]["data"][0],  # Tag 273 is StripOffsets
         "file_creation_datetime": dt,
-        "md5_checksum": md5.hexdigest(),
-        "byte_offset": tags[273]["data"][0],  # Tag 273 is StripOffsets
+        "file_data_type": dtype,
+        "file_md5_checksum": md5.hexdigest(),
+        "file_path": p.name,
         "lines": tags[257]["data"][0],  # Tag 257 is ImageWidth,
         "samples": tags[256]["data"][0],  # Tag 256 is ImageWidth,
-        "data_type": dtype,
     }
     return d
 
 
-def version_info(pid: pds.VISID):
+def version_info():
     # This should reach into a database and do something smart to figure
     # out how to populate this, but for now, hardcoding:
     d = {
@@ -382,7 +381,10 @@ def write_xml(product: dict, outdir: Path = Path.cwd(), template_path: Path = No
     else:
         tmpl = MarkupTemplate(template_path.read_text())
 
-    stream = tmpl.generate(**product)
+    d = version_info()
+    d.update(product)
+
+    stream = tmpl.generate(**d)
     out_path = (outdir / product["product_id"]).with_suffix(".xml")
     out_path.write_text(stream.render())
     return
