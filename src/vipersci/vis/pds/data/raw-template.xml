@@ -163,12 +163,12 @@
     </File>
     <Array_2D_Image>
     	<local_identifier>image2d</local_identifier>
-    	<md5_checksum>${md5_checksum}</md5_checksum>
-    	<offset unit="byte">${byte_offset}</offset>
+    	<md5_checksum>${file_md5_checksum}</md5_checksum>
+    	<offset unit="byte">${file_byte_offset}</offset>
     	<axes>2</axes>
     	<axis_index_order>Last Index Fastest</axis_index_order>
     	<Element_Array>
-    		<data_type>${data_type}</data_type>
+    		<data_type>${file_data_type}</data_type>
     		<unit>DN</unit>
     	</Element_Array>
     	<Axis_Array>

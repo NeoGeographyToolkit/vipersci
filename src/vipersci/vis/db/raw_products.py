@@ -123,6 +123,11 @@ class RawProduct(Base):
         nullable=False,
         doc="The time at which file_name was created.",
     )
+    file_md5_checksum = Column(
+        String,
+        nullable=False,
+        doc="The md5 checksum of the file described by file_path.",
+    )
     file_path = Column(
         String,
         nullable=False,
@@ -170,11 +175,6 @@ class RawProduct(Base):
     )
     mcam_id = Column(
         Integer, nullable=False, doc="The MCAM_ID from the MCSE Image Header."
-    )
-    md5_checksum = Column(
-        String,
-        nullable=False,
-        doc="The md5 checksum of the file described by file_path.",
     )
     mission_phase = Column(
         String,
@@ -570,7 +570,7 @@ class RawProduct(Base):
 
         aa = root.find(".//pds:Axis_Array[pds:axis_name='Line']", ns)
         d["lines"] = int(aa.find("./pds:elements", ns).text)
-        d["md5_checksum"] = root.find(".//pds:md5_checksum", ns).text
+        d["file_md5_checksum"] = root.find(".//pds:md5_checksum", ns).text
         d["mission_phase"] = root.find(".//msn:mission_phase_name", ns).text
         d["offset"] = root.find(".//img:analog_offset", ns).text
 
