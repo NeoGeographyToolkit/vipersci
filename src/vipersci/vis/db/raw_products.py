@@ -29,8 +29,6 @@ from datetime import datetime, timedelta, timezone
 from warnings import warn
 import xml.etree.ElementTree as ET
 
-from sqlalchemy import orm
-from sqlalchemy.orm import synonym, validates
 from sqlalchemy import (
     Boolean,
     Column,
@@ -41,6 +39,7 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import declarative_base, synonym, validates
 
 from vipersci.pds.pid import VISID, vis_instruments, vis_compression
 from vipersci.pds.xml import ns
@@ -48,7 +47,7 @@ from vipersci.pds.datetime import fromisozformat, isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
 
 
-Base = orm.declarative_base()
+Base = declarative_base()
 
 luminaire_names = {
     "NavLight Left": "navlight_left_on",
@@ -218,7 +217,9 @@ class RawProduct(Base):
     )
     outputImageMask = synonym("output_image_mask")
     outputImageType = synonym("output_image_type")
-    _pid = Column("product_id", String, nullable=False, doc="The PDS Product ID.")
+    _pid = Column(
+        "product_id", String, nullable=False, unique=True, doc="The PDS Product ID."
+    )
     padding = Column(
         Integer,
         nullable=False,
