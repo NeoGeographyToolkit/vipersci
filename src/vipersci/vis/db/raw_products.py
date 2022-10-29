@@ -510,6 +510,19 @@ class RawProduct(Base):
             raise ValueError(f"purpose must be one of {s}")
         return value
 
+    def asdict(self):
+        d = {}
+
+        for c in self.__table__.columns:
+            if isinstance(getattr(self, c.name), datetime):
+                d[c.name] = isozformat(getattr(self, c.name))
+            else:
+                d[c.name] = getattr(self, c.name)
+
+        d.update(self.labelmeta)
+
+        return d
+
     @classmethod
     def from_xml(cls, text: str):
         """
@@ -625,13 +638,7 @@ class RawProduct(Base):
         for k, v in luminaire_names.items():
             d["luminaires"][k] = onoff[getattr(self, v)]
 
-        for c in self.__table__.columns:
-            if isinstance(getattr(self, c.name), datetime):
-                d[c.name] = isozformat(getattr(self, c.name))
-            else:
-                d[c.name] = getattr(self, c.name)
-
-        d.update(self.labelmeta)
+        d.update(self.asdict())
 
         return d
 
