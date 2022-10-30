@@ -191,17 +191,12 @@ class RawProduct(Base):
     )
     onboard_compression_ratio = Column(
         Float,
-        nullable=False,
+        doc="The PDS img:Onboard_Compression parameter.  Will be NULL for "
+        "lossless compression or uncompressed images."
         # This is a PDS img:Onboard_Compression parameter which is the ratio
         # of the size, in bytes, of the original uncompressed data object
         # to its compressed size.  This operation is done by RFSW, but not
         # sure where to get this parameter from ...?
-    )
-    onboard_compression_type = Column(
-        String,
-        nullable=False,
-        # This is the PDS img:Onboard_Compression parameter.  For us this
-        # is going to be ICER, Lossless, or rarely None.
     )
     output_image_mask = Column(
         Integer,
@@ -252,9 +247,13 @@ class RawProduct(Base):
         nullable=False,
         doc="The imageWidth parameter from the Yamcs imageHeader.",
     )
+    slog = Column(
+        Boolean,
+        nullable=False,
+        doc="Indicates whether onboard SLoG processing occurred.",
+    )
     software_name = Column(String, nullable=False)
     software_version = Column(String, nullable=False)
-    software_type = Column(String, nullable=False)
     software_program_name = Column(String, nullable=False)
     start_time = Column(DateTime(timezone=True), nullable=False)
     stereo = Column(
@@ -339,6 +338,10 @@ class RawProduct(Base):
 
             self.instrument_name = VISID.instrument_name(maybe_name)
 
+        # Derive slog, if possible.
+        if "slog" not in kwargs and "yamcs_name" in kwargs:
+            self.slog = self.yamcs_name.endswith("slog")
+
         # Ensure product_id consistency
         if pid:
 
@@ -365,26 +368,31 @@ class RawProduct(Base):
                     f"({self.instrument_name}) disagree."
                 )
 
-            if (
-                self.onboard_compression_ratio is not None
-                and vis_compression[pid.compression] != self.onboard_compression_ratio
-            ):
+            if self.onboard_compression_ratio is None:
+                if self.slog and pid.compression != "s":
+                    raise ValueError(
+                        f"The product_id compression code ({pid.compression}) is not "
+                        f"s, but onboard_compression_ratio is None and slog is true. "
+                    )
+                elif not self.slog and pid.compression != "s":
+                    raise ValueError(
+                        f"The product_id compression code ({pid.compression}) is not "
+                        f"a, but onboard_compression_ratio is None and slog is false. "
+                    )
+            elif vis_compression[pid.compression] != self.onboard_compression_ratio:
                 raise ValueError(
                     f"The product_id compression code ({pid.compression}) and "
                     f"the provided onboard_compression_ratio "
                     f"({self.onboard_compression_ratio}) disagree."
                 )
-
         elif (
             self.start_time is not None
             and self.instrument_name is not None
-            and self.onboard_compression_ratio is not None
+            and self.slog is not None
         ):
+            c = "s" if self.slog else self.onboard_compression_ratio
             pid = VISID(
-                self.start_time.date(),
-                self.start_time.time(),
-                self.instrument_name,
-                self.onboard_compression_ratio,
+                self.start_time.date(), self.start_time.time(), self.instrument_name, c
             )
         else:
             got = dict()
@@ -392,7 +400,7 @@ class RawProduct(Base):
                 "product_id",
                 "start_time",
                 "instrument_name",
-                "onboard_compression_ratio",
+                "slog",
             ):
                 v = getattr(self, k)
                 if v is not None:
@@ -400,7 +408,7 @@ class RawProduct(Base):
 
             raise ValueError(
                 "Either product_id must be given, or each of start_time, "
-                f"instrument_name, and onboard_compression_ratio. Got: {got}"
+                f"instrument_name, and slog. Got: {got}"
             )
 
         self._pid = str(pid)
@@ -485,15 +493,6 @@ class RawProduct(Base):
             )
 
         return dt.astimezone(timezone.utc)
-
-    @validates("onboard_compression_type")
-    def validate_onboard_compression_type(self, key, value: str):
-        s = {"ICER", "Lossless", "None"}
-        if value not in s:
-            raise ValueError(
-                f"onboard_compression_type must be one of {s}, but was {value}."
-            )
-        return value
 
     @validates("purpose")
     def validate_purpose(self, key, value: str):
@@ -591,10 +590,6 @@ class RawProduct(Base):
         if ocr is not None:
             d["onboard_compression_ratio"] = float(ocr.text)
 
-        d["onboard_compression_type"] = root.find(
-            ".//img:onboard_compression_type", ns
-        ).text
-
         d["purpose"] = root.find(".//pds:purpose", ns).text
 
         aa = root.find(".//pds:Axis_Array[pds:axis_name='Sample']", ns)
@@ -603,7 +598,6 @@ class RawProduct(Base):
         sw = root.find(".//proc:Software", ns)
         d["software_name"] = sw.find("./proc:name", ns).text
         d["software_version"] = sw.find("./proc:software_version_id", ns).text
-        d["software_type"] = sw.find("./proc:software_type", ns).text
         d["software_program_name"] = sw.find(
             "./proc:Software_Program/proc:name", ns
         ).text
@@ -622,7 +616,7 @@ class RawProduct(Base):
         """Returns a dictionary suitable for label generation."""
         _inst = self.instrument_name.lower().replace(" ", "_")
         _sclid = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
-        onoff = {True: "On", False: "Off", None: "Unknown"}
+        onoff = {True: "On", False: "Off", None: None}
         pid = VISID(self.product_id)
         d = dict(
             lid=f"urn:nasa:pds:viper_vis:raw:{self.product_id}",
@@ -631,12 +625,20 @@ class RawProduct(Base):
             inst_lid=f"{_sclid}.{_inst}",
             gain_number=(self.adc_gain * self.pga_gain),
             exposure_type="Auto" if self.auto_exposure else "Manual",
+            image_filter=None,
             led_wavelength=453,  # nm
             luminaires={},
-            compression_class="Lossless" if pid.compression == "a" else "Lossy",
+            compression_class=pid.compression_class(),
+            onboard_compression_type="ICER",
         )
         for k, v in luminaire_names.items():
             d["luminaires"][k] = onoff[getattr(self, v)]
+
+        if self.slog:
+            d["image_filter"] = dict(
+                processing_venue="Onboard",
+                processing_algorithm="Sign of the Laplacian of the Gaussian, SLoG",
+            )
 
         d.update(self.asdict())
 

@@ -66,6 +66,7 @@ class TestRawProduct(unittest.TestCase):
             processing_info=0,
             purpose="Engineering",
             samples=2048,
+            slog=False,
             stereo=False,
             voltage_ramp=109,
         )
@@ -113,10 +114,6 @@ class TestRawProduct(unittest.TestCase):
     # def test_mcam_id(self):
     #     rp = trp.RawProduct(**self.d)
     #     self.assertRaises(ValueError, setattr, rp, "mcam_id", 5)
-
-    def test_onboard_compression_type(self):
-        rp = trp.RawProduct(**self.d)
-        self.assertRaises(ValueError, setattr, rp, "onboard_compression_type", "dummy")
 
     def test_product_id(self):
         rp = trp.RawProduct(**self.d)
