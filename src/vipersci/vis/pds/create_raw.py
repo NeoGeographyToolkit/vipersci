@@ -339,22 +339,13 @@ def tif_info(p: Path) -> dict:
     info = read_tiff(str(p))
     tags = info["ifds"][0]["tags"]
 
-    if info["bigEndian"]:
-        end = "MSB"
-    else:
-        end = "LSB"
-
-    if tags[258]["data"][0] != 16:
-        raise ValueError(
-            f"TIFF file has {tags[258]['data'][0]} BitsPerSample " f"expecting 16."
-        )
-    else:
-        dtype = f"Unsigned{end}2"
+    end = "MSB" if info["bigEndian"] else "LSB"
 
     d = {
         "file_byte_offset": tags[273]["data"][0],  # Tag 273 is StripOffsets
         "file_creation_datetime": dt,
-        "file_data_type": dtype,
+        # Tag 258 is bits per pixel:
+        "file_data_type": f"Unsigned{end}{int(tags[258]['data'][0] / 8)}",
         "file_md5_checksum": md5.hexdigest(),
         "file_path": p.name,
         "lines": tags[257]["data"][0],  # Tag 257 is ImageWidth,
