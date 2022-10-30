@@ -36,7 +36,6 @@ import logging
 import sys
 from typing import Union
 from pathlib import Path
-from warnings import warn
 
 from genshi.template import MarkupTemplate
 import numpy as np
@@ -52,6 +51,8 @@ from vipersci.pds import pid as pds
 from vipersci import util
 
 logger = logging.getLogger(__name__)
+
+ImageType = Union[npt.NDArray[np.uint16], npt.NDArray[np.uint8]]
 
 
 def arg_parser():
@@ -164,7 +165,7 @@ class Creator:
         self.session = session
         self.tmpl_path = template_path
 
-    def __call__(self, metadata: dict, image: npt.NDArray[np.uint16] = None):
+    def __call__(self, metadata: dict, image: ImageType = None):
         rp = make_raw_product(metadata, image, self.outdir)
         logger.info(f"{rp.product_id} created.")
 
@@ -207,7 +208,7 @@ class Creator:
 
 def create(
     metadata: dict,
-    image: Union[npt.NDArray[np.uint16], Path] = None,
+    image: Union[ImageType, Path] = None,
     outdir: Path = Path.cwd(),
     session: Session = None,
     template_path: Path = None,
@@ -248,9 +249,39 @@ def create(
     return
 
 
+def check_bit_depth(pid: pds.VISID, bit_depth):
+
+    bd = None
+    if isinstance(bit_depth, int):
+        bd = bit_depth
+    elif isinstance(bit_depth, str):
+        bd = int(bit_depth[-1]) * 8
+    elif isinstance(bit_depth, np.dtype):
+        if bit_depth == np.uint16:
+            bd = 16
+        elif bit_depth == np.uint8:
+            bd = 8
+
+    if bd is None:
+        raise ValueError(f"Cannot determine a bit-depth from {bit_depth}")
+
+    if pid.compression == "s":
+        if bd != 8:
+            raise ValueError(
+                f"This is a SLoG product ({pid}), but this image is not 8-bit, "
+                f"it is {bit_depth}"
+            )
+    else:
+        if bd != 16:
+            raise ValueError(
+                f"This product ({pid}) should be 16-bit, but it is {bit_depth}"
+            )
+    return
+
+
 def make_raw_product(
     metadata: dict,
-    image: Union[npt.NDArray[np.uint16], Path] = None,
+    image: Union[ImageType, Path] = None,
     outdir: Path = Path.cwd(),
 ) -> RawProduct:
     """
@@ -260,12 +291,13 @@ def make_raw_product(
     working directory).
     """
     rp = RawProduct(**metadata)
+    pid = pds.VISID(rp.product_id)
 
     if image is not None:
         if isinstance(image, Path):
             tif_d = tif_info(image)
         else:
-            tif_d = tif_info(write_tiff(pds.VISID(rp.product_id), image, outdir))
+            tif_d = tif_info(write_tiff(pid, image, outdir))
 
         for k in ("lines", "samples"):
             if getattr(rp, k) != tif_d[k]:
@@ -273,6 +305,8 @@ def make_raw_product(
                     f"The value of {k} from the TIFF ({tif_d[k]}) does not "
                     f"match the value from the metadata ({getattr(rp, k)})"
                 )
+
+        check_bit_depth(pid, tif_d["file_data_type"])
 
         rp.update(tif_d)
     else:
@@ -345,16 +379,13 @@ def version_info():
     return d
 
 
-def write_tiff(
-    pid: pds.VISID, image: npt.NDArray[np.uint16], outdir: Path = Path.cwd()
-) -> Path:
+def write_tiff(pid: pds.VISID, image: ImageType, outdir: Path = Path.cwd()) -> Path:
     """
     Returns the path where a TIFF with a name based on *pid* and the array
     *image* was written in *outdir* (defaults to current working directory).
     """
-    if image.dtype != np.uint16:
-        # raise ValueError(
-        warn(f"The input image is not a uint16, it is {image.dtype}")
+
+    check_bit_depth(pid, image.dtype)
 
     desc = f"VIPER {pds.vis_instruments[pid.instrument]} {pid}"
 
