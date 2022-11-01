@@ -1,7 +1,14 @@
 """Creates Raw VIS PDS Products.
 
-For now, this program has a variety of pre-set data,
+This module builds "raw" VIS data products from input data.  A "raw" VIS
+data product consists of a TIFF file and a JSON file containing meta-data.
+The meta data can optionally be inserted into a database, and/or used to
+generate a PDS4 XML label.
+
+For now, this program still has a variety of hard-coded elements,
 that will eventually be extracted from telemetry.
+
+The command-line version is primarily to aide testing.
 """
 
 # Copyright 2022, United States Government as represented by the
@@ -67,17 +74,17 @@ def arg_parser():
         "postgresql://postgres:NotTheDefault@localhost/visdb",
     )
     parser.add_argument(
-        "--json",
-        type=Path,
-        required=True,
-        help="JSON file, with raw product meta-data.",
+        "--nojson",
+        action="store_false",
+        dest="json",
+        help="Disables creation of .json output, which is the default.",
     )
     parser.add_argument(
         "-t",
         "--template",
         type=Path,
         help="Genshi XML file template.  Will default to the raw-template.xml "
-        "file distributed with the module.",
+        "file distributed with the module.  Only relevant when --xml is provided.",
     )
     parser.add_argument(
         "--image",
@@ -89,17 +96,22 @@ def arg_parser():
     parser.add_argument(
         "--tiff",
         type=Path,
-        help="Optional pre-existing TIFF file.  This file will be inspected "
-        "and an .xml label will be written.  If --image is given, this will "
-        "be ignored.",
+        help="Optional pre-existing TIFF file (presumably created by this program). "
+        "This file will be inspected and its information added to the output. "
+        "If --image is given, this option will be ignored.",
     )
     parser.add_argument(
         "-o",
         "--output_dir",
         type=Path,
         default=Path.cwd(),
-        help="Output directory for label. Defaults to current working directory.",
+        help="Output directory for label. Defaults to current working directory.  "
+        "Output file names are fixed based on product_id, and will be over-written.",
     )
+    parser.add_argument(
+        "-x", "--xml", action="store_true", help="Create a PDS4 .XML label file."
+    )
+    parser.add_argument("input", type=Path, help="JSON file containing metadata.")
     return parser
 
 
@@ -107,14 +119,14 @@ def main():
     args = arg_parser().parse_args()
     util.set_logger(args.verbose)
 
-    with open(args.json) as f:
+    with open(args.input) as f:
         jsondata = json.load(f)
 
     # I'm not sure where these are coming from, let's hard-code them for now:
     metadata = {
         "mission_phase": "TEST",
-        "purpose": "Navigation",
-        "onboard_compression_ratio": 64,
+        # "purpose": "Engineering",
+        # "onboard_compression_ratio": 64,
     }
 
     # This allows values in jsondata to override the hard-coded values above.
@@ -128,11 +140,21 @@ def main():
         image = None
 
     if args.dburl is None:
-        create(metadata, image, args.output_dir, None, args.template)
+        create(
+            metadata, image, args.output_dir, None, args.json, args.xml, args.template
+        )
     else:
         engine = create_engine(args.dburl)
         session_maker = sessionmaker(engine, future=True)
-        create(metadata, image, args.output_dir, session_maker, args.template)
+        create(
+            metadata,
+            image,
+            args.output_dir,
+            session_maker,
+            args.json,
+            args.xml,
+            args.template,
+        )
 
     return
 
@@ -142,8 +164,8 @@ class Creator:
     This object can be instantiated with an output directory, *outdir*, and optional
     *session* and *template_path* directories, which the object maintains.
 
-    This object can simply be called which results in a raw product being created,
-    written to disk and possibly added to the database.
+    This object can simply be called which results in a raw product TIFF file and JSON
+    file being created, written to disk and possibly added to the database.
 
     This is basically a persistent version of the create() function, so that a
     database connection can be kept alive (during a Yamcs subscription, for example),
@@ -151,25 +173,22 @@ class Creator:
 
     All of the arguments to initialize the object are optional:  If *outdir* is not
     given, the current working directory will be used (beware!).  If *session* is not
-    given, no writes to a database will occur.  If *template_path* is not given, a
-    default from this library will be used.
+    given, no writes to a database will occur.
     """
 
     def __init__(
         self,
         outdir: Path = Path.cwd(),
         session: Session = None,
-        template_path: Path = None,
     ):
         self.outdir = outdir
         self.session = session
-        self.tmpl_path = template_path
 
     def __call__(self, metadata: dict, image: ImageType = None):
         rp = make_raw_product(metadata, image, self.outdir)
         logger.info(f"{rp.product_id} created.")
 
-        write_xml(rp.label_dict(), self.outdir, self.tmpl_path)
+        write_json(rp.asdict(), self.outdir)
 
         if self.session is not None:
             with self.session.begin() as s:
@@ -180,7 +199,7 @@ class Creator:
     def from_yamcs_parameters(self, data):
         for parameter in data.parameters:
             logger.info(f"{parameter.generation_time} - {parameter.name}")
-            # These are hard-coded until I figure out where they come from.
+            # These are hard-coded until we figure out where they come from.
             d = {
                 "bad_pixel_table_id": 0,
                 "hazlight_aft_port_on": False,
@@ -193,8 +212,6 @@ class Creator:
                 "navlight_right_on": False,
                 "mission_phase": "TEST",
                 "purpose": "Navigation",
-                "onboard_compression_ratio": 64,
-                "onboard_compression_type": parameter.name[-4:].upper(),
             }
             d.update(parameter.eng_value["imageHeader"])
             d["yamcs_name"] = parameter.name
@@ -210,7 +227,9 @@ def create(
     metadata: dict,
     image: Union[ImageType, Path] = None,
     outdir: Path = Path.cwd(),
-    session: Session = None,
+    session: Union[Session, sessionmaker] = None,
+    json: bool = True,
+    xml: bool = False,
     template_path: Path = None,
 ):
     """
@@ -238,9 +257,17 @@ def create(
     The *template_path* argument is passed to the write_xml() function, please see
     its documentation for details.
     """
+    # This arrangement of creating the output files first, ensures a clean
+    # db insert (otherwise the outfile-writing would need to happen in the
+    # context of the session).  However, if the db insert fails, the files
+    # already exist on disk.  Is that a problem?  Maybe that's fine?
     rp = make_raw_product(metadata, image, outdir)
 
-    write_xml(rp.label_dict(), outdir, template_path)
+    if json:
+        write_json(rp.asdict(), outdir)
+
+    if xml:
+        write_xml(rp.label_dict(), outdir, template_path)
 
     if session is not None:
         with session.begin() as s:
@@ -249,7 +276,15 @@ def create(
     return
 
 
-def check_bit_depth(pid: pds.VISID, bit_depth):
+def check_bit_depth(pid: pds.VISID, bit_depth: Union[int, str, np.dtype]):
+    """If the provided *bit_depth* is incompatible with *pid* a ValueError will be
+    raised.
+
+    The *bit_depth* will attempt to be converted to a valid integer value the bit
+    depth of the PDS TIFF file.  The *bit_depth* argument can be an integer, a
+    numpy dtype, and even a string compatible with the PDS4
+    Array_2D_Image/Element_Array/data_type attribute.
+    """
 
     bd = None
     if isinstance(bit_depth, int):
@@ -370,6 +405,16 @@ def version_info():
     return d
 
 
+def write_json(product: dict, outdir: Path = Path.cwd()):
+    """
+    Convenience function to write *product* as a JSON file in
+    *outdir*.
+    """
+    out_path = (outdir / product["product_id"]).with_suffix(".json")
+    with out_path.open("w") as f:
+        json.dump(product, f, indent=2, sort_keys=True)
+
+
 def write_tiff(pid: pds.VISID, image: ImageType, outdir: Path = Path.cwd()) -> Path:
     """
     Returns the path where a TIFF with a name based on *pid* and the array
@@ -380,7 +425,7 @@ def write_tiff(pid: pds.VISID, image: ImageType, outdir: Path = Path.cwd()) -> P
 
     desc = f"VIPER {pds.vis_instruments[pid.instrument]} {pid}"
 
-    logger.info(desc)
+    logger.debug(desc)
     outpath = (outdir / str(pid)).with_suffix(".tif")
 
     imsave(str(outpath), image, check_contrast=False, description=desc, metadata=None)
