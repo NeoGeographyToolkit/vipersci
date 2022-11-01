@@ -125,8 +125,9 @@
                 <img:onboard_compression_ratio py:if="compression_class == 'Lossy'">${onboard_compression_ratio}</img:onboard_compression_ratio>
 			</img:Onboard_Compression>
 			<img:Sampling>
-				<img:sample_bits>12</img:sample_bits>
-				<img:sample_bit_mask>2#0000111111111111</img:sample_bit_mask>
+				<img:original_sample_bits>12</img:original_sample_bits>
+                <img:sample_bits>${sample_bits}</img:sample_bits>
+				<img:sample_bit_mask>${sample_bit_mask}</img:sample_bit_mask>
 			</img:Sampling>
 			<img:Instrument_State>
 				<img:Device_Temperatures>

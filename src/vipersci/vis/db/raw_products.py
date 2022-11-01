@@ -635,6 +635,8 @@ class RawProduct(Base):
             luminaires={},
             compression_class=pid.compression_class(),
             onboard_compression_type="ICER",
+            sample_bits=12,
+            sample_bit_mask="2#0000111111111111",
         )
         for k, v in luminaire_names.items():
             d["luminaires"][k] = onoff[getattr(self, v)]
@@ -644,6 +646,8 @@ class RawProduct(Base):
                 processing_venue="Onboard",
                 processing_algorithm="Sign of the Laplacian of the Gaussian, SLoG",
             )
+            d["sample_bits"] = 8
+            d["sample_bit_mask"] = "2#11111111"
 
         d.update(self.asdict())
 
