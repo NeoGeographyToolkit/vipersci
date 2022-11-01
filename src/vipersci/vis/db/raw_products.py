@@ -284,14 +284,19 @@ class RawProduct(Base):
 
     def __init__(self, **kwargs):
 
+        if "lobt" in kwargs:
+            lobt_dt = datetime.fromtimestamp(kwargs["lobt"], tz=timezone.utc)
+
         if kwargs.keys() >= {"start_time", "lobt"}:
-            if (
-                datetime.fromtimestamp(kwargs["lobt"], tz=timezone.utc)
-                != kwargs["start_time"]
-            ):
+            if isinstance(kwargs["start_time"], str):
+                dt = fromisozformat(kwargs["start_time"])
+            else:
+                dt = kwargs["start_time"]
+
+            if lobt_dt != dt:
                 raise ValueError(
                     f"The start_time {kwargs['start_time']} does not equal "
-                    f"the lobt {kwargs['lobt']}"
+                    f"the lobt ({kwargs['lobt']}, {lobt_dt})"
                 )
 
         # Exposure duration is a hybrid_property that also sets the stop_time,
@@ -346,10 +351,10 @@ class RawProduct(Base):
         if pid:
 
             if "lobt" in kwargs:
-                if pid.datetime() != self.lobt:
+                if pid.datetime() != lobt_dt:
                     raise ValueError(
                         f"The product_id datetime ({pid.datetime()}) and the "
-                        f"provided lobt ({kwargs['lobt']}) disagree."
+                        f"provided lobt ({kwargs['lobt']}, {lobt_dt}) disagree."
                     )
 
             if "start_time" in kwargs and pid.datetime() != self.start_time:
@@ -374,7 +379,7 @@ class RawProduct(Base):
                         f"The product_id compression code ({pid.compression}) is not "
                         f"s, but onboard_compression_ratio is None and slog is true. "
                     )
-                elif not self.slog and pid.compression != "s":
+                elif not self.slog and pid.compression != "a":
                     raise ValueError(
                         f"The product_id compression code ({pid.compression}) is not "
                         f"a, but onboard_compression_ratio is None and slog is false. "
@@ -483,10 +488,10 @@ class RawProduct(Base):
                 raise ValueError(f"{key} must be tz aware.")
             dt = value
         elif isinstance(value, str):
-            try:
+            if value.endswith("Z"):
+                dt = fromisozformat(value)
+            else:
                 dt = datetime.fromisoformat(value)
-            except ValueError:
-                dt = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
         else:
             raise ValueError(
                 f"{key} must be a datetime or an ISO 8601 formatted string."
