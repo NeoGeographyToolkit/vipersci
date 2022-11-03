@@ -30,7 +30,6 @@ jobs:
         sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
         sudo apt-get update
         sudo apt-get install gdal-bin libgdal-dev
-        pip install GDAL
         python -m pip install pytest flake8
         python -m pip install pytest-cov
         python -m pip install -r requirements.txt
