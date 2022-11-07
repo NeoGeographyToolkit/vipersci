@@ -477,7 +477,8 @@ def generate_area_bin_heatmap(
         x_coords: array of x coordinates. Should be projected
         y_coords: array of y coordinates. Should be projected
         values: array of scalar values at each provided location
-        crs: coordinate reference system used to project the locations to cartesian coordinates
+        crs: coordinate reference system used to project the locations to cartesian
+            coordinates
         bin_size: size of square bins in meters
 
     Returns:
