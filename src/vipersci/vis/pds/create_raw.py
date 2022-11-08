@@ -40,7 +40,6 @@ from importlib import resources
 import io
 import json
 import logging
-import sys
 from typing import Union
 from pathlib import Path
 
@@ -455,7 +454,3 @@ def write_xml(product: dict, outdir: Path = Path.cwd(), template_path: Path = No
     out_path = (outdir / product["product_id"]).with_suffix(".xml")
     out_path.write_text(stream.render())
     return
-
-
-if __name__ == "__main__":
-    sys.exit(main())  # pragma: no cover

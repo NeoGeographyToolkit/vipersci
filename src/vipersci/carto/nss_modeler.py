@@ -29,7 +29,6 @@ map has values for Detector 2, and produces Burial Depth and WEH% maps.
 import argparse
 import logging
 from pathlib import Path
-import sys
 
 import numpy as np
 import rasterio
@@ -97,7 +96,3 @@ def write_tif(path: Path, ending: str, arr: np.array, kwds: dict):
     with rasterio.open(path.with_name(path.name + ending), "w", **kwds) as dst_dataset:
         dst_dataset.write(arr, 1)
     return
-
-
-if __name__ == "__main__":
-    sys.exit(main())

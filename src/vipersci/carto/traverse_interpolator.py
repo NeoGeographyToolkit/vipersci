@@ -29,7 +29,6 @@ import argparse
 import csv
 import logging
 from pathlib import Path
-import sys
 
 import geopandas as gpd
 from shapely.geometry import Point
@@ -110,7 +109,3 @@ def interval_count(start, stop, step):
     # it is.
     total_time = stop - start
     return int(total_time / step)
-
-
-if __name__ == "__main__":
-    sys.exit(main())

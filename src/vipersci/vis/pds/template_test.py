@@ -30,7 +30,6 @@ out the template.
 import argparse
 import json
 import logging
-import sys
 from pathlib import Path
 
 # import genshi
@@ -64,7 +63,3 @@ def main():
     tmpl = MarkupTemplate(args.input.read_text())
     stream = tmpl.generate(**info)
     args.output.write_text(stream.render())
-
-
-if __name__ == "__main__":
-    sys.exit(main())  # pragma: no cover

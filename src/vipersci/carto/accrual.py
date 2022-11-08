@@ -32,7 +32,6 @@ more.
 
 import argparse
 from collections import Counter
-import sys
 
 import geopandas as gp
 from shapely.geometry import LineString, box
@@ -119,7 +118,3 @@ def accumulate(
         counter[area.category] += path.intersection(area.geometry).length
 
     return counter
-
-
-if __name__ == "__main__":
-    sys.exit(main())

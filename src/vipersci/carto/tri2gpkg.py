@@ -314,7 +314,3 @@ def replace_with(replacement_val, replacement_check, value):
 #         ]
 #     )
 #     return (f"POLYGON Z (({c_list}))")
-
-
-if __name__ == "__main__":
-    main()
