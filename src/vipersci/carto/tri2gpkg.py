@@ -89,7 +89,7 @@ def arg_parser():
     parser.add_argument(
         "--s_srs",
         default="+proj=cart +a=1737400 +b=1737400",
-        help="The source CRS or SRS of the .tri10 data.",
+        help="The source CRS or SRS of the .tri10 data. Default: %(default)s"
     )
     parser.add_argument(
         "--t_srs",
@@ -101,17 +101,18 @@ def arg_parser():
         "--value_names",
         default="Depth (m)",
         help="This text will be used as the title of the data value field in "
-        "the output file.  If there are commas, this text is split on "
-        "the commas and whitespace stripped, to produce a list of value "
-        "fields in the output.",
+             "the output file.  If there are commas, this text is split on "
+             "the commas and whitespace stripped, to produce a list of value "
+             "fields in the output. Default: %(default)s"
     )
     parser.add_argument(
         "--value_columns",
         default="9",
         help="This should be a comma-separated list of integers (or just one) "
-        "specifying which columns from the .tri file get the names from "
-        "-v.  The first 9 columns (zero is the first) have facet "
-        "coordinates, so typically this value (or list) starts at 9.",
+             "specifying which columns from the .tri file get the names from "
+             "-v.  The first 9 columns (zero is the first) have facet "
+             "coordinates, so typically this value (or list) starts at 9. "
+             "Default: %(default)s"
     )
     parser.add_argument(
         "--value_file",
