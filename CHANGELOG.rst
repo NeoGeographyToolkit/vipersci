@@ -36,6 +36,7 @@ Added
 - vis.db.raw_products.RawProduct.from_xml() function.
 - vis.db.raw_products.RawProduct.asdict() function.
 - vis.pds.create_raw.check_bit_depth() function.
+- vis.db.create_vis_dbs convenience program to add empty tables to database.
 
 Changed
 ^^^^^^^
