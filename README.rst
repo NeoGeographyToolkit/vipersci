@@ -8,6 +8,9 @@ vipersci
 .. image:: https://codecov.io/github/NeoGeographyToolkit/vipersci/branch/main/graph/badge.svg?token=5U68VOAHGG 
  :target: https://codecov.io/github/NeoGeographyToolkit/vipersci
 
+.. image:: https://img.shields.io/pypi/v/vipersci.svg
+        :target: https://pypi.python.org/pypi/vipersci
+
 This vipersci package is software to support the activities of the
 Volatiles Investigating Polar Exploration Rover (VIPER) Science Team.
 
@@ -53,7 +56,7 @@ contributing guide for details on how to help and setup a development
 environment.
 
 Credits
-=======
+-------
 
 vipersci was developed in the open at NASA's Ames Research Center.
 
@@ -63,7 +66,7 @@ file for a complete list of developers.
 
 
 License
-=======
+-------
 
 See LICENSE file for the full text of the license that applies to vipersci.
 

@@ -33,13 +33,13 @@ Unreleased
 ------------------
 
 Added
-+++++
+^^^^^
 - Data Simulators for NSS, NIRVSS, and MSolo
 - Lots of material to enaable PDS archiving of VIS data.
 - Added GitHub workflow to perform Black format checking
 
 Changed
-+++++++
+^^^^^^^
 - Many updates to heatmap.py
 - Applied Black formatting to all code in the repo.
 - Modified Python testing workflow to actually work.
