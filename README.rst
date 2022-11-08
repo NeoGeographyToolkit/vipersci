@@ -2,6 +2,12 @@
 vipersci
 ========
 
+.. image:: https://github.com/NeoGeographyToolkit/vipersci/actions/workflows/python-test.yml/badge.svg
+        :target: https://github.com/NeoGeographyToolkit/vipersci/actions
+
+.. image:: https://codecov.io/github/NeoGeographyToolkit/vipersci/branch/main/graph/badge.svg?token=5U68VOAHGG 
+ :target: https://codecov.io/github/NeoGeographyToolkit/vipersci
+
 This vipersci package is software to support the activities of the
 Volatiles Investigating Polar Exploration Rover (VIPER) Science Team.
 
@@ -29,12 +35,6 @@ as much as is possible.
 
 ..    * Documentation: https://vipersci.readthedocs.io.
 ..    * `PlanetaryPy`_ Affiliate Package.
-
-
-Features
---------
-
-* TODO
 
 
 Installation

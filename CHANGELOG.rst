@@ -28,6 +28,10 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+
+0.2.0 (2022-11-07)
+------------------
+
 Added
 +++++
 - Data Simulators for NSS, NIRVSS, and MSolo
