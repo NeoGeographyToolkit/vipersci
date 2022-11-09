@@ -54,6 +54,7 @@ Changed
 
 Fixed
 ^^^^^
+- carto.tri2gpkg.replace_with() now correctly returns a float value in all circumstances.
 - pds.pid.VIPERID.datetime() now properly returns datetimes with a UTC timezone.
 - vis.db.raw_products.RawProduct.label_dict() now correctly sets sample_bits and
   sample_bit_mask if the image is a SLoG image.

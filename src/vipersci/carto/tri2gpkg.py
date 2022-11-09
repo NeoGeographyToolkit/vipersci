@@ -286,7 +286,7 @@ def replace_with(replacement_val, replacement_check, value):
     if float(value) == replacement_check:
         return replacement_val
     else:
-        return value
+        return float(value)
 
 
 # def get_wkt_value(transformer, tokens: list):
