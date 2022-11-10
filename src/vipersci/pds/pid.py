@@ -224,7 +224,8 @@ class VIPERID:
         if len(self.time) == 9:
             fmt += "%f"
             time_string += "000"
-        return datetime.datetime.strptime(time_string, fmt)
+        dt = datetime.datetime.strptime(time_string, fmt)
+        return dt.replace(tzinfo=datetime.timezone.utc)
 
 
 class VISID(VIPERID):
@@ -329,3 +330,10 @@ class VISID(VIPERID):
             return vis_instruments[vis_instrument_aliases[name.casefold()]]
         else:
             raise ValueError(f"No instrument name based on {name} could be found.")
+
+    def compression_class(self):
+        """Returns text value for the PDS onboard_compression_class."""
+        if self.compression == "a" or self.compression == "s":
+            return "Lossless"
+        else:
+            return "Lossy"

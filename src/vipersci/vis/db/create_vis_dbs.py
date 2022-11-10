@@ -1,11 +1,13 @@
-"""
-Test creation of PDS labels.
+#!/usr/bin/env python
+# coding: utf-8
 
-Takes a JSON file and a Genshi XML template, and uses the JSON file to fill
-out the template.
+"""Program to instantiate all the VIS tables in a database.
+
+If a table already exists, no CREATE TABLE statement will be issued to
+the database.
 """
 
-# Copyright 2021-2022, United States Government as represented by the
+# Copyright 2022, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -28,15 +30,17 @@ out the template.
 # top level of this library.
 
 import argparse
-import json
 import logging
-from pathlib import Path
 
-# import genshi
-# from genshi.template import TemplateLoader
-from genshi.template import MarkupTemplate
+from sqlalchemy import create_engine, inspect
 
 from vipersci import util
+
+from vipersci.vis.db.raw_products import RawProduct
+
+# As new tables are defined, their Classes must be imported above, and
+# then also added to this tuple:
+tables = (RawProduct,)
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +49,12 @@ def arg_parser():
     parser = argparse.ArgumentParser(
         description=__doc__, parents=[util.parent_parser()]
     )
-    parser.add_argument("-j", "--json", type=Path, help="Path to .json file to load.")
-    parser.add_argument("input", type=Path, help="Genshi XML file template.")
-    parser.add_argument("output", type=Path, help="Output XML label.")
+    parser.add_argument(
+        "-d",
+        "--dburl",
+        default="postgresql://postgres:NotTheDefault@localhost/visdb",
+        help="Something like  %(default)s",
+    )
     return parser
 
 
@@ -55,11 +62,15 @@ def main():
     args = arg_parser().parse_args()
     util.set_logger(args.verbose)
 
-    with open(args.json, "r") as f:
-        info = json.load(f)
+    engine = create_engine(args.dburl)
 
-    # loader = TemplateLoader()
-    # tmpl = loader.load(str(args.input))
-    tmpl = MarkupTemplate(args.input.read_text())
-    stream = tmpl.generate(**info)
-    args.output.write_text(stream.render())
+    # Create tables
+    for t in tables:
+        logger.info(f"Attempting to create {t.__tablename__}.")
+        t.metadata.create_all(engine)
+
+    # Check table names exists via inspect
+    ins = inspect(engine)
+    print("The following tables are now present in the database:")
+    for t in ins.get_table_names():
+        print(f"  {t}")

@@ -27,7 +27,6 @@ buffered versions of the regions.
 # top level of this library.
 
 import argparse
-import sys
 
 import geopandas as gp
 from shapely.geometry import Polygon, MultiPolygon
@@ -117,7 +116,3 @@ def clean(geometry):
 
     else:
         return geometry
-
-
-if __name__ == "__main__":
-    sys.exit(main())

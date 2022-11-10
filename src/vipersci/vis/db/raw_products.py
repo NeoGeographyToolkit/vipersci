@@ -27,9 +27,8 @@
 
 from datetime import datetime, timedelta, timezone
 from warnings import warn
+import xml.etree.ElementTree as ET
 
-from sqlalchemy import orm
-from sqlalchemy.orm import synonym, validates
 from sqlalchemy import (
     Boolean,
     Column,
@@ -40,13 +39,26 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import declarative_base, synonym, validates
 
 from vipersci.pds.pid import VISID, vis_instruments, vis_compression
-from vipersci.pds.datetime import isozformat
+from vipersci.pds.xml import ns
+from vipersci.pds.datetime import fromisozformat, isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
 
 
-Base = orm.declarative_base()
+Base = declarative_base()
+
+luminaire_names = {
+    "NavLight Left": "navlight_left_on",
+    "NavLight Right": "navlight_right_on",
+    "HazLight Aft Port": "hazlight_aft_port_on",
+    "HazLight Aft Starboard": "hazlight_aft_starboard_on",
+    "HazLight Center Port": "hazlight_center_port_on",
+    "HazLight Center Starboard": "hazlight_center_starboard_on",
+    "HazLight Fore Port": "hazlight_fore_port_on",
+    "HazLight Fore Starboard": "hazlight_fore_starboard_on",
+}
 
 
 class RawProduct(Base):
@@ -111,6 +123,11 @@ class RawProduct(Base):
         nullable=False,
         doc="The time at which file_name was created.",
     )
+    file_md5_checksum = Column(
+        String,
+        nullable=False,
+        doc="The md5 checksum of the file described by file_path.",
+    )
     file_path = Column(
         String,
         nullable=False,
@@ -159,11 +176,6 @@ class RawProduct(Base):
     mcam_id = Column(
         Integer, nullable=False, doc="The MCAM_ID from the MCSE Image Header."
     )
-    md5_checksum = Column(
-        String,
-        nullable=False,
-        doc="The md5 checksum of the file described by file_path.",
-    )
     mission_phase = Column(
         String,
         nullable=False,
@@ -179,17 +191,12 @@ class RawProduct(Base):
     )
     onboard_compression_ratio = Column(
         Float,
-        nullable=False,
+        doc="The PDS img:Onboard_Compression parameter.  Will be NULL for "
+        "lossless compression or uncompressed images."
         # This is a PDS img:Onboard_Compression parameter which is the ratio
         # of the size, in bytes, of the original uncompressed data object
         # to its compressed size.  This operation is done by RFSW, but not
         # sure where to get this parameter from ...?
-    )
-    onboard_compression_type = Column(
-        String,
-        nullable=False,
-        # This is the PDS img:Onboard_Compression parameter.  For us this
-        # is going to be ICER, Lossless, or rarely None.
     )
     output_image_mask = Column(
         Integer,
@@ -205,7 +212,9 @@ class RawProduct(Base):
     )
     outputImageMask = synonym("output_image_mask")
     outputImageType = synonym("output_image_type")
-    _pid = Column("product_id", String, nullable=False, doc="The PDS Product ID.")
+    _pid = Column(
+        "product_id", String, nullable=False, unique=True, doc="The PDS Product ID."
+    )
     padding = Column(
         Integer,
         nullable=False,
@@ -238,9 +247,13 @@ class RawProduct(Base):
         nullable=False,
         doc="The imageWidth parameter from the Yamcs imageHeader.",
     )
+    slog = Column(
+        Boolean,
+        nullable=False,
+        doc="Indicates whether onboard SLoG processing occurred.",
+    )
     software_name = Column(String, nullable=False)
     software_version = Column(String, nullable=False)
-    software_type = Column(String, nullable=False)
     software_program_name = Column(String, nullable=False)
     start_time = Column(DateTime(timezone=True), nullable=False)
     stereo = Column(
@@ -271,14 +284,19 @@ class RawProduct(Base):
 
     def __init__(self, **kwargs):
 
+        if "lobt" in kwargs:
+            lobt_dt = datetime.fromtimestamp(kwargs["lobt"], tz=timezone.utc)
+
         if kwargs.keys() >= {"start_time", "lobt"}:
-            if (
-                datetime.fromtimestamp(kwargs["lobt"], tz=timezone.utc)
-                != kwargs["start_time"]
-            ):
+            if isinstance(kwargs["start_time"], str):
+                dt = fromisozformat(kwargs["start_time"])
+            else:
+                dt = kwargs["start_time"]
+
+            if lobt_dt != dt:
                 raise ValueError(
                     f"The start_time {kwargs['start_time']} does not equal "
-                    f"the lobt {kwargs['lobt']}"
+                    f"the lobt ({kwargs['lobt']}, {lobt_dt})"
                 )
 
         # Exposure duration is a hybrid_property that also sets the stop_time,
@@ -325,14 +343,18 @@ class RawProduct(Base):
 
             self.instrument_name = VISID.instrument_name(maybe_name)
 
+        # Derive slog, if possible.
+        if "slog" not in kwargs and "yamcs_name" in kwargs:
+            self.slog = self.yamcs_name.endswith("slog")
+
         # Ensure product_id consistency
         if pid:
 
             if "lobt" in kwargs:
-                if pid.datetime() != self.lobt:
+                if pid.datetime() != lobt_dt:
                     raise ValueError(
                         f"The product_id datetime ({pid.datetime()}) and the "
-                        f"provided lobt ({kwargs['lobt']}) disagree."
+                        f"provided lobt ({kwargs['lobt']}, {lobt_dt}) disagree."
                     )
 
             if "start_time" in kwargs and pid.datetime() != self.start_time:
@@ -351,26 +373,31 @@ class RawProduct(Base):
                     f"({self.instrument_name}) disagree."
                 )
 
-            if (
-                self.onboard_compression_ratio is not None
-                and vis_compression[pid.compression] != self.onboard_compression_ratio
-            ):
+            if self.onboard_compression_ratio is None:
+                if self.slog and pid.compression != "s":
+                    raise ValueError(
+                        f"The product_id compression code ({pid.compression}) is not "
+                        f"s, but onboard_compression_ratio is None and slog is true. "
+                    )
+                elif not self.slog and pid.compression != "a":
+                    raise ValueError(
+                        f"The product_id compression code ({pid.compression}) is not "
+                        f"a, but onboard_compression_ratio is None and slog is false. "
+                    )
+            elif vis_compression[pid.compression] != self.onboard_compression_ratio:
                 raise ValueError(
                     f"The product_id compression code ({pid.compression}) and "
                     f"the provided onboard_compression_ratio "
                     f"({self.onboard_compression_ratio}) disagree."
                 )
-
         elif (
             self.start_time is not None
             and self.instrument_name is not None
-            and self.onboard_compression_ratio is not None
+            and self.slog is not None
         ):
+            c = "s" if self.slog else self.onboard_compression_ratio
             pid = VISID(
-                self.start_time.date(),
-                self.start_time.time(),
-                self.instrument_name,
-                self.onboard_compression_ratio,
+                self.start_time.date(), self.start_time.time(), self.instrument_name, c
             )
         else:
             got = dict()
@@ -378,7 +405,7 @@ class RawProduct(Base):
                 "product_id",
                 "start_time",
                 "instrument_name",
-                "onboard_compression_ratio",
+                "slog",
             ):
                 v = getattr(self, k)
                 if v is not None:
@@ -386,7 +413,7 @@ class RawProduct(Base):
 
             raise ValueError(
                 "Either product_id must be given, or each of start_time, "
-                f"instrument_name, and onboard_compression_ratio. Got: {got}"
+                f"instrument_name, and slog. Got: {got}"
             )
 
         self._pid = str(pid)
@@ -461,25 +488,16 @@ class RawProduct(Base):
                 raise ValueError(f"{key} must be tz aware.")
             dt = value
         elif isinstance(value, str):
-            try:
+            if value.endswith("Z"):
+                dt = fromisozformat(value)
+            else:
                 dt = datetime.fromisoformat(value)
-            except ValueError:
-                dt = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
         else:
             raise ValueError(
                 f"{key} must be a datetime or an ISO 8601 formatted string."
             )
 
         return dt.astimezone(timezone.utc)
-
-    @validates("onboard_compression_type")
-    def validate_onboard_compression_type(self, key, value: str):
-        s = {"ICER", "Lossless", "None"}
-        if value not in s:
-            raise ValueError(
-                f"onboard_compression_type must be one of {s}, but was {value}."
-            )
-        return value
 
     @validates("purpose")
     def validate_purpose(self, key, value: str):
@@ -496,11 +514,114 @@ class RawProduct(Base):
             raise ValueError(f"purpose must be one of {s}")
         return value
 
+    def asdict(self):
+        d = {}
+
+        for c in self.__table__.columns:
+            if isinstance(getattr(self, c.name), datetime):
+                d[c.name] = isozformat(getattr(self, c.name))
+            else:
+                d[c.name] = getattr(self, c.name)
+
+        d.update(self.labelmeta)
+
+        return d
+
+    @classmethod
+    def from_xml(cls, text: str):
+        """
+        Returns an instantiated RawProduct object from parsing the provided *text*
+        as XML.
+        """
+        d = {}
+
+        root = ET.fromstring(text)
+        lid = root.find(
+            "./pds:Identification_Area/pds:logical_identifier", ns
+        ).text.split(":")
+        if lid[3] != "viper_vis":
+            raise ValueError(
+                f"XML text has a logical_identifier which is not viper_vis: {lid[3]}"
+            )
+
+        if lid[4] != "raw":
+            raise ValueError(
+                f"XML text has a logical_identifier which is not raw: {lid[4]}"
+            )
+        d["product_id"] = lid[5]
+
+        d["auto_exposure"] = (
+            True if root.find(".//img:exposure_type", ns).text == "Auto" else False
+        )
+        d["bad_pixel_table_id"] = int(
+            root.find(".//img:bad_pixel_replacement_table_id", ns).text
+        )
+        exp_dur = root.find(".//img:exposure_duration", ns)
+        if exp_dur.get("unit") != "microseconds":
+            raise ValueError(
+                "The img:exposure_duration element does not have units of "
+                f"microseconds, has {exp_dur.get('unit')}"
+            )
+        d["exposure_duration"] = int(exp_dur.text)
+        d["file_creation_datetime"] = fromisozformat(
+            root.find(".//pds:creation_date_time", ns).text
+        )
+        d["file_path"] = root.find(".//pds:file_name", ns).text
+
+        for k, v in luminaire_names.items():
+            light = root.find(f".//img:LED_Illumination_Source[img:name='{k}']", ns)
+            d[v] = (
+                True if light.find("img:illumination_state", ns).text == "On" else False
+            )
+
+        osc = root.find(".//pds:Observing_System_Component[pds:type='Instrument']", ns)
+        d["instrument_name"] = osc.find("pds:name", ns).text
+
+        temp = root.find(".//img:temperature_value", ns)
+        if temp.get("unit") != "K":
+            raise ValueError(
+                "The img:temperature_value element does not have units of K, has "
+                f"{temp.get('unit')}"
+            )
+        d["instrument_temperature"] = float(temp.text)
+
+        aa = root.find(".//pds:Axis_Array[pds:axis_name='Line']", ns)
+        d["lines"] = int(aa.find("./pds:elements", ns).text)
+        d["file_md5_checksum"] = root.find(".//pds:md5_checksum", ns).text
+        d["mission_phase"] = root.find(".//msn:mission_phase_name", ns).text
+        d["offset"] = root.find(".//img:analog_offset", ns).text
+
+        ocr = root.find(".//img:onboard_compression_ratio", ns)
+        if ocr is not None:
+            d["onboard_compression_ratio"] = float(ocr.text)
+
+        d["purpose"] = root.find(".//pds:purpose", ns).text
+
+        aa = root.find(".//pds:Axis_Array[pds:axis_name='Sample']", ns)
+        d["samples"] = int(aa.find("./pds:elements", ns).text)
+
+        sw = root.find(".//proc:Software", ns)
+        d["software_name"] = sw.find("./proc:name", ns).text
+        d["software_version"] = sw.find("./proc:software_version_id", ns).text
+        d["software_program_name"] = sw.find(
+            "./proc:Software_Program/proc:name", ns
+        ).text
+
+        # Start times must be on the whole second, which is why we don't use
+        # fromisozformat() here.
+        d["start_time"] = datetime.strptime(
+            root.find(".//pds:start_date_time", ns).text, "%Y-%m-%dT%H:%M:%SZ"
+        ).replace(tzinfo=timezone.utc)
+
+        d["stop_time"] = fromisozformat(root.find(".//pds:stop_date_time", ns).text)
+
+        return cls(**d)
+
     def label_dict(self):
         """Returns a dictionary suitable for label generation."""
         _inst = self.instrument_name.lower().replace(" ", "_")
         _sclid = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
-        onoff = {True: "On", False: "Off", None: "Unknown"}
+        onoff = {True: "On", False: "Off", None: None}
         pid = VISID(self.product_id)
         d = dict(
             lid=f"urn:nasa:pds:viper_vis:raw:{self.product_id}",
@@ -509,26 +630,26 @@ class RawProduct(Base):
             inst_lid=f"{_sclid}.{_inst}",
             gain_number=(self.adc_gain * self.pga_gain),
             exposure_type="Auto" if self.auto_exposure else "Manual",
+            image_filter=None,
             led_wavelength=453,  # nm
-            luminaires={
-                "NavLight Left": onoff[self.navlight_left_on],
-                "NavLight Right": onoff[self.navlight_right_on],
-                "HazLight Aft Port": onoff[self.hazlight_aft_port_on],
-                "HazLight Aft Starboard": onoff[self.hazlight_aft_starboard_on],
-                "HazLight Center Port": onoff[self.hazlight_center_port_on],
-                "HazLight Center Starboard": onoff[self.hazlight_center_starboard_on],
-                "HazLight Fore Port": onoff[self.hazlight_fore_port_on],
-                "HazLight Fore Starboard": onoff[self.hazlight_fore_starboard_on],
-            },
-            compression_class="Lossless" if pid.compression == "a" else "Lossy",
+            luminaires={},
+            compression_class=pid.compression_class(),
+            onboard_compression_type="ICER",
+            sample_bits=12,
+            sample_bit_mask="2#0000111111111111",
         )
-        for c in self.__table__.columns:
-            if isinstance(getattr(self, c.name), datetime):
-                d[c.name] = isozformat(getattr(self, c.name))
-            else:
-                d[c.name] = getattr(self, c.name)
+        for k, v in luminaire_names.items():
+            d["luminaires"][k] = onoff[getattr(self, v)]
 
-        d.update(self.labelmeta)
+        if self.slog:
+            d["image_filter"] = dict(
+                processing_venue="Onboard",
+                processing_algorithm="Sign of the Laplacian of the Gaussian, SLoG",
+            )
+            d["sample_bits"] = 8
+            d["sample_bit_mask"] = "2#11111111"
+
+        d.update(self.asdict())
 
         return d
 

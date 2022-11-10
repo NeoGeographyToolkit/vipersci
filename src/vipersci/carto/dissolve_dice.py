@@ -28,7 +28,6 @@ geometry of the different ISR types.
 
 import argparse
 import logging
-import sys
 
 import geopandas as gp
 import pandas as pd
@@ -84,7 +83,3 @@ def main():
     print("Dissolved geometries.")
 
     dissolved.to_file(args.out, driver="GPKG")
-
-
-if __name__ == "__main__":
-    sys.exit(main())

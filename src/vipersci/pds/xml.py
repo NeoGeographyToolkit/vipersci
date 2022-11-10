@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-"""This module has tests for the pds.datetime functions."""
+"""This module contains functions and data structures to enable
+processing of PDS4 XML.
+"""
 
 # Copyright 2022, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
@@ -23,23 +25,16 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-import datetime
-import unittest
+im_version = "1.18.0.0"
 
-from vipersci.pds import datetime as pdsdt
+dd = dict(
+    pds="PDS4_PDS_1I00",
+    disp="PDS4_DISP_1I00_1510",
+    img="PDS4_IMG_1I00_1860",
+    msn="PDS4_MSN_1I00_1300",
+    proc="PDS4_PROC_1I00_1210",
+)
 
-
-class TestIsoZ(unittest.TestCase):
-    def test_fromisozformat(self):
-        dt = datetime.datetime(2022, 10, 1, 13, 20, 0, tzinfo=datetime.timezone.utc)
-        self.assertEqual(dt, pdsdt.fromisozformat("2022-10-01T13:20:00Z"))
-
-        self.assertRaises(ValueError, pdsdt.fromisozformat, "2022-10-01T13:20:00")
-
-    def test_isozformat(self):
-        dt = datetime.datetime(2022, 10, 1, 13, 20, 0, tzinfo=datetime.timezone.utc)
-        self.assertEqual(pdsdt.isozformat(dt), "2022-10-01T13:20:00Z")
-
-        no_tz = dt.replace(tzinfo=None)
-
-        self.assertRaises(ValueError, pdsdt.isozformat, no_tz)
+ns = {}
+for k in dd.keys():
+    ns[k] = f"http://pds.nasa.gov/pds4/{k}/v1"
