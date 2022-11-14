@@ -330,6 +330,7 @@ def write_geotiff_rasterio(
     source_crs=None,
     nodata_value=0,
     profile={},
+    compress="deflate",
 ) -> Dict[str, Any]:
     """
     Writes 2D data to a geotiff file
@@ -346,6 +347,8 @@ def write_geotiff_rasterio(
         profile (dict): Additional profile data to use with rasterio.
             Will be merged / updated with basic information about the raster itself.
             Defaults to an empty dictionary (no additional data).
+        compress: Compression method to use if not specified in profile.  
+            Any value supported by GDAL - defaults to "deflate"
     Returns
         A dictionary that mimics the information provided by gdalinfo
     """
@@ -366,6 +369,9 @@ def write_geotiff_rasterio(
             "nodata": nodata_value,
         }
     )
+
+    if not "compress" in profile:
+        unified_profile.update(compress=compress)
 
     with rasterio.open(out_filepath, "w", **unified_profile) as raster:
         for i, d in enumerate(data, start=1):
