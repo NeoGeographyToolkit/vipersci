@@ -347,7 +347,7 @@ def write_geotiff_rasterio(
         profile (dict): Additional profile data to use with rasterio.
             Will be merged / updated with basic information about the raster itself.
             Defaults to an empty dictionary (no additional data).
-        compress: Compression method to use if not specified in profile.  
+        compress: Compression method to use if not specified in profile.
             Any value supported by GDAL - defaults to "deflate"
     Returns
         A dictionary that mimics the information provided by gdalinfo
