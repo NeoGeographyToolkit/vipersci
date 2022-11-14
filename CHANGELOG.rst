@@ -58,6 +58,8 @@ Fixed
 - pds.pid.VIPERID.datetime() now properly returns datetimes with a UTC timezone.
 - vis.db.raw_products.RawProduct.label_dict() now correctly sets sample_bits and
   sample_bit_mask if the image is a SLoG image.
+- Added __init__.py files to all modules (some modules did not get incorporated into the
+  PyPI package because they did not have __init__.py files.
 
 Removed
 ^^^^^^^
