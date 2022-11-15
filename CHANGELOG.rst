@@ -28,6 +28,16 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+Added
+^^^^^
+- Makefile now has a "list/twine" option to hopefully help me remember to test that.
+
+Fixed
+^^^^^
+- CHANGELOG.rst had an unescaped underbar which caused trouble with twine upload.
+- setup.cfg arrangement in install_requires passed local testing, but not GitHub testing,
+  have now fixed.
+
 
 0.3.0 (2022-11-15)
 ------------------
