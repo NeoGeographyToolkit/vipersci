@@ -28,6 +28,10 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+
+0.3.0 (2022-11-15)
+------------------
+
 Added
 ^^^^^
 - pds.datetime.fromisozformat() function.
@@ -61,6 +65,7 @@ Fixed
   sample_bit_mask if the image is a SLoG image.
 - Added __init__.py files to all modules (some modules did not get incorporated into the
   PyPI package because they did not have __init__.py files.
+- The setup.cfg now properly includes requirements that vipersci needs.
 
 Removed
 ^^^^^^^
