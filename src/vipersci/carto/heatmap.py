@@ -370,7 +370,7 @@ def write_geotiff_rasterio(
         }
     )
 
-    if not "compress" in profile:
+    if "compress" not in profile:
         unified_profile.update(compress=compress)
 
     with rasterio.open(out_filepath, "w", **unified_profile) as raster:
