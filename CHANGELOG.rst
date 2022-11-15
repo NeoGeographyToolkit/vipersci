@@ -49,7 +49,7 @@ Changed
   validate_datetime_asutc().
 - vis.db.raw_products.RawProduct product_id column is now unique in database.
 - vis.db.raw_products.RawProduct md5_checksum changed to file_md4_checksum to
-  clearly associate it with the other properties that begin with "file_".
+  clearly associate it with the other properties that begin with "file\_".
 - vis.pds.create_raw.tiff_info() no longer raises an error if a bit depth other than 16
   is provided.
 - vis.pds.create_raw now creates .JSON output files by default instead of XML PDS4
