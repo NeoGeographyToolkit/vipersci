@@ -50,6 +50,7 @@ Changed
   is provided.
 - vis.pds.create_raw now creates .JSON output files by default instead of XML PDS4
   labels, but XML files can still be made.
+- carto.heatmap.write_geotiff_rasterio now supports compressed output and defaults to "deflate"
 
 
 Fixed
