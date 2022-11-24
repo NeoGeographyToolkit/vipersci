@@ -1,10 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-"""Program to instantiate all the VIS tables in a database.
-
-If a table already exists, no CREATE TABLE statement will be issued to
-the database.
+"""Produces various statistics from images.
 """
 
 # Copyright 2022, United States Government as represented by the
@@ -31,22 +25,20 @@ the database.
 
 import argparse
 import logging
+from typing import Union
+from pathlib import Path
+from pprint import pprint
 
-from sqlalchemy import create_engine, inspect
+import numpy as np
+import numpy.typing as npt
+from skimage.io import imread
+from skimage import measure
 
 from vipersci import util
 
-from vipersci.vis.db.raw_products import RawProduct
-from vipersci.vis.db.raw_stats import RawStats
-
-# As new tables are defined, their Classes must be imported above, and
-# then also added to this tuple:
-tables = (
-    RawProduct,
-    RawStats,
-)
-
 logger = logging.getLogger(__name__)
+
+ImageType = Union[npt.NDArray[np.uint16], npt.NDArray[np.uint8]]
 
 
 def arg_parser():
@@ -54,10 +46,9 @@ def arg_parser():
         description=__doc__, parents=[util.parent_parser()]
     )
     parser.add_argument(
-        "-d",
-        "--dburl",
-        default="postgresql://postgres:NotTheDefault@localhost/visdb",
-        help="Something like  %(default)s",
+        "image",
+        type=Path,
+        help="Path to image file which will be read and statistics computed.",
     )
     return parser
 
@@ -66,15 +57,18 @@ def main():
     args = arg_parser().parse_args()
     util.set_logger(args.verbose)
 
-    engine = create_engine(args.dburl)
+    image = imread(str(args.image))
 
-    # Create tables
-    for t in tables:
-        logger.info(f"Attempting to create {t.__tablename__}.")
-        t.metadata.create_all(engine)
+    pprint(compute(image))
 
-    # Check table names exists via inspect
-    ins = inspect(engine)
-    print("The following tables are now present in the database:")
-    for t in ins.get_table_names():
-        print(f"  {t}")
+    return
+
+
+def compute(image: ImageType) -> dict:
+    d = {
+        "blur": measure.blur_effect(image),
+        "mean": np.mean(image),
+        "std": np.std(image),
+    }
+
+    return d
