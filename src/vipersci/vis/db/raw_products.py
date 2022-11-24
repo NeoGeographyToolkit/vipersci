@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""Defines the VIS Raw_Product table using the SQLAlchemy ORM."""
+"""Defines the VIS raw_products table using the SQLAlchemy ORM."""
 
 # Copyright 2022, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
@@ -62,7 +62,7 @@ luminaire_names = {
 
 
 class RawProduct(Base):
-    """An object to represent rows in the Raw_Products table for VIS."""
+    """An object to represent rows in the raw_products table for VIS."""
 
     # This class is derived from SQLAlchemy's orm.declarative_base()
     # which means that it has a variety of class properties that are
