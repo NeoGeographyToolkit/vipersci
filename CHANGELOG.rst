@@ -30,7 +30,7 @@ Unreleased
 
 Added
 ^^^^^
-- Makefile now has a "list/twine" option to hopefully help me remember to test that.
+- Makefile now has a "lint/twine" option to hopefully help me remember to test that.
 
 Fixed
 ^^^^^
