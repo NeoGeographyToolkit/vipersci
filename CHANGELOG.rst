@@ -31,6 +31,12 @@ Unreleased
 Added
 ^^^^^
 - Makefile now has a "lint/twine" option to hopefully help me remember to test that.
+- VIS image_statistics.py and raw_stats.py modules.
+- A variety of unit tests.
+
+Changed
+^^^^^^^
+- Flattened test directory structure.
 
 Fixed
 ^^^^^
