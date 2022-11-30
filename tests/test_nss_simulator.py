@@ -23,13 +23,20 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
+import argparse
 from pathlib import Path
 import unittest
 from unittest.mock import patch
 
 import numpy as np
 
-from vipersci import nss
+from vipersci.carto import nss_simulator as ns
+
+
+class TestParser(unittest.TestCase):
+    def test_parser(self):
+        parser = ns.arg_parser()
+        self.assertIsInstance(parser, argparse.ArgumentParser)
 
 
 class TestLocationSimulator(unittest.TestCase):
@@ -44,19 +51,30 @@ class TestLocationSimulator(unittest.TestCase):
             ]
         )
 
-    def testInit(self):
-        with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
-            ds = nss.DataSimulator(Path("dummy1"), Path("dummy2"))
-            self.assertIsInstance(ds, nss.DataSimulator)
+    @patch("vipersci.carto.nss_simulator.rasterio.open")
+    def test__init_map(self, mock_rasterio_data):
+        ns.LocationSimulator._init_map(Path("dummy/path.raster"))
+        mock_rasterio_data.transform.called_once()
+        mock_rasterio_data.read.called_once_with(1)
 
-    def testCall(self):
+    @patch(
+        "vipersci.carto.nss_simulator.rasterio.transform.rowcol", return_value=(0, 0)
+    )
+    @patch(
+        "vipersci.carto.nss_simulator.LocationSimulator._init_map",
+        return_value=("xform", "array"),
+    )
+    def test_call(self, mock_init_map, mock_rowcol):
         with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
-            ds = nss.DataSimulator(Path("dummy1"), Path("dummy2"))
-            self.assertRaises(ValueError, ds, 5, 5)
-            d1, d2 = ds(0.3, 20)
-            self.assertEqual(88, d1)
-            self.assertEqual(88, d2)
+            simulator = ns.LocationSimulator(
+                Path("dummy/bd.tif"),
+                Path("dummy/weh.tif"),
+                Path("dummy/det1.csv"),
+                Path("dummy/det2.csv"),
+            )
+            simulator.bd_arr = np.array([[0.5, 0.5], [0.5, 0.5]])
+            simulator.weh_arr = np.array([[20, 20], [20, 20]])
 
-            d1_arr, d2_arr = ds([0.3, 0.5], [20, 30])
-            np.testing.assert_array_almost_equal(np.array([88, 20]), d1_arr)
-            np.testing.assert_array_almost_equal(np.array([88, 20]), d2_arr)
+            d1, d2 = simulator(np.array([0, 0]))
+            self.assertAlmostEqual(d1, 110)
+            self.assertAlmostEqual(d2, 110)

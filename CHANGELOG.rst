@@ -30,13 +30,22 @@ Unreleased
 
 Added
 ^^^^^
-- Makefile now has a "list/twine" option to hopefully help me remember to test that.
+- Makefile now has a "lint/twine" option to hopefully help me remember to test that.
+- VIS image_statistics.py and raw_stats.py modules.
+- A variety of unit tests.
+
+Changed
+^^^^^^^
+- Flattened test directory structure.
+- tri2gpkg -v is no longer an alias for --value-names, as it now determines verbosity
+  since logging has been added.
 
 Fixed
 ^^^^^
 - CHANGELOG.rst had an unescaped underbar which caused trouble with twine upload.
 - setup.cfg arrangement in install_requires passed local testing, but not GitHub testing,
   have now fixed.
+- tri2gpkg now works correctly if --keep_z is specified
 
 
 0.3.0 (2022-11-15)
