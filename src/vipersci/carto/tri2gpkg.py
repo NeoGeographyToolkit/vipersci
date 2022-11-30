@@ -44,6 +44,7 @@ This file format is not particularly a standard, but is simple to process.
 # top level of this library.
 
 import argparse
+import logging
 
 # import csv
 from pathlib import Path
@@ -54,7 +55,9 @@ from pyproj import CRS, Transformer
 # from osgeo import ogr, osr
 from shapely.geometry import Polygon
 
-# ogr.UseExceptions()
+from vipersci import util
+
+logger = logging.getLogger(__name__)
 
 stere_crs = "+proj=stere +lon_0={} +lat_0={} +R=1737400"
 sites = dict(  # lon first, then lat
@@ -63,11 +66,14 @@ sites = dict(  # lon first, then lat
     nobile=stere_crs.format(31.1492746341015, -85.391176037601),
     # the Haworth DEMs are polar stereographic, apparently.
     haworth=stere_crs.format(0, -90),
+    viper=stere_crs.format(31.6218, -85.42088),
 )
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__, parents=[util.parent_parser()]
+    )
     parser.add_argument(
         "-o", "--output", help="Optional name of output file.", required=False
     )
@@ -97,7 +103,6 @@ def arg_parser():
         "short-hands for this.",
     )
     parser.add_argument(
-        "-v",
         "--value_names",
         default="Depth (m)",
         help="This text will be used as the title of the data value field in "
@@ -184,6 +189,7 @@ def arg_checks(args):
 def main():
     parser = arg_parser()
     args = parser.parse_args()
+    util.set_logger(args.verbose)
 
     try:
         (value_keys, col_idxs, t_srs, outfile, replace_with_zero) = arg_checks(args)
@@ -191,13 +197,14 @@ def main():
         parser.error(str(err))
 
     s_crs = CRS(args.s_srs)
-    t_crs = CRS(t_srs)
+    t_crs = CRS(args.t_srs)
     transformer = Transformer.from_crs(s_crs, t_crs)
 
     values = {k: [] for k in value_keys}
 
     polys = list()
     with open(args.file, "r") as f:
+        logger.info(f"Reading vertices from {args.file}")
         for line in f:
             tokens = line.split()
             poly = vertexes_to_poly(transformer, tokens[:9], args.keep_z)
@@ -228,11 +235,13 @@ def main():
     gdf = geopandas.GeoDataFrame(values, crs=t_crs)
 
     if not args.keep_all_facets:
+        logger.info("Dissolving polygons.")
         gdf = gdf.dissolve(by=value_keys[0])
 
     if args.csv:
         gdf.to_file(outfile.with_suffix(".csv"), driver="CSV")
     else:
+        logger.info(f"Writing {outfile}")
         gdf.to_file(outfile, driver="GPKG")
 
     # if args.csv:
@@ -275,7 +284,7 @@ def vertexes_to_poly(transformer, tokens: list, z=True):
     v3 = transformer.transform(in_m[6], in_m[7], in_m[8])
 
     if z:
-        poly = Polygon(v1, v2, v3)
+        poly = Polygon([v1, v2, v3])
     else:
         poly = Polygon([v1[:-1], v2[:-1], v3[:-1]])
 
