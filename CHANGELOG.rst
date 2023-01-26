@@ -30,6 +30,7 @@ Unreleased
 
 Added
 ^^^^^
+- carto.dotmap module for creating simple heatmap-like visualizations from 2d scalar data.
 - Makefile now has a "lint/twine" option to hopefully help me remember to test that.
 - VIS image_statistics.py and raw_stats.py modules.
 - A variety of unit tests.
