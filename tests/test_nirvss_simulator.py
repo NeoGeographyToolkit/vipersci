@@ -53,7 +53,6 @@ class TestLocationSimulator(unittest.TestCase):
         return_value=("xform", "array"),
     )
     def test_call(self, mock_init_map, mock_rowcol):
-
         simulator = ns.LocationSimulator(
             Path("dummy/bd.tif"), Path("dummy/insl.tif"), Path("dummy/temp.tif")
         )

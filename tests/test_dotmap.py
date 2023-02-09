@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """This module has tests for dotmap.generate_dotmap"""
 
-# Copyright 2022, United States Government as represented by the
+# Copyright 2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -35,7 +35,7 @@ def test_single_point():
     y_arr = [0]
     value_arr = [1]
     transform, raster = generate_dotmap(
-        x_arr, y_arr, value_arr, radius=1, gsd=1, padding=0
+        x_arr, y_arr, value_arr, radius=1, ground_sample_distance=1, padding=0
     )
 
     assert (-1, -1, 1, 1) == rasterio.windows.bounds(
@@ -52,7 +52,7 @@ def test_single_point_padded():
     y_arr = [0]
     value_arr = [1]
     transform, raster = generate_dotmap(
-        x_arr, y_arr, value_arr, radius=1, gsd=1, padding=1
+        x_arr, y_arr, value_arr, radius=1, ground_sample_distance=1, padding=1
     )
     assert (-2, -2, 2, 2) == rasterio.windows.bounds(
         rasterio.windows.Window(0, 0, raster.shape[0], raster.shape[1]), transform
@@ -70,13 +70,7 @@ def test_2_overlapping_points():
     y_arr = [0, 1]
     value_arr = [1, 2]
     transform, raster = generate_dotmap(
-        x_arr, y_arr, value_arr, radius=1, gsd=1, padding=0
-    )
-
-    print(
-        rasterio.windows.bounds(
-            rasterio.windows.Window(0, 0, raster.shape[0], raster.shape[1]), transform
-        )
+        x_arr, y_arr, value_arr, radius=1, ground_sample_distance=1, padding=0
     )
 
     assert (-1, -1, 2, 2) == rasterio.windows.bounds(
@@ -93,16 +87,8 @@ def test_single_detailed_point():
     y_arr = [0]
     value_arr = [1]
     transform, raster = generate_dotmap(
-        x_arr, y_arr, value_arr, radius=1, gsd=0.25, padding=0
+        x_arr, y_arr, value_arr, radius=1, ground_sample_distance=0.25, padding=3
     )
-
-    print(transform)
-    print(
-        rasterio.windows.bounds(
-            rasterio.windows.Window(0, 0, raster.shape[0], raster.shape[1]), transform
-        )
-    )
-    print(raster)
 
     assert (-1, -1, 1, 1) == rasterio.windows.bounds(
         rasterio.windows.Window(0, 0, raster.shape[0], raster.shape[1]), transform
@@ -120,3 +106,10 @@ def test_single_detailed_point():
             [-1] * 2 + [1] * 4 + [-1] * 2,
         ],
     )
+
+
+if __name__ == "__main__":
+    test_single_point()
+    test_single_point_padded()
+    test_single_detailed_point()
+    test_2_overlapping_points()

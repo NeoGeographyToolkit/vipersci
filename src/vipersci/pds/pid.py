@@ -100,7 +100,6 @@ class VIPERID:
     """
 
     def __init__(self, *args):
-
         if len(args) == 1:
             match = pid_re.search(str(args).lower())
             if match:
@@ -240,7 +239,6 @@ class VISID(VIPERID):
     """
 
     def __init__(self, *args):
-
         if len(args) == 1:
             if isinstance(args[0], dict):
                 if "start_time" in args[0] or "lobt" in args[0]:
