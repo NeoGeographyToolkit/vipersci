@@ -67,7 +67,6 @@ def main():
     last_point = Point(0, 0)
     last_time = None
     for row in df.itertuples():
-
         if row.name != "Driving":
             continue
 

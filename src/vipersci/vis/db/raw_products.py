@@ -283,7 +283,6 @@ class RawProduct(Base):
     )
 
     def __init__(self, **kwargs):
-
         if "lobt" in kwargs:
             lobt_dt = datetime.fromtimestamp(kwargs["lobt"], tz=timezone.utc)
 
@@ -349,7 +348,6 @@ class RawProduct(Base):
 
         # Ensure product_id consistency
         if pid:
-
             if "lobt" in kwargs:
                 if pid.datetime() != lobt_dt:
                     raise ValueError(

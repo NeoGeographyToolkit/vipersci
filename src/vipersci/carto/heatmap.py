@@ -40,6 +40,8 @@ import rasterio.features
 import shapely.geometry
 from sklearn.neighbors import KernelDensity
 
+from vipersci.carto.bounds import compute_bounds, pad_grid_align_bounds
+
 logger = logging.getLogger(__name__)
 
 
@@ -92,30 +94,6 @@ def buffered_mask(
     logger.debug(f"Created geometry_mask in {time.perf_counter() - start:.6f}s")
 
     return mask
-
-
-def transform_frombuffer_withgrid(
-    west: float, north: float, buffer: float, gsd: float
-) -> rasterio.Affine:
-    """
-    Returns a rasterio Affine transform based on the specified value of
-    *gsd* (ground sample distance) and the location of a point north of *north*
-    by *buffer* distance and west of *west* by *buffer* distance which are
-    further moved to the northwest by a small amount to guarantee that the
-    returned offset is an integer number of *gsd* intervals from the origin.
-    """
-    bwest = west - buffer
-    bnorth = north + buffer
-
-    # Make sure that "west" and "north" are snapped into a grid centered on the
-    # origin with a *ground_sample_distance* step.
-    west = math.floor(bwest / gsd) * gsd
-    north = math.ceil(bnorth / gsd) * gsd
-
-    logger.debug(f"west, north: {west}, {north}")
-
-    transform = rasterio.transform.from_origin(west, north, gsd, gsd)
-    return transform
 
 
 def generate_density_heatmap(
@@ -214,12 +192,8 @@ def generate_density_heatmap(
 
     if transform is None:
         if sample_bounds is None:
-            minx = np.amin(x_coords_np)
-            maxy = np.amax(y_coords_np)
-        else:
-            minx = sample_bounds.bounds[0]
-            maxy = sample_bounds.bounds[3]
-        transform = transform_frombuffer_withgrid(minx, maxy, buffer, gsd)
+            sample_bounds = compute_bounds(x_coords_np, y_coords_np)
+        transform = pad_grid_align_bounds(sample_bounds, gsd, math.ceil(buffer / gsd))
     else:
         if transform.a != gsd or transform.e != gsd:
             raise ValueError(
