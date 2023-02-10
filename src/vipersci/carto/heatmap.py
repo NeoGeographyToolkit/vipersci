@@ -193,7 +193,10 @@ def generate_density_heatmap(
     if transform is None:
         if sample_bounds is None:
             sample_bounds = compute_bounds(x_coords_np, y_coords_np)
-        transform = pad_grid_align_bounds(sample_bounds, gsd, math.ceil(buffer / gsd))
+        else:
+            sample_bounds = rasterio.coords.BoundingBox(*sample_bounds.bounds)
+        aligned_bounds = pad_grid_align_bounds(sample_bounds, gsd, math.ceil(buffer / gsd))
+        transform = rasterio.transform.from_origin(aligned_bounds.left, aligned_bounds.top, gsd, gsd)
     else:
         if transform.a != gsd or transform.e != gsd:
             raise ValueError(
@@ -494,8 +497,6 @@ def generate_area_bin_heatmap(
             raise ValueError(
                 "Total padding should not be larger than the original shape of the data"
             )
-
-        # w = rasterio.windows.get_data_window()
 
         bounds = rasterio.coords.BoundingBox(x_min, y_min, x_max, y_max)
         transform = rasterio.transform.from_bounds(

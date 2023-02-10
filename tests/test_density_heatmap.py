@@ -34,7 +34,7 @@ import shapely
 from vipersci.carto import heatmap as hm
 
 
-class TestHeatmapAreaBin(unittest.TestCase):
+class TestDensityHeatmap(unittest.TestCase):
     def test_density_heatmap_3x3_uniform(self):
         self.uniform_density_heatmap_runner((3, 3), processes=1)
 

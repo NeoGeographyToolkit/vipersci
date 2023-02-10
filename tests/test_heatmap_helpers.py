@@ -31,7 +31,7 @@ import unittest
 from vipersci.carto import heatmap as hm
 
 
-class TestHeatmapAreaBin(unittest.TestCase):
+class TestHeatmapHelpers(unittest.TestCase):
     def test_transform_frombuffer_withgrid_simple(self):
         t = hm.transform_frombuffer_withgrid(0, 10, 1, 1)
         self.assertEqual(t, transform.from_origin(-1, 11, 1, 1))
