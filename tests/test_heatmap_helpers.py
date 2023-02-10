@@ -24,32 +24,43 @@
 # top level of this library.
 
 import numpy as np
-from rasterio import transform
+import rasterio
+from rasterio.coords import BoundingBox
 import shapely
 import unittest
 
-from vipersci.carto import heatmap as hm
+from vipersci.carto import heatmap, bounds
 
 
-class TestHeatmapHelpers(unittest.TestCase):
-    def test_transform_frombuffer_withgrid_simple(self):
-        t = hm.transform_frombuffer_withgrid(0, 10, 1, 1)
-        self.assertEqual(t, transform.from_origin(-1, 11, 1, 1))
+class TestBounds(unittest.TestCase):
+    def test_simple(self):
+        initial_bounds = BoundingBox(0,0,10,10)
+        expected_bounds = initial_bounds
+        out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 1)
+        self.assertEqual(out_bounds, expected_bounds)
 
-    def test_transform_frombuffer_withgrid_nobuffer(self):
-        t = hm.transform_frombuffer_withgrid(0, 10, 0, 1)
-        self.assertEqual(t, transform.from_origin(0, 10, 1, 1))
+    def test_padded(self):
+        initial_bounds = BoundingBox(0,0,10,10)
+        expected_bounds = BoundingBox(-1,-1,11,11)
+        out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 1, padding=1)
+        self.assertEqual(out_bounds, expected_bounds)
 
-    def test_transform_frombuffer_withgrid_smallgsd(self):
-        t = hm.transform_frombuffer_withgrid(0, 10, 0, 0.1)
-        self.assertEqual(t, transform.from_origin(0, 10, 0.1, 0.1))
+    def test_small_gsd(self):
+        initial_bounds = BoundingBox(0,0,10,10)
+        expected_bounds = initial_bounds
+        out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 0.1)
+        self.assertEqual(out_bounds, expected_bounds)
 
-    def test_transform_frombuffer_withgrid_origin_snap_to_gsd(self):
-        t = hm.transform_frombuffer_withgrid(1, 9, 0, 2)
-        self.assertEqual(t, transform.from_origin(0, 10, 2, 2))
+    def test_origin_adjust(self):
+        initial_bounds = BoundingBox(1,1,9,9)
+        expected_bounds = BoundingBox(0,0,10,10)
+        out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 2)
+        self.assertEqual(out_bounds, expected_bounds)
 
     def test_buffered_mask_full(self):
         points = shapely.geometry.LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
-        t = hm.transform_frombuffer_withgrid(0, 1, 1, 1)
-        mask = hm.buffered_mask(points, t, buffer=1)
+        gsd = 1
+        b = bounds.pad_grid_align_bounds(BoundingBox(0, 0, 1, 1), gsd, 1)
+        t = rasterio.transform.from_origin(b.left, b.top, gsd, gsd)
+        mask = heatmap.buffered_mask(points, t, buffer=1)
         self.assertTrue(np.array_equal(np.full((3, 3), False), mask))
