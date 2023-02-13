@@ -195,8 +195,12 @@ def generate_density_heatmap(
             sample_bounds = compute_bounds(x_coords_np, y_coords_np)
         else:
             sample_bounds = rasterio.coords.BoundingBox(*sample_bounds.bounds)
-        aligned_bounds = pad_grid_align_bounds(sample_bounds, gsd, math.ceil(buffer / gsd))
-        transform = rasterio.transform.from_origin(aligned_bounds.left, aligned_bounds.top, gsd, gsd)
+        aligned_bounds = pad_grid_align_bounds(
+            sample_bounds, gsd, math.ceil(buffer / gsd)
+        )
+        transform = rasterio.transform.from_origin(
+            aligned_bounds.left, aligned_bounds.top, gsd, gsd
+        )
     else:
         if transform.a != gsd or transform.e != gsd:
             raise ValueError(

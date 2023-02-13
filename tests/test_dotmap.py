@@ -39,7 +39,7 @@ def test_single_point():
     )
 
     assert (-1, -1, 1, 1) == rasterio.windows.bounds(
-        rasterio.windows.Window(0, 0, raster.shape[0], raster.shape[1]), transform
+        rasterio.windows.Window(0, 0, raster.shape[1], raster.shape[0]), transform
     )
     assert np.array_equal(raster, [[1, 1], [1, 1]])
 
@@ -55,7 +55,7 @@ def test_single_point_padded():
         x_arr, y_arr, value_arr, radius=1, ground_sample_distance=1, padding=1
     )
     assert (-2, -2, 2, 2) == rasterio.windows.bounds(
-        rasterio.windows.Window(0, 0, raster.shape[0], raster.shape[1]), transform
+        rasterio.windows.Window(0, 0, raster.shape[1], raster.shape[0]), transform
     )
     assert np.array_equal(
         raster, [[-1, -1, -1, -1], [-1, 1, 1, -1], [-1, 1, 1, -1], [-1, -1, -1, -1]]
@@ -74,7 +74,7 @@ def test_2_overlapping_points():
     )
 
     assert (-1, -1, 2, 2) == rasterio.windows.bounds(
-        rasterio.windows.Window(0, 0, raster.shape[0], raster.shape[1]), transform
+        rasterio.windows.Window(0, 0, raster.shape[1], raster.shape[0]), transform
     )
     assert np.array_equal(raster, [[-1, 2, 2], [1, 2, 2], [1, 1, -1]])
 
@@ -87,11 +87,11 @@ def test_single_detailed_point():
     y_arr = [0]
     value_arr = [1]
     transform, raster = generate_dotmap(
-        x_arr, y_arr, value_arr, radius=1, ground_sample_distance=0.25, padding=3
+        x_arr, y_arr, value_arr, radius=1, ground_sample_distance=0.25, padding=0
     )
 
     assert (-1, -1, 1, 1) == rasterio.windows.bounds(
-        rasterio.windows.Window(0, 0, raster.shape[0], raster.shape[1]), transform
+        rasterio.windows.Window(0, 0, raster.shape[1], raster.shape[0]), transform
     )
     assert np.array_equal(
         raster,
@@ -108,8 +108,24 @@ def test_single_detailed_point():
     )
 
 
-if __name__ == "__main__":
-    test_single_point()
-    test_single_point_padded()
-    test_single_detailed_point()
-    test_2_overlapping_points()
+def test_horizontal_line():
+    x_arr = [0, 1, 2, 3, 4]
+    y_arr = [0] * len(x_arr)
+    value_arr = [1] * len(x_arr)
+    transform, raster = generate_dotmap(
+        x_arr, y_arr, value_arr, radius=1, ground_sample_distance=0.5, padding=0
+    )
+
+    assert (-1, -1, 5, 1) == rasterio.windows.bounds(
+        rasterio.windows.Window(0, 0, raster.shape[1], raster.shape[0]), transform
+    )
+
+    assert np.array_equal(
+        raster,
+        [
+            [-1] + [1] * 10 + [-1],
+            [1] * 12,
+            [1] * 12,
+            [-1] + [1] * 10 + [-1],
+        ],
+    )

@@ -66,9 +66,7 @@ def generate_dotmap(
         output: the output data containing circles drawn at each point.
     """
 
-    padding = padding + (
-        math.ceil(radius / ground_sample_distance) * ground_sample_distance
-    )
+    padding = padding + math.ceil(radius / ground_sample_distance)
     bounds = compute_bounds(x_coords, y_coords)
     bounds = pad_grid_align_bounds(bounds, ground_sample_distance, padding)
 
@@ -76,8 +74,8 @@ def generate_dotmap(
         bounds.left, bounds.top, ground_sample_distance, ground_sample_distance
     )
     out_shape = (
-        math.floor((bounds.right - bounds.left) / ground_sample_distance),
         math.floor((bounds.top - bounds.bottom) / ground_sample_distance),
+        math.floor((bounds.right - bounds.left) / ground_sample_distance),
     )
 
     shapes = []
