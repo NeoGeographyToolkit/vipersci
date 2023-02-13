@@ -34,26 +34,26 @@ from vipersci.carto import heatmap, bounds
 
 class TestBounds(unittest.TestCase):
     def test_simple(self):
-        initial_bounds = BoundingBox(0,0,10,10)
+        initial_bounds = BoundingBox(0, 0, 10, 10)
         expected_bounds = initial_bounds
         out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 1)
         self.assertEqual(out_bounds, expected_bounds)
 
     def test_padded(self):
-        initial_bounds = BoundingBox(0,0,10,10)
-        expected_bounds = BoundingBox(-1,-1,11,11)
+        initial_bounds = BoundingBox(0, 0, 10, 10)
+        expected_bounds = BoundingBox(-1, -1, 11, 11)
         out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 1, padding=1)
         self.assertEqual(out_bounds, expected_bounds)
 
     def test_small_gsd(self):
-        initial_bounds = BoundingBox(0,0,10,10)
+        initial_bounds = BoundingBox(0, 0, 10, 10)
         expected_bounds = initial_bounds
         out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 0.1)
         self.assertEqual(out_bounds, expected_bounds)
 
     def test_origin_adjust(self):
-        initial_bounds = BoundingBox(1,1,9,9)
-        expected_bounds = BoundingBox(0,0,10,10)
+        initial_bounds = BoundingBox(1, 1, 9, 9)
+        expected_bounds = BoundingBox(0, 0, 10, 10)
         out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 2)
         self.assertEqual(out_bounds, expected_bounds)
 

@@ -171,7 +171,11 @@ class VIPERID:
 
     def __lt__(self, other):
         if isinstance(other, self.__class__):
-            return (self.date, self.time, self.instrument,) < (
+            return (
+                self.date,
+                self.time,
+                self.instrument,
+            ) < (
                 other.date,
                 other.time,
                 other.instrument,
