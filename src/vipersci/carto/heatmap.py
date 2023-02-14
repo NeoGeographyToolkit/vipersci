@@ -29,7 +29,7 @@ import math
 from multiprocessing import Pool
 from itertools import chain
 import time
-from typing import Dict, Tuple, Any, Sequence
+from typing import Any, Dict, Optional, Sequence, Tuple
 import logging
 
 import pyproj
@@ -50,7 +50,7 @@ def buffered_mask(
     transform: rasterio.Affine,
     buffer: float,
     all_touched=False,
-) -> NDArray[np.bool8]:
+) -> NDArray[np.bool_]:
     """
     Returns a boolean numpy array from rasterio.features.geometry_mask() that
     indicates the shape of *linestring* buffered by *buffer* interpreted into
@@ -96,22 +96,36 @@ def buffered_mask(
     return mask
 
 
+def as_ndarray(input: Sequence) -> NDArray:
+    """
+    Check the type of the input and return it as an np ndarray, converting if needed
+    Parameters:
+        input
+    Returns:
+        ndarray
+    """
+    if isinstance(input, np.ndarray):
+        return input
+    else:
+        return np.asarray(input)
+
+
 def generate_density_heatmap(
     x_coords: Sequence,  # list or np.ndarray
     y_coords: Sequence,  # list or np.ndarray
     values: Sequence,  # list or np.ndarray
     gsd: float = 1,  # in same units of x, y
     radius: float = 1,  # radius of "data disk", in units of x, y
-    padding: float = None,  # in pixels
+    padding: Optional[float] = None,  # in pixels
     nodata_value: float = 0,
-    transform=None,
-    processes: int = None,
-    sample_bounds: shapely.geometry.Polygon = None,
-    frequencies: Sequence = None,  # list or np.ndarray
+    transform: Optional[rasterio.Affine] = None,
+    processes: int = 1,
+    sample_bounds: Optional[shapely.geometry.Polygon] = None,
+    frequencies: Optional[NDArray[np.float32]] = None,
 ) -> Tuple[
     rasterio.Affine,
-    NDArray[np.float32],
     NDArray[np.uintc],
+    NDArray[np.float32],
     NDArray[np.float32],
 ]:
     """
@@ -155,19 +169,6 @@ def generate_density_heatmap(
 
     The *counts* and *avg* objects are numpy arrays.
     """
-
-    def as_ndarray(input: Sequence) -> NDArray:
-        """
-        Check the type of the input and return it as an np ndarray, converting if needed
-        Parameters:
-            input
-        Returns:
-            ndarray
-        """
-        if isinstance(input, np.ndarray):
-            return input
-        else:
-            return np.asarray(input)
 
     if processes < 1:
         raise ValueError("Processes must be a positive integer.")
@@ -228,8 +229,8 @@ def generate_density_heatmap(
     row_coords, col_coords = np.meshgrid(
         range(mask.shape[0]), range(mask.shape[1]), indexing="ij"
     )
-    row_masked = np.ma.MaskedArray(row_coords, mask)
-    col_masked = np.ma.MaskedArray(col_coords, mask)
+    row_masked: np.ma.MaskedArray = np.ma.MaskedArray(row_coords, mask)
+    col_masked: np.ma.MaskedArray = np.ma.MaskedArray(col_coords, mask)
 
     x_tosample, y_tosample = rasterio.transform.xy(
         transform, row_masked.compressed(), col_masked.compressed()
@@ -244,7 +245,7 @@ def generate_density_heatmap(
         with Pool(processes=processes) as pool:
             results = pool.imap(
                 kde.score_samples,
-                np.array_split(sample_coords, 1 if processes is None else processes),
+                np.array_split(sample_coords, processes),
             )
             samples = np.fromiter(
                 chain.from_iterable(results),
@@ -267,7 +268,7 @@ def generate_density_heatmap(
     with Pool(processes=processes) as pool:
         results = pool.imap(
             kde.score_samples,
-            np.array_split(sample_coords, 1 if processes is None else processes),
+            np.array_split(sample_coords, processes),
         )
         weighted_samples = np.fromiter(
             chain.from_iterable(results), dtype=float, count=len(sample_coords)
@@ -333,7 +334,7 @@ def write_geotiff_rasterio(
     Returns
         A dictionary that mimics the information provided by gdalinfo
     """
-    unified_profile = {
+    unified_profile: Dict[str, Any] = {
         "driver": "GTiff",
     }
 
@@ -455,7 +456,7 @@ def generate_area_bin_heatmap(
     y_coords: NDArray,
     values: NDArray,
     bin_size: float = 1,
-) -> Tuple[NDArray, NDArray]:
+) -> Tuple[rasterio.Affine, NDArray, NDArray]:
     """
     Generates a 1-band floating point geotiff heatmap by binning data into a grid and
         averaging the values
@@ -510,7 +511,7 @@ def generate_area_bin_heatmap(
 
         return transform, window, bounds
 
-    transform, window = get_transform_from_coords(
+    transform, window, _ = get_transform_from_coords(
         x_coords, y_coords, grid_size=bin_size
     )
     averages, counts = area_bin(values, x_coords, y_coords, transform, window)
