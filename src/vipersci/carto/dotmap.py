@@ -35,6 +35,7 @@ from rasterio.features import rasterize
 from shapely.geometry import Point
 
 from vipersci.carto.bounds import compute_bounds, pad_grid_align_bounds
+from vipersci.carto.heatmap import as_ndarray
 
 
 def generate_dotmap(
@@ -43,7 +44,7 @@ def generate_dotmap(
     values: Sequence,
     radius: float,
     ground_sample_distance: float,
-    padding: float = 0,
+    padding: int = 0,
     nodata: float = -1,
 ) -> Tuple[rasterio.Affine, NDArray[np.float32]]:
     """
@@ -67,7 +68,7 @@ def generate_dotmap(
     """
 
     padding = padding + math.ceil(radius / ground_sample_distance)
-    bounds = compute_bounds(x_coords, y_coords)
+    bounds = compute_bounds(as_ndarray(x_coords), as_ndarray(y_coords))
     bounds = pad_grid_align_bounds(bounds, ground_sample_distance, padding)
 
     transform = rasterio.transform.from_origin(
