@@ -1,0 +1,11 @@
+[tool.mypy]
+[[tool.mypy.overrides]]
+module = [
+    'rasterio',
+    'rasterio.*',
+    'shapely',
+    'shapely.*',
+    'sklearn.*'
+]
+ignore_missing_imports = true
+
