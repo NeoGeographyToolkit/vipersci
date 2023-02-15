@@ -31,6 +31,7 @@ from typing import Tuple, Sequence
 import numpy as np
 from numpy.typing import NDArray
 import rasterio
+from rasterio.coords import BoundingBox
 from rasterio.features import rasterize
 from shapely.geometry import Point
 
@@ -68,8 +69,13 @@ def generate_dotmap(
     """
 
     padding = padding + math.ceil(radius / ground_sample_distance)
-    bounds = compute_bounds(as_ndarray(x_coords), as_ndarray(y_coords))
-    bounds = pad_grid_align_bounds(bounds, ground_sample_distance, padding)
+    bounds = BoundingBox(
+        pad_grid_align_bounds(
+            *compute_bounds(as_ndarray(x_coords), as_ndarray(y_coords)),
+            ground_sample_distance,
+            padding
+        )
+    )
 
     transform = rasterio.transform.from_origin(
         bounds.left, bounds.top, ground_sample_distance, ground_sample_distance
