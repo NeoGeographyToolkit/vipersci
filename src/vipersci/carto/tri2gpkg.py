@@ -197,7 +197,7 @@ def main():
         parser.error(str(err))
 
     s_crs = CRS(args.s_srs)
-    t_crs = CRS(args.t_srs)
+    t_crs = CRS(t_srs)
     transformer = Transformer.from_crs(s_crs, t_crs)
 
     values = {k: [] for k in value_keys}
