@@ -25,56 +25,62 @@ The bounds module is used to calculate a bounding box for a set of 2d spatial da
 # top level of this library.
 
 import math
+from typing import Tuple
 
 import numpy as np
 from numpy.typing import NDArray
-from rasterio.coords import BoundingBox
 
 
 def compute_bounds(
     x_arr: NDArray,
     y_arr: NDArray,
-) -> BoundingBox:
+) -> Tuple[float, float, float, float]:
     """Compute cartesian bounds of input coordinates
 
     Args:
-        x_arr (NDArray): set of x locations
-        y_arr (NDArray): set of y locations
+        x_arr: set of x locations
+        y_arr: set of y locations
 
     Returns:
-        BoundingBox: Rasterio bounding box of input locations
+        a tuple (left, bottom, right, top) describing the bounds of the input data
     """
-    return BoundingBox(np.amin(x_arr), np.amin(y_arr), np.amax(x_arr), np.amax(y_arr))
+    return (np.amin(x_arr), np.amin(y_arr), np.amax(x_arr), np.amax(y_arr))
 
 
 def pad_grid_align_bounds(
-    bounds: BoundingBox, ground_sample_distance: float, padding: int = 0
-) -> BoundingBox:
+    left: float,
+    bottom: float,
+    right: float,
+    top: float,
+    ground_sample_distance: float,
+    padding: int = 0,
+) -> Tuple[float, float, float, float]:
     """Given bounds, add a padding and align to a grid of size of
     ground_sample_distance.  That is, the output bounds will be integer multiples of
     ground_sample_distance.
 
     Args:
-        bounds (BoundingBox): Input bounds to modify
-        ground_sample_distance (float): Spatial resolution of grid
-        padding (int): Pixels (multiples of ground_sample_distance) of padding to add on to bounds
+        left: xmin of input bounds
+        bottom: ymin of input bounds
+        right: xmax of input bounds
+        top: ymax of input bounds
+        ground_sample_distance: Spatial resolution of grid
+        padding: Pixels (multiples of ground_sample_distance) of padding to add on to bounds
+    Returns:
+        a tuple (left, bottom, right, top) describing padded and aligned bounds
     """
 
     # Convert from pixels of padding to a buffer in x/y distance units.
     buffer = padding * ground_sample_distance
-    xmin = bounds.left
-    xmax = bounds.right
-    ymin = bounds.bottom
-    ymax = bounds.top
-    bxmin = xmin - buffer
-    bxmax = xmax + buffer
-    bymin = ymin - buffer
-    bymax = ymax + buffer
     # Make sure that bounds are snapped into a grid centered on the
     # origin with a *ground_sample_distance* step.
-    left = math.floor(bxmin / ground_sample_distance) * ground_sample_distance
-    right = math.ceil(bxmax / ground_sample_distance) * ground_sample_distance
-    bottom = math.floor(bymin / ground_sample_distance) * ground_sample_distance
-    top = math.ceil(bymax / ground_sample_distance) * ground_sample_distance
+    left = math.floor((left - buffer) / ground_sample_distance) * ground_sample_distance
+    right = (
+        math.ceil((right + buffer) / ground_sample_distance) * ground_sample_distance
+    )
+    bottom = (
+        math.floor((bottom - buffer) / ground_sample_distance) * ground_sample_distance
+    )
+    top = math.ceil((top + buffer) / ground_sample_distance) * ground_sample_distance
 
-    return BoundingBox(left, bottom, right, top)
+    return (left, bottom, right, top)
