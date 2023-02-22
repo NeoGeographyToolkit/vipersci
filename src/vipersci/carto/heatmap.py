@@ -291,7 +291,7 @@ def generate_density_heatmap(
     logger.info(f"Computed stats in {end - start:.6f}s")
 
     out_avg = np.full_like(mask, nodata_value, dtype=np.float32)
-    out_counts = np.full_like(mask, nodata_value, dtype=np.uintc)
+    out_counts = np.full_like(mask, 0, dtype=np.uintc)
     for x, y, avg, count in zip(x_tosample, y_tosample, avg_values, counts):
         r, c = rasterio.transform.rowcol(transform, x, y)
         out_avg[r, c] = avg
