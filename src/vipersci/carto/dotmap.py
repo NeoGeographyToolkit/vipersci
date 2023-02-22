@@ -70,7 +70,7 @@ def generate_dotmap(
 
     padding = padding + math.ceil(radius / ground_sample_distance)
     bounds = BoundingBox(
-        pad_grid_align_bounds(
+        *pad_grid_align_bounds(
             *compute_bounds(as_ndarray(x_coords), as_ndarray(y_coords)),
             ground_sample_distance,
             padding
