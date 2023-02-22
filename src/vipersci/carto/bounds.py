@@ -25,7 +25,7 @@ The bounds module is used to calculate a bounding box for a set of 2d spatial da
 # top level of this library.
 
 import math
-from typing import Tuple
+from typing import Callable, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -70,17 +70,30 @@ def pad_grid_align_bounds(
         a tuple (left, bottom, right, top) describing padded and aligned bounds
     """
 
+    def _grid_snap(
+        operator: Callable[[float], float],
+        value: float,
+        ground_sample_distance: float,
+    ) -> float:
+        """Round value to closest multiple of ground_sample_distance.
+
+        Args:
+            operator: Function that defines how value is rounded.  Usually math.floor or math.ceil.
+            value: value to snap to grid
+            ground_sample_distance: defines a grid with origin 0 and cells of this size.
+
+        Returns:
+            Rounded value
+        """
+        return operator(value / ground_sample_distance) * ground_sample_distance
+
     # Convert from pixels of padding to a buffer in x/y distance units.
     buffer = padding * ground_sample_distance
     # Make sure that bounds are snapped into a grid centered on the
     # origin with a *ground_sample_distance* step.
-    left = math.floor((left - buffer) / ground_sample_distance) * ground_sample_distance
-    right = (
-        math.ceil((right + buffer) / ground_sample_distance) * ground_sample_distance
-    )
-    bottom = (
-        math.floor((bottom - buffer) / ground_sample_distance) * ground_sample_distance
-    )
-    top = math.ceil((top + buffer) / ground_sample_distance) * ground_sample_distance
+    left = _grid_snap(math.floor, left - buffer, ground_sample_distance)
+    right = _grid_snap(math.ceil, right + buffer, ground_sample_distance)
+    bottom = _grid_snap(math.floor, bottom - buffer, ground_sample_distance)
+    top = _grid_snap(math.ceil, top + buffer, ground_sample_distance)
 
     return (left, bottom, right, top)
