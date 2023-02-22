@@ -34,33 +34,33 @@ from vipersci.carto import heatmap, bounds
 
 class TestBounds(unittest.TestCase):
     def test_simple(self):
-        initial_bounds = BoundingBox(0, 0, 10, 10)
+        initial_bounds = (0, 0, 10, 10)
         expected_bounds = initial_bounds
-        out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 1)
+        out_bounds = bounds.pad_grid_align_bounds(*initial_bounds, 1)
         self.assertEqual(out_bounds, expected_bounds)
 
     def test_padded(self):
-        initial_bounds = BoundingBox(0, 0, 10, 10)
-        expected_bounds = BoundingBox(-1, -1, 11, 11)
-        out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 1, padding=1)
+        initial_bounds = (0, 0, 10, 10)
+        expected_bounds = (-1, -1, 11, 11)
+        out_bounds = bounds.pad_grid_align_bounds(*initial_bounds, 1, padding=1)
         self.assertEqual(out_bounds, expected_bounds)
 
     def test_small_gsd(self):
-        initial_bounds = BoundingBox(0, 0, 10, 10)
+        initial_bounds = (0, 0, 10, 10)
         expected_bounds = initial_bounds
-        out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 0.1)
+        out_bounds = bounds.pad_grid_align_bounds(*initial_bounds, 0.1)
         self.assertEqual(out_bounds, expected_bounds)
 
     def test_origin_adjust(self):
-        initial_bounds = BoundingBox(1, 1, 9, 9)
-        expected_bounds = BoundingBox(0, 0, 10, 10)
-        out_bounds = bounds.pad_grid_align_bounds(initial_bounds, 2)
+        initial_bounds = (1, 1, 9, 9)
+        expected_bounds = (0, 0, 10, 10)
+        out_bounds = bounds.pad_grid_align_bounds(*initial_bounds, 2)
         self.assertEqual(out_bounds, expected_bounds)
 
     def test_buffered_mask_full(self):
         points = shapely.geometry.LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         gsd = 1
-        b = bounds.pad_grid_align_bounds(BoundingBox(0, 0, 1, 1), gsd, 1)
+        b = BoundingBox(*bounds.pad_grid_align_bounds(0, 0, 1, 1, gsd, 1))
         t = rasterio.transform.from_origin(b.left, b.top, gsd, gsd)
         mask = heatmap.buffered_mask(points, t, buffer=1)
         self.assertTrue(np.array_equal(np.full((3, 3), False), mask))

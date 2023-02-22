@@ -1,11 +1,18 @@
 [tool.mypy]
 [[tool.mypy.overrides]]
 module = [
+    'genshi.template',
+    'geopandas',
+    'pandas',
     'rasterio',
     'rasterio.*',
     'shapely',
     'shapely.*',
-    'sklearn.*'
+    'skimage',
+    'skimage.*',
+    'sklearn.*',
+    'tifftools',
+    
 ]
 ignore_missing_imports = true
 
