@@ -30,6 +30,7 @@ Unreleased
 
 Added
 ^^^^^
+- carto.bounds module added to unify functionality for both heatmaps and dotmaps.
 - carto.dotmap module for creating simple heatmap-like visualizations from 2d scalar data.
 - Makefile now has a "lint/twine" option to hopefully help me remember to test that.
 - VIS image_statistics.py and raw_stats.py modules.
@@ -41,12 +42,20 @@ Changed
 - tri2gpkg -v is no longer an alias for --value-names, as it now determines verbosity
   since logging has been added.
 
+Removed
+^^^^^^^
+- The pinned versions requirements_dev.txt
+
 Fixed
 ^^^^^
 - CHANGELOG.rst had an unescaped underbar which caused trouble with twine upload.
 - setup.cfg arrangement in install_requires passed local testing, but not GitHub testing,
   have now fixed.
+- heatmap's generate_density_heatmap() function now properly returns values of zero
+  in the returned out_count numpy array when there are no counts in those grid cells
+  instead of the provided nodata value.
 - tri2gpkg now works correctly if --keep_z is specified
+- tri2gpkg now uses the correct srs if a pre-defined site is selected.
 
 
 0.3.0 (2022-11-15)
