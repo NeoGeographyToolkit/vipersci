@@ -35,12 +35,15 @@ Added
 - Makefile now has a "lint/twine" option to hopefully help me remember to test that.
 - VIS image_statistics.py and raw_stats.py modules.
 - A variety of unit tests.
+- mypy configuration arguments.
 
 Changed
 ^^^^^^^
 - Flattened test directory structure.
 - tri2gpkg -v is no longer an alias for --value-names, as it now determines verbosity
   since logging has been added.
+- GitHub workflows have been re-arranged.  Black and flake8 are now run under the "Lint"
+  action, and the flake8 tests are removed from the Python testing matrix.
 
 Removed
 ^^^^^^^
