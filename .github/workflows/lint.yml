@@ -6,11 +6,14 @@ jobs:
   black:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: psf/black@stable
+      - name: Check out source repository
+        uses: actions/checkout@v3
+      - name: Black Version
+        uses: psf/black@stable
         with:
           options: "--version"
-      - uses: psf/black@stable
+      - name: Black Check
+        uses: psf/black@stable
 
   flake8:
     runs-on: ubuntu-latest
