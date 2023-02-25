@@ -49,8 +49,9 @@ def generate_dotmap(
     nodata: float = -1,
 ) -> Tuple[rasterio.Affine, NDArray[np.float32]]:
     """
-    Creates a simple "dotmap" by drawing a filled circle with the provided value at each point.  Subsequent points
-    will be drawn on top of any other circles they may overlap.
+    Creates a simple "dotmap" by drawing a filled circle with the
+    provided value at each point.  Subsequent points will be drawn
+    on top of any other circles they may overlap.
 
     Parameters:
         x_coords: x coordinates of the data points

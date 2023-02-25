@@ -65,7 +65,8 @@ def pad_grid_align_bounds(
         right: xmax of input bounds
         top: ymax of input bounds
         ground_sample_distance: Spatial resolution of grid
-        padding: Pixels (multiples of ground_sample_distance) of padding to add on to bounds
+        padding: Pixels (multiples of ground_sample_distance) of padding to add on
+          to bounds
     Returns:
         a tuple (left, bottom, right, top) describing padded and aligned bounds
     """
@@ -78,7 +79,8 @@ def pad_grid_align_bounds(
         """Round value to closest multiple of ground_sample_distance.
 
         Args:
-            operator: Function that defines how value is rounded.  Usually math.floor or math.ceil.
+            operator: Function that defines how value is rounded.  Usually math.floor
+              or math.ceil.
             value: value to snap to grid
             ground_sample_distance: defines a grid with origin 0 and cells of this size.
 
