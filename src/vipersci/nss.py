@@ -140,15 +140,15 @@ class DataModeler:
 
     def __call__(
         self,
-        det1: Union[float, Sequence, np.ndarray],
-        det2: Union[float, Sequence, np.ndarray],
+        det1: Union[float, Sequence[float], np.typing.ArrayLike],
+        det2: Union[float, Sequence[float], np.typing.ArrayLike],
     ):
         """
         Returns model-provided burial depth, water equivalent hydrogen, and
         uniform water equivalent hydrogen values.
 
-        :param bd:  A single value or sequence of detector 1 values.
-        :param weh: A single value or sequence of detector 2 values.
+        :param det1:  A single value or sequence of detector 1 values.
+        :param det2: A single value or sequence of detector 2 values.
         :returns: A three-tuple of values or np.arrays.  If *det1* and *det2* are
         singular elements, then a three-tuple is returned of the BD, WEH, and UWEH
         values at that location.  If *det1* and *det2* contain more than
@@ -156,18 +156,20 @@ class DataModeler:
         of BD values, a numpy array of WEH values, and a numpy array of UWEH values.
         """
         is_arraylike = True if hasattr(det1, "__iter__") else False
+        d1 = det1 if isinstance(det1, np.ma.MaskedArray) else np.ma.array(det1)
+        d2 = det2 if isinstance(det2, np.ma.MaskedArray) else np.ma.array(det2)
 
-        bd_arr = np.full_like(det1, self.fill_value, dtype=np.double)
-        weh_arr = np.full_like(det1, self.fill_value, dtype=np.double)
+        bd_arr = np.full_like(d1, self.fill_value, dtype=np.double)
+        weh_arr = np.full_like(d2, self.fill_value, dtype=np.double)
 
-        bd_arr[~det1.mask] = self.bd_model(
-            np.column_stack((det1.compressed(), det2.compressed()))
+        bd_arr[~d1.mask] = self.det1_model(
+            np.column_stack((d1.compressed(), d2.compressed()))
         )
-        weh_arr[~det1.mask] = self.weh_model(
-            np.column_stack((det1.compressed(), det2.compressed()))
+        weh_arr[~d1.mask] = self.det2_model(
+            np.column_stack((d2.compressed(), d2.compressed()))
         )
         uweh_arr = uniform_weh(
-            det1.filled(self.fill_value), fill_value=self.fill_value, bounds_error=False
+            d1.filled(self.fill_value), fill_value=self.fill_value, bounds_error=False
         )
 
         if not is_arraylike:
@@ -233,7 +235,7 @@ def read_csv(fname: Readable):
 
 
 def uniform_weh(
-    measured: Union[float, Sequence, np.ndarray],
+    measured: Union[float, Sequence[float], np.typing.ArrayLike],
     c0: float = 30.75,
     a: float = 0.0256,
     b: float = 1.0990,
@@ -262,18 +264,22 @@ def uniform_weh(
     *bounds_error*.
     """
     is_arraylike = True if hasattr(measured, "__iter__") else False
+    if is_arraylike and not isinstance(measured, np.ndarray):
+        m: Any = np.array(measured)
+    else:
+        m = measured
 
     # Values of *measured* larger than C0 result in unrealistic negative
     # fractions.
     if bounds_error:
-        if np.any(measured > c0):
+        if np.any(m > c0):
             raise ValueError(f"Value(s) in measured are greater than c0, {c0}.")
 
-        if np.any(measured <= 0):
+        if np.any(m <= 0):
             raise ValueError("Value(s) in measured are less than or equal to zero.")
 
     with np.errstate(divide="ignore", invalid="ignore"):
-        arr = np.float_power(a * ((c0 / measured) - 1), b)
+        arr = np.float_power(a * ((c0 / m) - 1), b)
 
     if is_arraylike:
         arr[np.logical_or(arr < 0, arr > 1)] = fill_value
