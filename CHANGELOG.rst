@@ -28,6 +28,9 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+0.4.0 (2023-03-01)
+------------------
+
 Added
 ^^^^^
 - carto.bounds module added to unify functionality for both heatmaps and dotmaps.
