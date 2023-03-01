@@ -43,7 +43,9 @@ as much as is possible.
 Installation
 ------------
 
-Versions will be posted to PyPI and conda to ease installation soon.
+The vipersci package is available on PyPI and pip-installable.
+
+Installation via Conda will be forthcoming.
 
 For the moment, follow the "Get Started!" directions in the CONTRIBUTING.rst document.
 
