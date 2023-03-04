@@ -53,10 +53,13 @@ lint/flake8: ## check style with flake8
 lint/black: ## check style with black
 	black --check src/vipersci tests
 
+lint/mypy: ## check types with mypy
+	mypy src/vipersci
+
 lint/twine: dist ## check if this would pass twine upload
 	twine check dist/*
 
-lint: lint/flake8 lint/black ## check style
+lint: lint/flake8 lint/black lint/mypy ## check style
 
 test: ## run tests quickly with the default Python
 	pytest
