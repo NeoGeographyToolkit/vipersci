@@ -26,18 +26,19 @@
 # top level of this library.
 
 from sqlalchemy import (
-    Column,
     Float,
     ForeignKey,
     Identity,
     Integer,
     String,
 )
-from sqlalchemy.orm import backref, declarative_base, relationship
+from sqlalchemy.orm import DeclarativeBase, backref, mapped_column, relationship
 
 from vipersci.vis.db.raw_products import RawProduct
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 class RawStats(Base):
@@ -45,12 +46,14 @@ class RawStats(Base):
 
     __tablename__ = "raw_stats"
 
-    id = Column(Integer, Identity(start=1), primary_key=True)
-    product_id = Column(String, ForeignKey(RawProduct.product_id), nullable=False)
+    id = mapped_column(Integer, Identity(start=1), primary_key=True)
+    product_id = mapped_column(
+        String, ForeignKey(RawProduct.product_id), nullable=False
+    )
     raw_product = relationship(RawProduct, backref=backref("stats", uselist=False))
 
-    blur = Column(
+    blur = mapped_column(
         Float, nullable=False, doc="Blur metric from skimage.measure.blur_effect()."
     )
-    mean = Column(Float, nullable=False, doc="Image mean.")
-    std = Column(Float, nullable=False, doc="Image standard deviation.")
+    mean = mapped_column(Float, nullable=False, doc="Image mean.")
+    std = mapped_column(Float, nullable=False, doc="Image standard deviation.")
