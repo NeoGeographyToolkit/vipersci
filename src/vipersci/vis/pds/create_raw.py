@@ -40,7 +40,7 @@ from importlib import resources
 import io
 import json
 import logging
-from typing import Union
+from typing import Union, Optional
 from pathlib import Path
 
 from genshi.template import MarkupTemplate
@@ -178,12 +178,12 @@ class Creator:
     def __init__(
         self,
         outdir: Path = Path.cwd(),
-        session: Session = None,
+        session: Optional[Session] = None,
     ):
         self.outdir = outdir
         self.session = session
 
-    def __call__(self, metadata: dict, image: ImageType = None):
+    def __call__(self, metadata: dict, image: Union[ImageType, Path, None] = None):
         rp = make_raw_product(metadata, image, self.outdir)
         logger.info(f"{rp.product_id} created.")
 
@@ -224,12 +224,12 @@ class Creator:
 
 def create(
     metadata: dict,
-    image: Union[ImageType, Path] = None,
+    image: Union[ImageType, Path, None] = None,
     outdir: Path = Path.cwd(),
-    session: Union[Session, sessionmaker] = None,
+    session: Union[Session, sessionmaker, None] = None,
     json: bool = True,
     xml: bool = False,
-    template_path: Path = None,
+    template_path: Optional[Path] = None,
 ):
     """
     Creates a PDS4 XML label file in *outdir* based on the provided
@@ -315,7 +315,7 @@ def check_bit_depth(pid: pds.VISID, bit_depth: Union[int, str, np.dtype]):
 
 def make_raw_product(
     metadata: dict,
-    image: Union[ImageType, Path] = None,
+    image: Union[ImageType, Path, None] = None,
     outdir: Path = Path.cwd(),
 ) -> RawProduct:
     """
@@ -431,7 +431,9 @@ def write_tiff(pid: pds.VISID, image: ImageType, outdir: Path = Path.cwd()) -> P
     return outpath
 
 
-def write_xml(product: dict, outdir: Path = Path.cwd(), template_path: Path = None):
+def write_xml(
+    product: dict, outdir: Path = Path.cwd(), template_path: Optional[Path] = None
+):
     """
     Writes a PDS4 XML label in *outdir* based on the contents of
     the *product* object, which must be of type Raw_Product.
