@@ -28,8 +28,8 @@ models.
 # top level of this library.
 
 import logging
-import os
-from typing import Any, Generator, List, Sequence, Union
+from typing import Any, Iterable, Sequence, Union
+from os import PathLike
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
@@ -37,7 +37,7 @@ from scipy.interpolate import RegularGridInterpolator
 logger = logging.getLogger(__name__)
 
 # type alias for the exhaustive variety of arguments that np.genfromtxt() takes.
-Readable = Union[os.PathLike, str, List[str], Generator[Union[str, bytes], Any, Any]]
+Readable = Union[str, PathLike, Iterable[str], Iterable[bytes]]
 
 
 class DataSimulator:

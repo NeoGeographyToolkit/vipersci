@@ -32,6 +32,7 @@ more.
 
 import argparse
 from collections import Counter
+from typing import Optional
 
 import geopandas as gp
 from shapely.geometry import LineString, box
@@ -92,7 +93,7 @@ The area and path have different coordinate reference systems.
 
 
 def accumulate(
-    path: LineString, areas: gp.GeoDataFrame, counter: dict = None
+    path: LineString, areas: gp.GeoDataFrame, counter: Optional[dict] = None
 ) -> Counter:
     """Returns a collections.Counter of floating point accumulations
     of the length of *Path* against each of the geometries in *areas*.

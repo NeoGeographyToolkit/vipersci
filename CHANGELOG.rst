@@ -28,6 +28,21 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+Added
+^^^^^
+- mypy is now in the development dependencies to support type checking.
+- lint/mypy target added to Makefile.
+
+
+Changed
+^^^^^^^
+- Explicit in documentation about developing in Python 3.8 (although earlier versions
+  should still be supported).
+- Many changes to improve type checking.
+- Upgrade to SQLAlchemy >=2.
+
+
+
 0.4.0 (2023-03-01)
 ------------------
 

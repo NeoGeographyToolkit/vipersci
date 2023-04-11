@@ -2,7 +2,7 @@
 # > conda env create -n vipersci -f environment.yml
 #
 # If you want to develop vipersci, do this:
-# > conda create -n vipersci python=3.7
+# > conda create -n vipersci python=3.8
 # > conda activate vipersci
 # > conda env update -f environment_dev.yml
 # > conda env update -f environment.yml

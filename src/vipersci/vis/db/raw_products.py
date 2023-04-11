@@ -31,7 +31,6 @@ import xml.etree.ElementTree as ET
 
 from sqlalchemy import (
     Boolean,
-    Column,
     DateTime,
     Float,
     Identity,
@@ -39,15 +38,13 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import declarative_base, synonym, validates
+from sqlalchemy.orm import DeclarativeBase, mapped_column, synonym, validates
 
 from vipersci.pds.pid import VISID, vis_instruments, vis_compression
 from vipersci.pds.xml import ns
 from vipersci.pds.datetime import fromisozformat, isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
 
-
-Base = declarative_base()
 
 luminaire_names = {
     "NavLight Left": "navlight_left_on",
@@ -61,10 +58,14 @@ luminaire_names = {
 }
 
 
+class Base(DeclarativeBase):
+    pass
+
+
 class RawProduct(Base):
     """An object to represent rows in the raw_products table for VIS."""
 
-    # This class is derived from SQLAlchemy's orm.declarative_base()
+    # This class is derived from SQLAlchemy's orm.DeclarativeBase
     # which means that it has a variety of class properties that are
     # then swept up into properties on the instantiated object via
     # super().__init__().
@@ -73,25 +74,25 @@ class RawProduct(Base):
     # plural while the class name is singular.
     __tablename__ = "raw_products"
 
-    # The Column() names below should use "snake_case" for the names that are
+    # The mapped_column() names below should use "snake_case" for the names that are
     # committed to the database as column names.  Furthermore, those names
     # should be similar, if not identical, to the PDS4 Class and Attribute
     # names that they represent.  Other names (like Yamcs parameter camelCase
     # names) are implemented as synonyms. Aside from the leading "id" column,
     # the remainder are in alphabetical order, since there are so many.
 
-    id = Column(Integer, Identity(start=1), primary_key=True)
-    adc_gain = Column(
+    id = mapped_column(Integer, Identity(start=1), primary_key=True)
+    adc_gain = mapped_column(
         Integer, nullable=False, doc="ADC_GAIN from the MCSE Image Header."
     )
     adcGain = synonym("adc_gain")
-    auto_exposure = Column(
+    auto_exposure = mapped_column(
         Boolean,
         nullable=False,
         doc="AUTO_EXPOSURE from the MCSE Image Header.",
     )
     autoExposure = synonym("auto_exposure")
-    bad_pixel_table_id = Column(
+    bad_pixel_table_id = mapped_column(
         Integer,
         nullable=False,
         # There is a Defective Pixel Map (really a list of 128 coordinates) for
@@ -103,14 +104,14 @@ class RawProduct(Base):
     cameraId = synonym(
         "mcam_id"
     )  # This value maybe isn't the mcam_id since it is 0-7 from Yamcs?
-    capture_id = Column(
+    capture_id = mapped_column(
         Integer,
         nullable=False,
         doc="The captureId from the command sequence."
         # TODO: learn more about captureIds to provide better doc here.
     )
     captureId = synonym("capture_id")
-    _exposure_duration = Column(
+    _exposure_duration = mapped_column(
         "exposure_duration",
         Integer,
         nullable=False,
@@ -118,30 +119,30 @@ class RawProduct(Base):
         "EXP_STEP and EXP paramaters from the MCSE Image Header.",
     )
     exposureTime = synonym("exposure_duration")  # Yamcs parameter name.
-    file_creation_datetime = Column(
+    file_creation_datetime = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         doc="The time at which file_name was created.",
     )
-    file_md5_checksum = Column(
+    file_md5_checksum = mapped_column(
         String,
         nullable=False,
         doc="The md5 checksum of the file described by file_path.",
     )
-    file_path = Column(
+    file_path = mapped_column(
         String,
         nullable=False,
         doc="The absolute path (POSIX style) that contains the Array_2D_Image "
         "that this metadata refers to.",
     )
     # Not sure where we're getting info for these light booleans yet.
-    hazlight_aft_port_on = Column(Boolean, nullable=False)
-    hazlight_aft_starboard_on = Column(Boolean, nullable=False)
-    hazlight_center_port_on = Column(Boolean, nullable=False)
-    hazlight_center_starboard_on = Column(Boolean, nullable=False)
-    hazlight_fore_port_on = Column(Boolean, nullable=False)
-    hazlight_fore_starboard_on = Column(Boolean, nullable=False)
-    image_id = Column(
+    hazlight_aft_port_on = mapped_column(Boolean, nullable=False)
+    hazlight_aft_starboard_on = mapped_column(Boolean, nullable=False)
+    hazlight_center_port_on = mapped_column(Boolean, nullable=False)
+    hazlight_center_starboard_on = mapped_column(Boolean, nullable=False)
+    hazlight_fore_port_on = mapped_column(Boolean, nullable=False)
+    hazlight_fore_starboard_on = mapped_column(Boolean, nullable=False)
+    image_id = mapped_column(
         Integer,
         nullable=False,
         doc="The IMG_ID from the MCSE Image Header used for CCU storage and "
@@ -150,10 +151,10 @@ class RawProduct(Base):
     imageHeight = synonym("lines")
     imageId = synonym("image_id")
     imageWidth = synonym("samples")
-    instrument_name = Column(
+    instrument_name = mapped_column(
         String, nullable=False, doc="The full name of the instrument."
     )
-    instrument_temperature = Column(
+    instrument_temperature = mapped_column(
         Float,
         nullable=False,
         doc="The TEMPERATURE from the MCSE Image Header.  TBD how to convert "
@@ -162,34 +163,34 @@ class RawProduct(Base):
     # There is a sensor in the camera body (PT1000) which is apparently not
     # connected (sigh).  And there is also a sensor external to each camera
     # body (AD590), need to track down its Yamcs feed.
-    lines = Column(
+    lines = mapped_column(
         Integer,
         nullable=False,
         doc="The imageHeight parameter from the Yamcs imageHeader.",
     )
-    _lobt = Column(
+    _lobt = mapped_column(
         "lobt",
         Integer,
         nullable=False,
         doc="The TIME_TAG from the MCSE Image Header.",
     )
-    mcam_id = Column(
+    mcam_id = mapped_column(
         Integer, nullable=False, doc="The MCAM_ID from the MCSE Image Header."
     )
-    mission_phase = Column(
+    mission_phase = mapped_column(
         String,
         nullable=False,
         # Not sure what form this will take, nor where it can be looked up.
     )
-    navlight_left_on = Column(Boolean, nullable=False)
-    navlight_right_on = Column(Boolean, nullable=False)
-    offset = Column(
+    navlight_left_on = mapped_column(Boolean, nullable=False)
+    navlight_right_on = mapped_column(Boolean, nullable=False)
+    offset = mapped_column(
         Integer,
         nullable=False,
         doc="The OFFSET parameter from the MCSE Image Header describing the dark "
         "level offset.",
     )
-    onboard_compression_ratio = Column(
+    onboard_compression_ratio = mapped_column(
         Float,
         doc="The PDS img:Onboard_Compression parameter.  Will be NULL for "
         "lossless compression or uncompressed images."
@@ -198,13 +199,13 @@ class RawProduct(Base):
         # to its compressed size.  This operation is done by RFSW, but not
         # sure where to get this parameter from ...?
     )
-    output_image_mask = Column(
+    output_image_mask = mapped_column(
         Integer,
         nullable=False,
         doc="The outputImageMask from the Yamcs imageHeader."
         # TODO: learn more about outputImageMask to provide better doc here.
     )
-    output_image_type = Column(
+    output_image_type = mapped_column(
         String,
         nullable=False,
         doc="The outputImageType from the Yamcs imageHeader."
@@ -212,70 +213,70 @@ class RawProduct(Base):
     )
     outputImageMask = synonym("output_image_mask")
     outputImageType = synonym("output_image_type")
-    _pid = Column(
+    _pid = mapped_column(
         "product_id", String, nullable=False, unique=True, doc="The PDS Product ID."
     )
-    padding = Column(
+    padding = mapped_column(
         Integer,
         nullable=False,
         doc="The padding parameter from the Yamcs imageHeader.",
         # Not sure what this value means or where it comes from.
     )
-    pga_gain = Column(
+    pga_gain = mapped_column(
         Float,
         nullable=False,
         doc="The translated floating point multiplier derived from PGA_GAIN "
         "from the MCSE Image Header.",
     )
     ppaGain = synonym("pga_gain")  # Surely, this is a Yamcs typo, should be pgaGain
-    processing_info = Column(
+    processing_info = mapped_column(
         Integer,
         nullable=False,
         doc="The processingInfo parameter from the Yamcs imageHeader."
         # TODO: learn more about processingInfo to provide better doc here.
     )
     processingInfo = synonym("processing_info")
-    purpose = Column(
+    purpose = mapped_column(
         String,
         nullable=False,
         doc="This is the value for the PDS "
         "Observation_Area/Primary_Result_Summary/purpose parameter, it "
         "has a restricted set of allowable values.",
     )
-    samples = Column(
+    samples = mapped_column(
         Integer,
         nullable=False,
         doc="The imageWidth parameter from the Yamcs imageHeader.",
     )
-    slog = Column(
+    slog = mapped_column(
         Boolean,
         nullable=False,
         doc="Indicates whether onboard SLoG processing occurred.",
     )
-    software_name = Column(String, nullable=False)
-    software_version = Column(String, nullable=False)
-    software_program_name = Column(String, nullable=False)
-    start_time = Column(DateTime(timezone=True), nullable=False)
-    stereo = Column(
+    software_name = mapped_column(String, nullable=False)
+    software_version = mapped_column(String, nullable=False)
+    software_program_name = mapped_column(String, nullable=False)
+    start_time = mapped_column(DateTime(timezone=True), nullable=False)
+    stereo = mapped_column(
         Boolean,
         nullable=False,
         doc="The stereo parameter from the Yamcs imageHeader."
         # TODO: learn more about stereo to provide better doc here.
     )
-    stop_time = Column(DateTime(timezone=True), nullable=False)
+    stop_time = mapped_column(DateTime(timezone=True), nullable=False)
     temperature = synonym("instrument_temperature")
-    voltage_ramp = Column(
+    voltage_ramp = mapped_column(
         Integer,
         nullable=False,
         doc="The VOLTAGE_RAMP parameter from the MCSE Image Header.",
     )
     voltageRamp = synonym("voltage_ramp")
-    yamcs_generation_time = Column(
+    yamcs_generation_time = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         doc="The generation time of the source record from Yamcs.",
     )
-    yamcs_name = Column(
+    yamcs_name = mapped_column(
         String,
         nullable=False,
         doc="The full parameter name from Yamcs that this product data came from, "
@@ -428,8 +429,8 @@ class RawProduct(Base):
     def exposure_duration(self):
         return self._exposure_duration
 
-    @exposure_duration.setter
-    def exposure_duration(self, value: int):
+    @exposure_duration.inplace.setter
+    def _exposure_duration_setter(self, value: int):
         """Takes an exposure time in microseconds."""
         self._exposure_duration = value
         self.stop_time = self.start_time + timedelta(microseconds=value)
@@ -438,8 +439,8 @@ class RawProduct(Base):
     def lobt(self):
         return self._lobt
 
-    @lobt.setter
-    def lobt(self, lobt):
+    @lobt.inplace.setter
+    def _lobt_setter(self, lobt):
         self._lobt = lobt
         self.start_time = datetime.fromtimestamp(lobt, tz=timezone.utc)
 
@@ -449,8 +450,8 @@ class RawProduct(Base):
         # a full VISID object or just as the string as it is now.
         return self._pid
 
-    @product_id.setter
-    def product_id(self, pid):
+    @product_id.inplace.setter
+    def _product_id_setter(self, pid):
         # In this class, the source of product_id information really is what
         # comes from Yamcs, and so this should not be monkeyed with.  Theoretically
         # changing this would imply changes to start time, lobt, stop time,
@@ -533,10 +534,30 @@ class RawProduct(Base):
         """
         d = {}
 
+        def _find_text(root, xpath, unit_check=None):
+            element = root.find(xpath, ns)
+            if element is not None:
+                if unit_check is not None:
+                    if element.get("unit") != unit_check:
+                        raise ValueError(
+                            f"The {xpath} element does not have units of "
+                            f"{unit_check}, has {element.get('unit')}"
+                        )
+                el_text = element.text
+                if el_text:
+                    return el_text
+                else:
+                    raise ValueError(
+                        f"The XML {xpath} element contains no information."
+                    )
+            else:
+                raise ValueError(f"XML text does not have a {xpath} element.")
+
         root = ET.fromstring(text)
-        lid = root.find(
-            "./pds:Identification_Area/pds:logical_identifier", ns
-        ).text.split(":")
+        lid = _find_text(
+            root, "./pds:Identification_Area/pds:logical_identifier"
+        ).split(":")
+
         if lid[3] != "viper_vis":
             raise ValueError(
                 f"XML text has a logical_identifier which is not viper_vis: {lid[3]}"
@@ -549,69 +570,63 @@ class RawProduct(Base):
         d["product_id"] = lid[5]
 
         d["auto_exposure"] = (
-            True if root.find(".//img:exposure_type", ns).text == "Auto" else False
+            True if _find_text(root, ".//img:exposure_type") == "Auto" else False
         )
         d["bad_pixel_table_id"] = int(
-            root.find(".//img:bad_pixel_replacement_table_id", ns).text
+            _find_text(root, ".//img:bad_pixel_replacement_table_id")
         )
-        exp_dur = root.find(".//img:exposure_duration", ns)
-        if exp_dur.get("unit") != "microseconds":
-            raise ValueError(
-                "The img:exposure_duration element does not have units of "
-                f"microseconds, has {exp_dur.get('unit')}"
-            )
-        d["exposure_duration"] = int(exp_dur.text)
+        d["exposure_duration"] = int(
+            _find_text(root, ".//img:exposure_duration", unit_check="microseconds")
+        )
+
         d["file_creation_datetime"] = fromisozformat(
-            root.find(".//pds:creation_date_time", ns).text
+            _find_text(root, ".//pds:creation_date_time")
         )
-        d["file_path"] = root.find(".//pds:file_name", ns).text
+        d["file_path"] = _find_text(root, ".//pds:file_name")
 
         for k, v in luminaire_names.items():
             light = root.find(f".//img:LED_Illumination_Source[img:name='{k}']", ns)
             d[v] = (
-                True if light.find("img:illumination_state", ns).text == "On" else False
+                True if _find_text(light, "img:illumination_state") == "On" else False
             )
 
         osc = root.find(".//pds:Observing_System_Component[pds:type='Instrument']", ns)
-        d["instrument_name"] = osc.find("pds:name", ns).text
+        d["instrument_name"] = _find_text(osc, "pds:name")
 
-        temp = root.find(".//img:temperature_value", ns)
-        if temp.get("unit") != "K":
-            raise ValueError(
-                "The img:temperature_value element does not have units of K, has "
-                f"{temp.get('unit')}"
-            )
-        d["instrument_temperature"] = float(temp.text)
+        d["instrument_temperature"] = float(
+            _find_text(root, ".//img:temperature_value", unit_check="K")
+        )
 
         aa = root.find(".//pds:Axis_Array[pds:axis_name='Line']", ns)
-        d["lines"] = int(aa.find("./pds:elements", ns).text)
-        d["file_md5_checksum"] = root.find(".//pds:md5_checksum", ns).text
-        d["mission_phase"] = root.find(".//msn:mission_phase_name", ns).text
-        d["offset"] = root.find(".//img:analog_offset", ns).text
+        d["lines"] = int(_find_text(aa, "./pds:elements"))
+        d["file_md5_checksum"] = _find_text(root, ".//pds:md5_checksum")
+        d["mission_phase"] = _find_text(root, ".//msn:mission_phase_name")
+        d["offset"] = _find_text(root, ".//img:analog_offset")
 
-        ocr = root.find(".//img:onboard_compression_ratio", ns)
-        if ocr is not None:
-            d["onboard_compression_ratio"] = float(ocr.text)
+        try:
+            d["onboard_compression_ratio"] = float(
+                _find_text(root, ".//img:onboard_compression_ratio")
+            )
+        except ValueError:
+            pass
 
-        d["purpose"] = root.find(".//pds:purpose", ns).text
+        d["purpose"] = _find_text(root, ".//pds:purpose")
 
         aa = root.find(".//pds:Axis_Array[pds:axis_name='Sample']", ns)
-        d["samples"] = int(aa.find("./pds:elements", ns).text)
+        d["samples"] = int(_find_text(aa, "./pds:elements"))
 
         sw = root.find(".//proc:Software", ns)
-        d["software_name"] = sw.find("./proc:name", ns).text
-        d["software_version"] = sw.find("./proc:software_version_id", ns).text
-        d["software_program_name"] = sw.find(
-            "./proc:Software_Program/proc:name", ns
-        ).text
+        d["software_name"] = _find_text(sw, "./proc:name")
+        d["software_version"] = _find_text(sw, "./proc:software_version_id")
+        d["software_program_name"] = _find_text(sw, "./proc:Software_Program/proc:name")
 
         # Start times must be on the whole second, which is why we don't use
         # fromisozformat() here.
         d["start_time"] = datetime.strptime(
-            root.find(".//pds:start_date_time", ns).text, "%Y-%m-%dT%H:%M:%SZ"
+            _find_text(root, ".//pds:start_date_time"), "%Y-%m-%dT%H:%M:%SZ"
         ).replace(tzinfo=timezone.utc)
 
-        d["stop_time"] = fromisozformat(root.find(".//pds:stop_date_time", ns).text)
+        d["stop_time"] = fromisozformat(_find_text(root, ".//pds:stop_date_time"))
 
         return cls(**d)
 
