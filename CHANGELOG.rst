@@ -30,6 +30,7 @@ Unreleased
 
 Added
 ^^^^^
+- PanoID class added to pds.pid
 - mypy is now in the development dependencies to support type checking.
 - lint/mypy target added to Makefile.
 

@@ -69,6 +69,7 @@ instruments.update(nirvss_instruments)
 date_re = re.compile(r"(2\d)(1[0-2]|0[1-9])(3[01]|[12][0-9]|0[1-9])")  # YYMMDD
 time_re = re.compile(r"(2[0-3]|[01]\d)([0-5]\d)([0-5]\d)(\d{3})?")  # hhmmssfff
 inst_re = re.compile("|".join(instruments.keys()))
+vis_inst_re = re.compile("|".join(vis_instruments.keys()))
 
 pid_re = re.compile(
     rf"(?P<date>{date_re.pattern})-"
@@ -78,6 +79,11 @@ pid_re = re.compile(
 
 vis_comp_re = re.compile("|".join(vis_compression.keys()))
 vis_pid_re = re.compile(pid_re.pattern + rf"-(?P<compression>{vis_comp_re.pattern})")
+vis_pan_re = re.compile(
+    f"(?P<date>{date_re.pattern})-"
+    rf"(?P<time>{time_re.pattern})-"
+    rf"(?P<instrument>{vis_inst_re.pattern})-pan"
+)
 
 
 def get_key(value, dictionary):
@@ -339,3 +345,39 @@ class VISID(VIPERID):
             return "Lossless"
         else:
             return "Lossy"
+
+
+class PanoID(VIPERID):
+    """A Class for VIPER VIS Panorama Product IDs.  The date/time combination
+       should be equal to the earliest source product date/time combination.
+
+    :ivar date: a six digit string denoting YYMMDD (or strftime %y%m%d) where
+        the two digit year can be prefixed with "20" to get the four-digit year.
+    :ivar time: a six or nine digit string denoting hhmmss (or strftime
+        %H%M%S%f) or hhmmssuuu, similar to the first, but where the trailing
+        three digits are miliseconds.
+    :ivar instrument: A three character sequence denoting the instrument (if all
+        source data came from the same instrument), can be None (indicating multiple
+        instruments contributed).
+    """
+
+    def __init__(self, *args):
+        if len(args) == 1:
+            match = vis_pan_re.search(str(args).lower())
+            if not match:
+                raise ValueError(f"{args} did not match regex: {vis_pan_re.pattern}")
+        elif 2 <= len(args) <= 3:
+            instrument = args[-1]
+            if instrument in vis_instruments:
+                pass
+            elif instrument.casefold() in vis_instrument_aliases:
+                pass
+            elif instrument in vis_instruments.values():
+                pass
+            else:
+                raise ValueError(f"{instrument} is not a VIS instrument.")
+
+        super().__init__(*args)
+
+    def __str__(self):
+        return "-".join((self.date, self.time, self.instrument, "pan"))

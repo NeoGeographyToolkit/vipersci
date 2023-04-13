@@ -117,6 +117,11 @@ class TestVIPERID(unittest.TestCase):
         p = pid.VIPERID(s)
         self.assertEqual("VIPERID('220117-010101-ncl')", repr(p))
 
+    def test_str_(self):
+        test = "This is a VIPER Id: 220117-010101-aim"
+        truth = "220117-010101-aim"
+        self.assertEqual(truth, pid.VIPERID(test).__str__())
+
     def test_lt(self):
         p1 = pid.VIPERID("231120-010101-acl")
         p2 = pid.VIPERID("231121-010101-acl")
@@ -249,8 +254,71 @@ class TestVISID(unittest.TestCase):
         self.assertEqual(sorted(vids), [vid1, vid2, vid3, vid4])
 
 
-class TestStrings(unittest.TestCase):
+class TestPanoID(unittest.TestCase):
+    def test_init_tuple(self):
+        tuples = (
+            (
+                ("220117", "010101", "ncl"),
+                (datetime.date(2022, 1, 17), datetime.time(1, 1, 1), "ncl"),
+            ),
+            (
+                ("220117", "010101", "ncl"),
+                (datetime.date(2022, 1, 17), datetime.time(1, 1, 1), "NavCam Left"),
+            ),
+            (
+                ("231225", "182000", "acr"),
+                (datetime.date(2023, 12, 25), datetime.time(18, 20, 0), "acr"),
+            ),
+            (
+                ("240330", "121212", "hap"),
+                (datetime.datetime(2024, 3, 30, 12, 12, 12), "hap"),
+            ),
+        )
+        for truth, t in tuples:
+            with self.subTest():
+                p = pid.PanoID(*t)
+                self.assertTupleEqual(truth, (p.date, p.time, p.instrument))
+
+    def test_init_string(self):
+        string_tuples = (
+            ("220117-010101-ncl-pan", "220117-010101-ncl-pano"),
+            ("220117-010101-ncl-pan", "220117-010101-NCL-PAN"),
+            ("220117-010101-ncl-pan", "20220117-010101-ncl-pano"),
+            ("231225-182000-acr-pan", "231225-182000-acr-pan ignored"),
+        )
+        for s in string_tuples:
+            with self.subTest():
+                p = pid.PanoID(s[1])
+                self.assertEqual(s[0], str(p))
+
+    def test_init_bad_tuples(self):
+        tuples = (
+            ("not a datetime", "ncl"),
+            ("not a date", datetime.time(1, 1, 1), "ncl"),
+            ("220117", "010101001", "aim"),
+            (datetime.date(2024, 1, 1), "not a time", "ncl"),
+            (datetime.datetime(2022, 1, 17, 1, 1, 1), "not an instrument"),
+        )
+        for t in tuples:
+            with self.subTest(t):
+                self.assertRaises(ValueError, pid.PanoID, *t)
+
+    def test_init_bad_strings(self):
+        strings = (
+            "220117-010101-ncl",
+            "220117-10101-ncl",
+            "foobar",
+        )
+        for s in strings:
+            with self.subTest(s):
+                self.assertRaises(ValueError, pid.PanoID, s)
+
+    def test_repr(self):
+        s = "This is a Pano ID: 220117-010101-ncl-pan"
+        p = pid.PanoID(s)
+        self.assertEqual("PanoID('220117-010101-ncl-pan')", repr(p))
+
     def test_str_(self):
-        test = "This is a VIPER Id: 220117-010101-aim"
-        truth = "220117-010101-aim"
-        self.assertEqual(truth, pid.VIPERID(test).__str__())
+        test = "This is a Pano Id: 220117-010101-ncr-pan"
+        truth = "220117-010101-ncr-pan"
+        self.assertEqual(truth, pid.PanoID(test).__str__())
