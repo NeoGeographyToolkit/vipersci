@@ -44,6 +44,7 @@ from vipersci.pds.pid import VISID, vis_instruments, vis_compression
 from vipersci.pds.xml import ns
 from vipersci.pds.datetime import fromisozformat, isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
+import vipersci.vis.db.validators as vld
 
 
 luminaire_names = {
@@ -482,36 +483,11 @@ class RawProduct(Base):
         "yamcs_generation_time",
     )
     def validate_datetime_asutc(self, key, value):
-        if isinstance(value, datetime):
-            if value.utcoffset() is None:
-                raise ValueError(f"{key} must be tz aware.")
-            dt = value
-        elif isinstance(value, str):
-            if value.endswith("Z"):
-                dt = fromisozformat(value)
-            else:
-                dt = datetime.fromisoformat(value)
-        else:
-            raise ValueError(
-                f"{key} must be a datetime or an ISO 8601 formatted string."
-            )
-
-        return dt.astimezone(timezone.utc)
+        return vld.validate_datetime_asutc(key, value)
 
     @validates("purpose")
     def validate_purpose(self, key, value: str):
-        s = {
-            "Calibration",
-            "Checkout",
-            "Engineering",
-            "Navigation",
-            "Observation Geometry",
-            "Science",
-            "Supporting Observation",
-        }
-        if value not in s:
-            raise ValueError(f"purpose must be one of {s}")
-        return value
+        return vld.validate_purpose(value)
 
     def asdict(self):
         d = {}
