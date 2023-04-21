@@ -82,7 +82,7 @@ presets = dict(
     ),
     slope=dict(
         label="Slope (°)",
-        cmap="viridis",
+        cmap="RdPu",
         vmin=0,
         vmax=20,
         bounded=False,
@@ -90,10 +90,10 @@ presets = dict(
     ),
     slope_disc=dict(
         label="Slope (°)",
-        cmap="viridis",
+        cmap="RdPu",
         vmin=0,
         vmax=20,
-        bounded=[0, 5, 10, 15, 20],
+        bounded=[0, 3, 5, 10, 15, 20],
         extend="max"
     ),
     tmax=dict(
@@ -104,12 +104,20 @@ presets = dict(
         bounded=False,
         extend="neither"
     ),
+    weh=dict(
+        label="Water Equivalent Hydrogen fraction",
+        cmap="BuGn",
+        vmin=0,
+        vmax=1,
+        bounded=False,
+        extend="neither"
+    ),
 )
 
 
 class Palette:
     def __init__(
-        self, cmap, vmin, vmax, label="Some Units", bounded=False, extend=False,
+        self, cmap, vmin, vmax, label="Some Units", bounded=False, extend="neither",
         nodata_color="none", under_color=0, over_color=0.999999
     ):
         self.nodata_color = mpl.colors.to_rgba(nodata_color)
@@ -138,7 +146,7 @@ class Palette:
         self.label = label
         self.bounded = bounded
         if bounded:
-            self.norm = mpl.colors.BoundaryNorm(bounded, self.cmap.N)
+            self.norm = mpl.colors.BoundaryNorm(bounded, self.cmap.N, extend=extend)
         else:
             self.norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -159,7 +167,7 @@ class Palette:
                 values.append(v - epsilon)
                 values.append(v)
 
-            if self.cmap.colorbar_extend in ("min", "neither"):
+            if self.cmap.colorbar_extend in ("min", "max", "neither"):
                 values.append(self.bounded[-1] - epsilon)
 
             values.append(self.bounded[-1])
