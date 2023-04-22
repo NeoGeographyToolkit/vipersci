@@ -29,6 +29,7 @@ import argparse
 from io import StringIO
 import logging
 from pathlib import Path
+from typing import Sequence, Union
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -46,7 +47,7 @@ presets = dict(
         vmin=0,
         vmax=1.1,
         bounded=False,
-        extend="neither"
+        extend="neither",
     ),
     isr=dict(
         label="Depth to Ice Stability (m)",
@@ -54,39 +55,13 @@ presets = dict(
         vmin=0,
         vmax=1.1,
         bounded=[0, 0.01, 0.5, 1, 1.1],
-        extend="neither"
-    ),
-    verve_slope=dict(
-        label="Slope (°)",
-        cmap="",
-        vmin=0,
-        vmax=20,
-        bounded=False,
-        extend="max"
-    ),
-    verve_slope_discrete=dict(
-        label="Slope (°)",
-        cmap="",
-        vmin=0,
-        vmax=20,
-        bounded=[0, 5, 10, 15, 20],
-        extend="max"
+        extend="neither",
     ),
     stoplight_slope=dict(
-        label="Slope (°)",
-        cmap="RdYlGn_r",
-        vmin=0,
-        vmax=20,
-        bounded=False,
-        extend="max"
+        label="Slope (°)", cmap="RdYlGn_r", vmin=0, vmax=20, bounded=False, extend="max"
     ),
     slope=dict(
-        label="Slope (°)",
-        cmap="RdPu",
-        vmin=0,
-        vmax=20,
-        bounded=False,
-        extend="max"
+        label="Slope (°)", cmap="RdPu", vmin=0, vmax=20, bounded=False, extend="max"
     ),
     slope_disc=dict(
         label="Slope (°)",
@@ -94,7 +69,7 @@ presets = dict(
         vmin=0,
         vmax=20,
         bounded=[0, 3, 5, 10, 15, 20],
-        extend="max"
+        extend="max",
     ),
     tmax=dict(
         label="Max Temperature (K)",
@@ -102,7 +77,18 @@ presets = dict(
         vmin=22,
         vmax=351,
         bounded=False,
-        extend="neither"
+        extend="neither",
+    ),
+    verve_slope=dict(
+        label="Slope (°)", cmap="", vmin=0, vmax=20, bounded=False, extend="max"
+    ),
+    verve_slope_discrete=dict(
+        label="Slope (°)",
+        cmap="",
+        vmin=0,
+        vmax=20,
+        bounded=[0, 5, 10, 15, 20],
+        extend="max",
     ),
     weh=dict(
         label="Water Equivalent Hydrogen fraction",
@@ -110,15 +96,28 @@ presets = dict(
         vmin=0,
         vmax=1,
         bounded=False,
-        extend="neither"
+        extend="neither",
     ),
 )
 
 
 class Palette:
+    """
+    This class maintains information about a specific instance of a color map for a
+    particular purpose.
+    """
+
     def __init__(
-        self, cmap, vmin, vmax, label="Some Units", bounded=False, extend="neither",
-        nodata_color="none", under_color=0, over_color=0.999999
+        self,
+        cmap,
+        vmin,
+        vmax,
+        label="Some Units",
+        bounded: Union[bool, Sequence] = False,
+        extend="neither",
+        nodata_color="none",
+        under_color=0,
+        over_color=0.999999,
     ):
         self.nodata_color = mpl.colors.to_rgba(nodata_color)
         if isinstance(cmap, mpl.colors.Colormap):
@@ -154,7 +153,7 @@ class Palette:
         s = [
             f"# Color table for {self.label}",
             f"# created by {__name__} version {__version__} ",
-            "# value, R, G, B, A"
+            "# value, R, G, B, A",
         ]
         if self.bounded:
             if self.cmap.colorbar_extend in ("max", "neither"):
@@ -183,8 +182,8 @@ class Palette:
             rgba = self.cmap(self.norm(v), bytes=True)
             s.append(f"{v} {' '.join(map(str, rgba))}")
 
-        if not mpl.colors.same_color(self.nodata_color, (0, 0, 0, 0) ):
-            s.append(f"nv {' '.join(color_to_bytes(self.nodata_color))}")
+        if not mpl.colors.same_color(self.nodata_color, (0, 0, 0, 0)):
+            s.append(f"nv {' '.join(map(str, color_to_bytes(self.nodata_color)))}")
 
         return "\n".join(s)
 
@@ -195,9 +194,11 @@ def arg_parser():
     )
 
     parser.add_argument(
-        "-b", "--bar",
+        "-b",
+        "--bar",
         choices=["v", "h"],
-        help="If given will plot just a colorbar."
+        help="If given will plot just a colorbar. Must specify h (horizontal) or v "
+        "(vertical).",
     )
     parser.add_argument(
         "-c",
@@ -205,17 +206,24 @@ def arg_parser():
         help="Name of matplotlib colormap.",
     )
     parser.add_argument(
-        "-o", "--output", type=Path, help="Optional name of output file.", required=False
+        "-o",
+        "--output",
+        type=Path,
+        help="Optional name of output file.",
+        required=False,
     )
     parser.add_argument(
         "-p",
         "--preset",
         choices=presets.keys(),
         required=False,
-        help="Specifying a preset, sets the colormap, vmin, and vmax.",
+        help="Specifying a preset, sets the colormap, vmin, and vmax (ignoring those "
+        "arguments if provided).",
     )
     parser.add_argument(
-        "--plot", action="store_true", help="If given will create example plot, ignores -b."
+        "--plot",
+        action="store_true",
+        help="If given will create example plot, ignores -b.",
     )
     parser.add_argument(
         "--vmin", default=0, type=float, help="Minimum value for data range."
@@ -246,6 +254,8 @@ def main():
         )
 
     if args.plot:
+        # Apply colors to 2d function for example visualization.
+
         plt.ioff()
         # data = rescale(moon(), pal.vmin, pal.vmax)  # (512, 512) uint8 ndarray
         # make these smaller to increase the resolution
@@ -254,7 +264,7 @@ def main():
         x = np.arange(-3.0, 3.0, dx)
         y = np.arange(-3.0, 3.0, dy)
         X, Y = np.meshgrid(x, y)
-        Z = rescale(func3(X, Y), pal.vmin, pal.vmax)
+        Z = rescale(arbitrary_func(X, Y), pal.vmin, pal.vmax)
         extent = np.min(x), np.max(x), np.min(y), np.max(y)
 
         checkerboard = np.add.outer(range(32), range(32)) % 2
@@ -263,13 +273,13 @@ def main():
             cmap=plt.cm.gray,
             vmin=-1,
             vmax=2,
-            interpolation='nearest',
-            extent=extent
+            interpolation="nearest",
+            extent=extent,
         )
 
         # plt.imshow(data, cmap=pal.cmap, norm=pal.norm)
         plt.imshow(
-            Z, cmap=pal.cmap, norm=pal.norm, interpolation='bilinear', extent=extent
+            Z, cmap=pal.cmap, norm=pal.norm, interpolation="bilinear", extent=extent
         )
 
         plt.colorbar(label=pal.label)
@@ -277,7 +287,10 @@ def main():
         plt.tick_params(
             left=False, right=False, labelleft=False, labelbottom=False, bottom=False
         )
-        plt.xlabel(f"Colormap range: {pal.vmin} to {pal.vmax}, Data range: {Z.min():.3g} to {Z.max():.3g}")
+        plt.xlabel(
+            f"Colormap range: {pal.vmin} to {pal.vmax}, "
+            f"Data range: {Z.min():.3g} to {Z.max():.3g}"
+        )
 
         if args.output is None:
             plt.show()
@@ -285,6 +298,8 @@ def main():
             plt.savefig(args.output)
 
     elif args.bar is not None:
+        # Plot colorbars only.
+
         ori = {"h": "horizontal", "v": "vertical"}
 
         plt.ioff()
@@ -299,7 +314,7 @@ def main():
             mpl.cm.ScalarMappable(norm=pal.norm, cmap=pal.cmap),
             cax=ax,
             orientation=ori[args.bar],
-            label=pal.label
+            label=pal.label,
         )
 
         if args.output is None:
@@ -314,28 +329,39 @@ def main():
 
 
 def color_to_bytes(color_tuple):
+    """
+    Returns tuple of values from 0 to 255, based on values in input tuple assumed
+    to be in the range zero to one.
+    """
     converted = map(lambda x: int(x * 255), color_tuple)
     return tuple(converted)
 
 
-def func3(x, y):
+def arbitrary_func(x, y):
+    """Returns data values for a function of x and y."""
     return (1 - x / 2 + x**5 + y**3) * np.exp(-(x**2 + y**2))
 
 
-def rescale(arr, min, max):
-    data = arr.astype('float64')
+def rescale(arr, min, max, range_mult=0.1):
+    """
+    Returns numpy array of data based on array, but scaled to be range_mult smaller and
+    larger than min and max,
+    """
+    data = arr.astype("float64")
     minmax_range = max - min
-    real_min = min - (minmax_range * 0.1)
-    real_max = max + (minmax_range * 0.1)
+    real_min = min - (minmax_range * range_mult)
+    real_max = max + (minmax_range * range_mult)
     return (
-        (
-            ((data - np.min(data)) / (np.max(data) - np.min(data))) * (real_max - real_min)
-        ) + real_min
-    )
+        ((data - np.min(data)) / (np.max(data) - np.min(data))) * (real_max - real_min)
+    ) + real_min
 
 
 def verve_stoplight():
-    color_arr = np.flipud(np.loadtxt(StringIO("""100 254 14 2
+    """Returns VERVE stoplight colors as a matplotlib colormap object."""
+    color_arr = np.flipud(
+        np.loadtxt(
+            StringIO(
+                """100 254 14 2
 99 253 20 4
 98 253 27 5
 97 253 33 7
@@ -435,10 +461,11 @@ def verve_stoplight():
 3 139 220 134
 2 139 219 135
 1 139 219 135
-0 139 219 135"""), dtype=np.dtype(int), usecols=(1, 2, 3)))
+0 139 219 135"""
+            ),
+            dtype=np.dtype(int),
+            usecols=(1, 2, 3),
+        )
+    )
 
     return mpl.colors.ListedColormap(color_arr / 255, name="VERVE_stoplight")
-
-
-
-
