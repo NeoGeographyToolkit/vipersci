@@ -175,6 +175,9 @@ class VIPERID:
             )
         return False
 
+    def __hash__(self):
+        return hash((self.date, self.time, self.instrument))
+
     def __lt__(self, other):
         if isinstance(other, self.__class__):
             return (
@@ -319,6 +322,9 @@ class VISID(VIPERID):
         if isinstance(other, self.__class__):
             return super().__eq__(other) and self.compression == other.compression
         return False
+
+    def __hash__(self):
+        return hash((super().__hash__(), self.compression))
 
     def __lt__(self, other):
         if isinstance(other, self.__class__):
