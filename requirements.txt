@@ -1,5 +1,6 @@
 genshi
 geopandas
+matplotlib
 numpy
 rasterio
 pandas

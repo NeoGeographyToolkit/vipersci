@@ -12,6 +12,7 @@
 dependencies:
   - genshi
   - geopandas
+  - matplotlib
   - numpy
   - pandas
   - psycopg2
