@@ -152,7 +152,7 @@ class Palette:
     def to_gdal_colormap(self, epsilon=0.001):
         s = [
             f"# Color table for {self.label}",
-            f"# created by {__name__} version {__version__} ",
+            f"# created by {__name__} version {__version__}",
             "# value, R, G, B, A",
         ]
         if self.bounded:
@@ -254,73 +254,11 @@ def main():
         )
 
     if args.plot:
-        # Apply colors to 2d function for example visualization.
-
-        plt.ioff()
-        # data = rescale(moon(), pal.vmin, pal.vmax)  # (512, 512) uint8 ndarray
-        # make these smaller to increase the resolution
-        dx, dy = 0.05, 0.05
-
-        x = np.arange(-3.0, 3.0, dx)
-        y = np.arange(-3.0, 3.0, dy)
-        X, Y = np.meshgrid(x, y)
-        Z = rescale(arbitrary_func(X, Y), pal.vmin, pal.vmax)
-        extent = np.min(x), np.max(x), np.min(y), np.max(y)
-
-        checkerboard = np.add.outer(range(32), range(32)) % 2
-        plt.imshow(
-            checkerboard,
-            cmap=plt.cm.gray,
-            vmin=-1,
-            vmax=2,
-            interpolation="nearest",
-            extent=extent,
-        )
-
-        # plt.imshow(data, cmap=pal.cmap, norm=pal.norm)
-        plt.imshow(
-            Z, cmap=pal.cmap, norm=pal.norm, interpolation="bilinear", extent=extent
-        )
-
-        plt.colorbar(label=pal.label)
-        plt.title(f"Colormap: {pal.cmap.name}")
-        plt.tick_params(
-            left=False, right=False, labelleft=False, labelbottom=False, bottom=False
-        )
-        plt.xlabel(
-            f"Colormap range: {pal.vmin} to {pal.vmax}, "
-            f"Data range: {Z.min():.3g} to {Z.max():.3g}"
-        )
-
-        if args.output is None:
-            plt.show()
-        else:
-            plt.savefig(args.output)
+        example_plot(pal, args.output)
 
     elif args.bar is not None:
-        # Plot colorbars only.
+        plot_colorbar(pal, args.bar, args.output)
 
-        ori = {"h": "horizontal", "v": "vertical"}
-
-        plt.ioff()
-        if args.bar == "h":
-            fig, ax = plt.subplots(figsize=(5, 1))
-            fig.subplots_adjust(bottom=0.5)
-        elif args.bar == "v":
-            fig, ax = plt.subplots(figsize=(1.2, 5))
-            fig.subplots_adjust(right=0.4)
-
-        fig.colorbar(
-            mpl.cm.ScalarMappable(norm=pal.norm, cmap=pal.cmap),
-            cax=ax,
-            orientation=ori[args.bar],
-            label=pal.label,
-        )
-
-        if args.output is None:
-            plt.show()
-        else:
-            plt.savefig(args.output)
     else:
         if args.output is None:
             print(pal.to_gdal_colormap())
@@ -337,9 +275,86 @@ def color_to_bytes(color_tuple):
     return tuple(converted)
 
 
-def arbitrary_func(x, y):
-    """Returns data values for a function of x and y."""
-    return (1 - x / 2 + x**5 + y**3) * np.exp(-(x**2 + y**2))
+def example_plot(palette: Palette, output=None):
+    """Apply colors to 2d function for example visualization."""
+
+    plt.ioff()
+    # data = rescale(moon(), pal.vmin, pal.vmax)  # (512, 512) uint8 ndarray
+    # make these smaller to increase the resolution
+    dx = 0.05
+    x = np.arange(-3.0, 3.0, dx)
+    x_grid, y_grid = np.meshgrid(x, x)
+    z = rescale(
+        (1 - x_grid / 2 + x_grid**5 + y_grid**3)
+        * np.exp(-(x_grid**2 + y_grid**2)),
+        palette.vmin,
+        palette.vmax,
+    )
+    extent = np.min(x_grid), np.max(x_grid), np.min(y_grid), np.max(y_grid)
+
+    checkerboard = np.add.outer(range(32), range(32)) % 2
+    plt.imshow(
+        checkerboard,
+        cmap=plt.cm.gray,
+        vmin=-1,
+        vmax=2,
+        interpolation="nearest",
+        extent=extent,
+    )
+
+    # plt.imshow(data, cmap=pal.cmap, norm=pal.norm)
+    plt.imshow(
+        z, cmap=palette.cmap, norm=palette.norm, interpolation="bilinear", extent=extent
+    )
+
+    plt.colorbar(label=palette.label)
+    plt.title(f"Colormap: {palette.cmap.name}")
+    plt.tick_params(
+        left=False, right=False, labelleft=False, labelbottom=False, bottom=False
+    )
+    plt.xlabel(
+        f"Colormap range: {palette.vmin} to {palette.vmax}, "
+        f"Data range: {z.min():.3g} to {z.max():.3g}"
+    )
+
+    if output is None:
+        plt.show()
+    else:
+        plt.savefig(output)
+
+    return
+
+
+def plot_colorbar(palette: Palette, orientation: str = "h", output=None):
+    """Plot colorbars only."""
+
+    o_dict = {"h": "horizontal", "v": "vertical"}
+    if orientation in o_dict:
+        orientation = o_dict[orientation]
+
+    fig, ax = plt.subplots()
+
+    plt.ioff()
+    if orientation == "h":
+        fig, ax = plt.subplots(figsize=(5, 1))
+        fig.subplots_adjust(bottom=0.5)
+    elif orientation == "v":
+        fig, ax = plt.subplots(figsize=(1.2, 5))
+        fig.subplots_adjust(right=0.4)
+
+    fig.colorbar(
+        mpl.cm.ScalarMappable(norm=palette.norm, cmap=palette.cmap),
+        cax=ax,
+        orientation=orientation,
+        label=palette.label,
+    )
+
+    if output is None:
+        plt.show()
+    else:
+        plt.savefig(output)
+
+    return
 
 
 def rescale(arr, min, max, range_mult=0.1):

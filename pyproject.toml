@@ -3,6 +3,8 @@
 module = [
     'genshi.template',
     'geopandas',
+    'matplotlib',
+    'matplotlib.*',
     'pandas',
     'rasterio',
     'rasterio.*',
