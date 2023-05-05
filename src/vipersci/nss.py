@@ -32,6 +32,7 @@ from typing import Any, Iterable, Sequence, Union
 from os import PathLike
 
 import numpy as np
+import numpy.typing as npt
 from scipy.interpolate import RegularGridInterpolator
 
 logger = logging.getLogger(__name__)
@@ -140,8 +141,8 @@ class DataModeler:
 
     def __call__(
         self,
-        det1: Union[float, Sequence[float], np.typing.ArrayLike],
-        det2: Union[float, Sequence[float], np.typing.ArrayLike],
+        det1: Union[float, Sequence[float], npt.ArrayLike],
+        det2: Union[float, Sequence[float], npt.ArrayLike],
     ):
         """
         Returns model-provided burial depth, water equivalent hydrogen, and
@@ -235,7 +236,7 @@ def read_csv(fname: Readable):
 
 
 def uniform_weh(
-    measured: Union[float, Sequence[float], np.typing.ArrayLike],
+    measured: Union[float, Sequence[float], npt.ArrayLike],
     c0: float = 30.75,
     a: float = 0.0256,
     b: float = 1.0990,
