@@ -31,7 +31,6 @@ import vipersci.vis.db.validators as vld
 
 
 class TestValidators(unittest.TestCase):
-
     def test_validate_datetime_asutc(self):
         dt = datetime(2022, 1, 27, 0, 0, 0, tzinfo=timezone.utc)
         valid = vld.validate_datetime_asutc("foo", dt)
@@ -39,7 +38,7 @@ class TestValidators(unittest.TestCase):
 
         t_str = "2023-11-25T14:38:59Z"
         valid = vld.validate_datetime_asutc("foo", t_str)
-        self.assertEqual(valid, fromisozformat(t_str) )
+        self.assertEqual(valid, fromisozformat(t_str))
 
         # t2_str = "2023-11-25T14:38:59"
         # valid = vld.validate_datetime_asutc("foo", t2_str)
@@ -52,17 +51,10 @@ class TestValidators(unittest.TestCase):
             ValueError,
             vld.validate_datetime_asutc,
             "foo",
-            "not interpretable as a datetime"
+            "not interpretable as a datetime",
         )
 
     def test_validate_purpose(self):
-        self.assertEqual(
-            vld.validate_purpose("Science"),
-            "Science"
-        )
+        self.assertEqual(vld.validate_purpose("Science"), "Science")
 
-        self.assertRaises(
-            ValueError,
-            vld.validate_purpose,
-            "not a Purpose"
-        )
+        self.assertRaises(ValueError, vld.validate_purpose, "not a Purpose")

@@ -41,9 +41,7 @@ def validate_datetime_asutc(key, value):
         else:
             dt = datetime.fromisoformat(value)
     else:
-        raise ValueError(
-            f"{key} must be a datetime or an ISO 8601 formatted string."
-        )
+        raise ValueError(f"{key} must be a datetime or an ISO 8601 formatted string.")
 
     return dt.astimezone(timezone.utc)
 
