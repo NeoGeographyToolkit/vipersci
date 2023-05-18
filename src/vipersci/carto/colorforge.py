@@ -41,6 +41,14 @@ from vipersci import util
 logger = logging.getLogger(__name__)
 
 presets = dict(
+    dd=dict(
+        label="Depth to Diameter ratio",
+        cmap="viridis",
+        vmin=0.05,
+        vmax=0.15,
+        bounded=False,
+        extend="both",
+    ),
     dice=dict(
         label="Depth to Ice Stability (m)",
         cmap="Blues_r",
@@ -138,6 +146,8 @@ class Palette:
         elif extend == "neither":
             self.cmap.set_under(under_color, alpha=0)
             self.cmap.set_over(over_color, alpha=0)
+        elif extend == "both":
+            pass
         else:
             raise ValueError(f"extend={extend} is not accepted.")
         self.vmin = vmin
