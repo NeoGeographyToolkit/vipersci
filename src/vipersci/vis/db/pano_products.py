@@ -39,7 +39,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, mapped_column, validates
 
-from vipersci.pds.pid import PanoID
+from vipersci.pds.pid import VISID, PanoID
 from vipersci.pds.xml import ns
 from vipersci.pds.datetime import fromisozformat, isozformat
 import vipersci.vis.db.validators as vld
@@ -84,11 +84,6 @@ class PanoProduct(Base):
         doc="The absolute path (POSIX style) that contains the Array_2D_Image "
         "that this metadata refers to.",
     )
-    instrument_name = mapped_column(
-        String,
-        nullable=False,
-        doc="The full name of the instrument of the earliest source product.",
-    )
     lines = mapped_column(
         Integer,
         nullable=False,
@@ -112,7 +107,12 @@ class PanoProduct(Base):
     software_name = mapped_column(String, nullable=False)
     software_version = mapped_column(String, nullable=False)
     software_program_name = mapped_column(String, nullable=False)
-    # source_products: Mapped[List["RawProduct"]] =
+    # source_products
+    #   Eventually, this will be a Many-to-Many mapping element, but
+    #   we have not yet determined exactly which derived product type
+    #   is to be the source type, so we're not going to wire this up here,
+    #   but will shove it in the "labelmeta" for now.
+    # source_products: Mapped[List["???Product"]] =
     # relationship(back_populates="panorama")
     start_time = mapped_column(DateTime(timezone=True), nullable=False)
     stop_time = mapped_column(DateTime(timezone=True), nullable=False)
@@ -145,24 +145,35 @@ class PanoProduct(Base):
                     f"provided start_time ({kwargs['start_time']}) disagree."
                 )
 
-        elif self.start_time is not None and self.instrument_name is not None:
-            pid = PanoID(
-                self.start_time.date(), self.start_time.time(), self.instrument_name
-            )
+        elif "source_products" in otherargs and otherargs["source_products"] is not None:
+            source_pids = list(map(VISID, otherargs["source_products"]))
+            instruments = set([p.instrument for p in source_pids])
+            inst = "pan"
+            if len(instruments) == 1:
+                inst = instruments.pop()
+
+            source_pids.sort()
+            st = source_pids[0].datetime()
+            if self.start_time is not None:
+                st = self.start_time
+
+            pid = PanoID(st.date(), st.time(), inst)
         else:
             got = dict()
             for k in (
                 "product_id",
                 "start_time",
-                "instrument_name",
             ):
                 v = getattr(self, k)
                 if v is not None:
                     got[k] = v
 
+            if "source_products" in otherargs:
+                got["source_products"] = otherargs["source_products"]
+
             raise ValueError(
-                "Either product_id must be given, or each of start_time, "
-                f"and instrument_name. Got: {got}"
+                "Either product_id must be given, or a list of source_products. "
+                f"Got: {got}"
             )
 
         self._pid = str(pid)
@@ -219,86 +230,16 @@ class PanoProduct(Base):
         Returns an instantiated PanoProduct object from parsing the provided *text*
         as XML.
         """
-        d = {}
-
-        def _find_text(root, xpath, unit_check=None):
-            element = root.find(xpath, ns)
-            if element is not None:
-                if unit_check is not None:
-                    if element.get("unit") != unit_check:
-                        raise ValueError(
-                            f"The {xpath} element does not have units of "
-                            f"{unit_check}, has {element.get('unit')}"
-                        )
-                el_text = element.text
-                if el_text:
-                    return el_text
-                else:
-                    raise ValueError(
-                        f"The XML {xpath} element contains no information."
-                    )
-            else:
-                raise ValueError(f"XML text does not have a {xpath} element.")
-
-        root = ET.fromstring(text)
-        lid = _find_text(
-            root, "./pds:Identification_Area/pds:logical_identifier"
-        ).split(":")
-
-        if lid[3] != "viper_vis":
-            raise ValueError(
-                f"XML text has a logical_identifier which is not viper_vis: {lid[3]}"
-            )
-
-        if lid[4] != "panoramas":
-            raise ValueError(
-                f"XML text has a logical_identifier which is not panoramas: {lid[4]}"
-            )
-        d["product_id"] = lid[5]
-
-        d["file_creation_datetime"] = fromisozformat(
-            _find_text(root, ".//pds:creation_date_time")
-        )
-        d["file_path"] = _find_text(root, ".//pds:file_name")
-
-        osc = root.find(".//pds:Observing_System_Component[pds:type='Instrument']", ns)
-        d["instrument_name"] = _find_text(osc, "pds:name")
-
-        aa = root.find(".//pds:Axis_Array[pds:axis_name='Line']", ns)
-        d["lines"] = int(_find_text(aa, "./pds:elements"))
-        d["file_md5_checksum"] = _find_text(root, ".//pds:md5_checksum")
-        d["mission_phase"] = _find_text(root, ".//msn:mission_phase_name")
-        d["offset"] = _find_text(root, ".//img:analog_offset")
-
-        d["purpose"] = _find_text(root, ".//pds:purpose")
-
-        aa = root.find(".//pds:Axis_Array[pds:axis_name='Sample']", ns)
-        d["samples"] = int(_find_text(aa, "./pds:elements"))
-
-        sw = root.find(".//proc:Software", ns)
-        d["software_name"] = _find_text(sw, "./proc:name")
-        d["software_version"] = _find_text(sw, "./proc:software_version_id")
-        d["software_program_name"] = _find_text(sw, "./proc:Software_Program/proc:name")
-
-        # Start times must be on the whole second, which is why we don't use
-        # fromisozformat() here.
-        d["start_time"] = datetime.strptime(
-            _find_text(root, ".//pds:start_date_time"), "%Y-%m-%dT%H:%M:%SZ"
-        ).replace(tzinfo=timezone.utc)
-
-        d["stop_time"] = fromisozformat(_find_text(root, ".//pds:stop_date_time"))
-
-        return cls(**d)
+        raise NotImplementedError()
 
     def label_dict(self):
         """Returns a dictionary suitable for label generation."""
-        _inst = self.instrument_name.lower().replace(" ", "_")
         _sclid = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
         d = dict(
             lid=f"urn:nasa:pds:viper_vis:panoramas:{self.product_id}",
             mission_lid="urn:nasa:pds:viper",
             sc_lid=_sclid,
-            inst_lid=f"{_sclid}.{_inst}",
+            # inst_lid=f"{_sclid}.{_inst}",
         )
 
         d.update(self.asdict())

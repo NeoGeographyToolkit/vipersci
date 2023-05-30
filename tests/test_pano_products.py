@@ -23,7 +23,7 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import unittest
 
 from vipersci.vis.db import pano_products as tpp
@@ -35,12 +35,12 @@ class TestPanoProduct(unittest.TestCase):
         self.d = dict(
             file_creation_datetime=datetime.now(timezone.utc),
             file_path="/path/to/dummy",
-            instrument_name="NavCam Left",
             lines=2048,
             md5_checksum="dummychecksum",
             mission_phase="Test",
             purpose="Engineering",
             samples=2048,
+            source_products=["220127-000000-ncl-d", "220127-000005-ncl-d"],
             start_time=self.startUTC,
         )
         self.extras = dict(foo="bar")
@@ -54,17 +54,21 @@ class TestPanoProduct(unittest.TestCase):
         ppl = tpp.PanoProduct(**d)
         self.assertEqual("220127-000000-ncl-pan", str(ppl.product_id))
 
+        # Force alternate time
+        d = self.d.copy()
+        d["start_time"] = self.startUTC + timedelta(hours=1)
+        pp2 = tpp.PanoProduct(**d)
+        self.assertEqual("220127-010000-ncl-pan", str(pp2.product_id))
+
+        # Remove explicit time signature
+        d = self.d.copy()
+        del d["start_time"]
+        pp3 = tpp.PanoProduct(**d)
+        self.assertEqual("220127-000000-ncl-pan", str(pp3.product_id))
+
         # print(f"{k}: {getattr(rp, k)}")
 
     def test_init_errors(self):
-        # Need to implement when getting times from input products works.
-        # d = self.d.copy()
-        # d["start_time"] = self.startUTC + timedelta(hours=1)
-        # self.assertRaises(ValueError, tpp.PanoProduct, **d)
-
-        d = self.d.copy()
-        del d["instrument_name"]
-        self.assertRaises(ValueError, tpp.PanoProduct, **d)
 
         d = self.d.copy()
         d["product_id"] = "220127-010000-ncl-b"
@@ -89,9 +93,6 @@ class TestPanoProduct(unittest.TestCase):
 
         p.update(self.extras)
         self.assertTrue(k in p.labelmeta)
-
-        p.update({"instrument_name": "foo"})
-        self.assertEqual(p.instrument_name, "foo")
 
     def test_labeldict(self):
         din = self.d
