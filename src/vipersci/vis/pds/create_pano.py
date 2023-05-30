@@ -128,7 +128,7 @@ def create(
     """
     Creates a Panorama Product in *outdir*. Returns None.
 
-    At this time, session, xml, and template_pare ignored.
+    At this time, session, xml, and template_path are ignored.
 
     At this time, *inputs* should be a list of file paths.  In the
     future, it could be a list of product IDs.
@@ -146,45 +146,36 @@ def create(
     """
 
     metadata = dict(
-        source_products={},
+        source_products=[],
     )
+    source_paths = []
 
     for i in inputs:
         if isinstance(i, RawProduct):
-            metadata["source_products"][i.product_id] = (
-                i.file_path,
-                i.file_md5_checksum,
-            )
+            metadata["source_products"].append(i.product_id)
+            source_paths.append(i.file_path)
         elif isinstance(i, pds.VISID):
             raise NotImplementedError(
                 "One day, this will fire up a db connection and get the info needed."
             )
         elif isinstance(i, (Path, str)):
-            metadata["source_products"][str(pds.VISID(i))] = (i, None)
+            metadata["source_products"].append([str(pds.VISID(i))])
+            source_paths.append(i)
         else:
             raise ValueError(
                 f"an element in input is not the right type: {i} ({type(i)})"
             )
 
-    image_dict = {}
-    for id, (path, md5) in metadata["source_products"].items():
+    # At this time, image pointing information is not available, so we assume that
+    # the images provided are provided in left-to-right order.
+
+    image_list = list()
+    for path in source_paths:
         p = Path(path)
         if not p.exists():
             raise FileNotFoundError(f"{p} does not exist.")
             # in future, maybe do a db lookup on the VISID.
 
-        # check md5 here
-
-        image_dict[pds.VIPERID(id)] = p
-
-    pid = pds.PanoID(str(sorted(image_dict.keys())[0]) + "-pan")
-    metadata["product_id"] = str(pid)
-
-    # At this time, image pointing information is not available, so we assume that
-    # the images provided are provided in left-to-right order.
-
-    image_list = list()
-    for p in image_dict.values():
         image_list.append(imread(str(p)))
 
     pano_arr = np.hstack(image_list)
