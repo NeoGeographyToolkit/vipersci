@@ -36,6 +36,7 @@ vis_instruments = dict(
     has="HazCam Aft Starboard",
     acl="AftCam Left",
     acr="AftCam Right",
+    pan="Panorama"  # Not an instrument, but a valid combined product type.
 )
 vis_instrument_aliases = {
     "navcam left": "ncl",
@@ -82,7 +83,8 @@ vis_pid_re = re.compile(pid_re.pattern + rf"-(?P<compression>{vis_comp_re.patter
 vis_pan_re = re.compile(
     f"(?P<date>{date_re.pattern})-"
     rf"(?P<time>{time_re.pattern})-"
-    rf"(?P<instrument>{vis_inst_re.pattern})-pan"
+    rf"((?P<instrument>{vis_inst_re.pattern})-)?"
+    rf"pan"
 )
 
 
@@ -384,6 +386,11 @@ class PanoID(VIPERID):
                 raise ValueError(f"{instrument} is not a VIS instrument.")
 
         super().__init__(*args)
+        if self.instrument == "pan":
+            self.instrument = None
 
     def __str__(self):
-        return "-".join((self.date, self.time, self.instrument, "pan"))
+        if self.instrument in ("pan", None):
+            return "-".join((self.date, self.time, "pan"))
+        else:
+            return "-".join((self.date, self.time, self.instrument, "pan"))

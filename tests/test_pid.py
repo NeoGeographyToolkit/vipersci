@@ -285,6 +285,7 @@ class TestPanoID(unittest.TestCase):
             ("220117-010101-ncl-pan", "220117-010101-NCL-PAN"),
             ("220117-010101-ncl-pan", "20220117-010101-ncl-pano"),
             ("231225-182000-acr-pan", "231225-182000-acr-pan ignored"),
+            ("231225-182000-pan", "231225-182000-pan multiple instruments"),
         )
         for s in string_tuples:
             with self.subTest():
