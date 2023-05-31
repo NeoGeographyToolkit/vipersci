@@ -33,12 +33,13 @@ Panorama Product, only a mock-up of one.
 
 import argparse
 import logging
-from typing import Iterable, Union, Optional
+from typing import Iterable, Union, Optional, Sequence
 from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 from skimage.io import imread, imsave  # maybe just imageio here?
+from skimage.transform import resize
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -57,6 +58,15 @@ ImageType = Union[npt.NDArray[np.uint16], npt.NDArray[np.uint8]]
 def arg_parser():
     parser = argparse.ArgumentParser(
         description=__doc__, parents=[util.parent_parser()]
+    )
+    parser.add_argument(
+        "-b",
+        "--bottom",
+        nargs="*",
+        help="Any AftCam and front-down NavCam images that should go on the 'bottom "
+        "row.'  Literal '-' can be provided to indicate blank positions on the bottom "
+        "row.  This is an emphemeral option that is expected to go away when we can "
+        "get our hands on better pointing information.",
     )
     parser.add_argument(
         "-d",
@@ -101,7 +111,15 @@ def main():
     util.set_logger(args.verbose)
 
     if args.dburl is None:
-        create(args.inputs, args.output_dir, None, args.json, args.xml, args.template)
+        create(
+            args.inputs,
+            args.output_dir,
+            None,
+            args.json,
+            args.xml,
+            args.template,
+            args.bottom,
+        )
     else:
         engine = create_engine(args.dburl)
         session_maker = sessionmaker(engine, future=True)
@@ -112,6 +130,7 @@ def main():
             args.json,
             args.xml,
             args.template,
+            args.bottom,
         )
 
     return
@@ -124,6 +143,7 @@ def create(
     json: bool = True,
     xml: bool = False,
     template_path: Optional[Path] = None,
+    bottom_row: Optional[Sequence[Union[Path, str]]] = None,
 ):
     """
     Creates a Panorama Product in *outdir*. Returns None.
@@ -144,7 +164,6 @@ def create(
     The *template_path* argument is passed to the write_xml() function, please see
     its documentation for details.
     """
-
     metadata = dict(
         source_products=[],
     )
@@ -179,6 +198,26 @@ def create(
         image_list.append(imread(str(p)))
 
     pano_arr = np.hstack(image_list)
+
+    if bottom_row is not None:
+        if len(bottom_row) < len(source_paths):
+            bottom_row += "-" * (len(source_paths) - len(bottom_row))
+
+        bottom_list = list()
+        for b in bottom_row:
+            if b == "-":
+                bottom_list.append(np.zeros_like(image_list[0]))
+            else:
+                p = Path(b)
+                if not p.exists():
+                    raise FileNotFoundError(f"{p} does not exist.")
+                metadata["source_products"].append([str(pds.VISID(p))])
+                im = imread(str(p))
+                if im.shape != image_list[0].shape:
+                    im = resize(im, image_list[0].shape)
+                bottom_list.append(im)
+        bot_arr = np.hstack(bottom_list)
+        pano_arr = np.vstack((pano_arr, bot_arr))
 
     pp = make_pano_product(metadata, pano_arr, outdir)
 
