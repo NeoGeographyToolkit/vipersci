@@ -33,7 +33,7 @@ Panorama Product, only a mock-up of one.
 
 import argparse
 import logging
-from typing import Iterable, Union, Optional, Sequence
+from typing import Any, Dict, Iterable, Union, Optional, MutableSequence
 from pathlib import Path
 
 import numpy as np
@@ -122,11 +122,11 @@ def main():
         )
     else:
         engine = create_engine(args.dburl)
-        session_maker = sessionmaker(engine, future=True)
+        session = sessionmaker(engine, future=True)
         create(
             args.inputs,
             args.output_dir,
-            session_maker,
+            session,
             args.json,
             args.xml,
             args.template,
@@ -139,11 +139,11 @@ def main():
 def create(
     inputs: Iterable[Union[Path, pds.VISID, RawProduct, str]],
     outdir: Path = Path.cwd(),
-    session: Union[Session, sessionmaker, None] = None,
+    session: Optional[Session] = None,
     json: bool = True,
     xml: bool = False,
     template_path: Optional[Path] = None,
-    bottom_row: Optional[Sequence[Union[Path, str]]] = None,
+    bottom_row: Optional[MutableSequence[Union[Path, str]]] = None,
 ):
     """
     Creates a Panorama Product in *outdir*. Returns None.
@@ -164,7 +164,7 @@ def create(
     The *template_path* argument is passed to the write_xml() function, please see
     its documentation for details.
     """
-    metadata = dict(
+    metadata: Dict[str, Any] = dict(
         source_products=[],
     )
     source_paths = []
@@ -201,7 +201,9 @@ def create(
 
     if bottom_row is not None:
         if len(bottom_row) < len(source_paths):
-            bottom_row += "-" * (len(source_paths) - len(bottom_row))
+            bottom_row += [
+                "-",
+            ] * (len(source_paths) - len(bottom_row))
 
         bottom_list = list()
         for b in bottom_row:

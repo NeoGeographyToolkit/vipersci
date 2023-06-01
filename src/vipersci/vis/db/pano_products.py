@@ -25,10 +25,7 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from datetime import datetime, timezone
-
-# from typing import List
-import xml.etree.ElementTree as ET
+from datetime import datetime
 
 from sqlalchemy import (
     DateTime,
@@ -40,8 +37,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, mapped_column, validates
 
 from vipersci.pds.pid import VISID, PanoID
-from vipersci.pds.xml import ns
-from vipersci.pds.datetime import fromisozformat, isozformat
+from vipersci.pds.datetime import isozformat
 import vipersci.vis.db.validators as vld
 
 
@@ -145,7 +141,9 @@ class PanoProduct(Base):
                     f"provided start_time ({kwargs['start_time']}) disagree."
                 )
 
-        elif "source_products" in otherargs and otherargs["source_products"] is not None:
+        elif (
+            "source_products" in otherargs and otherargs["source_products"] is not None
+        ):
             source_pids = list(map(VISID, otherargs["source_products"]))
             instruments = set([p.instrument for p in source_pids])
             inst = "pan"

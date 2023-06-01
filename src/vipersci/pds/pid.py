@@ -36,7 +36,7 @@ vis_instruments = dict(
     has="HazCam Aft Starboard",
     acl="AftCam Left",
     acr="AftCam Right",
-    pan="Panorama"  # Not an instrument, but a valid combined product type.
+    pan="Panorama",  # Not an instrument, but a valid combined product type.
 )
 vis_instrument_aliases = {
     "navcam left": "ncl",

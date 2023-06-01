@@ -14,7 +14,6 @@ from unittest.mock import patch
 
 import numpy as np
 
-from vipersci.pds import pid as pds
 from vipersci.vis.db.pano_products import PanoProduct
 from vipersci.vis.pds import create_pano as cp
 
@@ -26,7 +25,7 @@ class TestMakePano(unittest.TestCase):
             "instrument_name": "NavCam Left",
             "lines": 2048,
             "product_id": "230421-200000-ncl-pan",
-            "samples": 6000
+            "samples": 6000,
         }
 
     def test_no_image(self):

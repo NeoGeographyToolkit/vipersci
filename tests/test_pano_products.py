@@ -69,7 +69,6 @@ class TestPanoProduct(unittest.TestCase):
         # print(f"{k}: {getattr(rp, k)}")
 
     def test_init_errors(self):
-
         d = self.d.copy()
         d["product_id"] = "220127-010000-ncl-b"
         self.assertRaises(ValueError, tpp.PanoProduct, **d)
