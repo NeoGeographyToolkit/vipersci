@@ -43,6 +43,7 @@ Changed
   should still be supported).
 - Many changes to improve type checking.
 - Added numeric instrument aliases and checking for them.
+- Added information for procesingInfo and outputMask from Yamcs.
 - Upgrade to SQLAlchemy >=2.
 
 
