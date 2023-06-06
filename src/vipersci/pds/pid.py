@@ -51,6 +51,20 @@ vis_instrument_aliases = {
     "hazcam front right": "hfs",
     "hazcam back left": "hap",
     "hazcam back right": "has",
+    "hazcam_1": "hfp",
+    "hazcam_2": "hap",
+    "hazcam_3": "hfs",
+    "hazcam_4": "has",
+}
+vis_instrument_numbers = {
+    0: "ncl",
+    1: "ncr",
+    2: "acl",
+    3: "acr",
+    4: "hfp",
+    5: "hfs",
+    6: "hap",
+    7: "has",
 }
 instruments.update(vis_instruments)
 vis_compression = dict(
@@ -300,12 +314,7 @@ class VISID(VIPERID):
         else:
             raise IndexError("accepts 1 or 4 arguments")
 
-        if instrument in vis_instruments:
-            pass
-        elif instrument.casefold() in vis_instrument_aliases:
-            instrument = vis_instrument_aliases[instrument.casefold()]
-        else:
-            raise ValueError(f"{instrument} is not a VIS instrument.")
+        instrument = self.instrument_name(instrument)
 
         if compression in vis_compression:
             pass
@@ -340,12 +349,14 @@ class VISID(VIPERID):
     @staticmethod
     def instrument_name(name):
         """Returns fullname of VIS instrument based on *name*."""
+        if isinstance(name, int):
+            return vis_instruments[vis_instrument_numbers[name]]
         if name.casefold() in vis_instruments:
             return vis_instruments[name.casefold()]
         elif name.casefold() in vis_instrument_aliases:
             return vis_instruments[vis_instrument_aliases[name.casefold()]]
         else:
-            raise ValueError(f"No instrument name based on {name} could be found.")
+            raise ValueError(f"No VIS instrument name based on {name} could be found.")
 
     def compression_class(self):
         """Returns text value for the PDS onboard_compression_class."""
@@ -376,14 +387,7 @@ class PanoID(VIPERID):
                 raise ValueError(f"{args} did not match regex: {vis_pan_re.pattern}")
         elif 2 <= len(args) <= 3:
             instrument = args[-1]
-            if instrument in vis_instruments:
-                pass
-            elif instrument.casefold() in vis_instrument_aliases:
-                pass
-            elif instrument in vis_instruments.values():
-                pass
-            else:
-                raise ValueError(f"{instrument} is not a VIS instrument.")
+            VISID.instrument_name(instrument)
 
         super().__init__(*args)
         if self.instrument == "pan":
