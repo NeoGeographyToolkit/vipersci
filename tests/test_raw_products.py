@@ -30,7 +30,6 @@ from vipersci.vis.db import raw_products as trp
 
 
 class TestImageType(unittest.TestCase):
-
     def test_init(self):
         self.assertEqual(trp.ImageType.LOSSLESS_ICER_IMAGE, trp.ImageType(1))
 
@@ -42,14 +41,14 @@ class TestImageType(unittest.TestCase):
 
 
 class TestProcessingStage(unittest.TestCase):
-
     def test_init(self):
         self.assertEqual(trp.ProcessingStage.PROCESS_FLATFIELD, trp.ProcessingStage(2))
 
     def test_combintation(self):
         self.assertEqual(
-            trp.ProcessingStage.PROCESS_FLATFIELD | trp.ProcessingStage.PROCESS_LINEARIZATION,
-            trp.ProcessingStage(10)
+            trp.ProcessingStage.PROCESS_FLATFIELD
+            | trp.ProcessingStage.PROCESS_LINEARIZATION,
+            trp.ProcessingStage(10),
         )
 
     def test_not_member(self):

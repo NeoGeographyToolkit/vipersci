@@ -115,9 +115,9 @@
 					<img:illumination_wavelength unit="nm">${led_wavelength}</img:illumination_wavelength>
 				</img:LED_Illumination_Source>
 			</img:Illumination>
-            <img:Image_Filter py:if="image_filter is not None">
-                <img:processing_venue>${image_filter.processing_venue}</img:processing_venue>
-                <img:processing_algorithm>${image_filter.processing_algorithm}</img:processing_algorithm>
+            <img:Image_Filter py:for="venue, algorithm in image_filters">
+                <img:processing_venue>${venue}</img:processing_venue>
+                <img:processing_algorithm>${algorithm}</img:processing_algorithm>
             </img:Image_Filter>
 			<img:Onboard_Compression>
 				<img:onboard_compression_class>${compression_class}</img:onboard_compression_class>
