@@ -226,7 +226,7 @@ def create(
     metadata: dict,
     image: Union[ImageType, Path, None] = None,
     outdir: Path = Path.cwd(),
-    session: Union[Session, sessionmaker, None] = None,
+    session: Optional[Session] = None,
     json: bool = True,
     xml: bool = False,
     template_path: Optional[Path] = None,

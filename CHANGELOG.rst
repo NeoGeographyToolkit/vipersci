@@ -30,6 +30,9 @@ Unreleased
 
 Added
 ^^^^^
+- PanoID class added to pds.pid
+- pano_products and create_pano added, still very preliminary, mostly just mock-ups.
+- colorforge program for managing colormaps.
 - mypy is now in the development dependencies to support type checking.
 - lint/mypy target added to Makefile.
 
