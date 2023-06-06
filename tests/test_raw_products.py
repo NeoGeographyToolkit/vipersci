@@ -29,6 +29,33 @@ import unittest
 from vipersci.vis.db import raw_products as trp
 
 
+class TestImageType(unittest.TestCase):
+
+    def test_init(self):
+        self.assertEqual(trp.ImageType.LOSSLESS_ICER_IMAGE, trp.ImageType(1))
+
+    def test_single_flags(self):
+        self.assertRaises(ValueError, trp.ImageType, 9)
+
+    def test_not_member(self):
+        self.assertRaises(ValueError, trp.ImageType, 1000)
+
+
+class TestProcessingStage(unittest.TestCase):
+
+    def test_init(self):
+        self.assertEqual(trp.ProcessingStage.PROCESS_FLATFIELD, trp.ProcessingStage(2))
+
+    def test_combintation(self):
+        self.assertEqual(
+            trp.ProcessingStage.PROCESS_FLATFIELD | trp.ProcessingStage.PROCESS_LINEARIZATION,
+            trp.ProcessingStage(10)
+        )
+
+    def test_not_member(self):
+        self.assertRaises(ValueError, trp.ProcessingStage, 15)
+
+
 class TestRawProduct(unittest.TestCase):
     def setUp(self):
         self.startUTC = datetime(2022, 1, 27, 0, 0, 0, tzinfo=timezone.utc)
@@ -51,7 +78,6 @@ class TestRawProduct(unittest.TestCase):
             instrument_temperature=128,
             lines=2048,
             lobt=self.startUTC.timestamp(),
-            mcam_id=1,
             md5_checksum="dummychecksum",
             mission_phase="Test",
             navlight_left_on=False,
@@ -59,7 +85,7 @@ class TestRawProduct(unittest.TestCase):
             offset=16324,
             onboard_compression_ratio=5,
             onboard_compression_type="ICER",
-            output_image_mask=0,
+            output_image_mask=8,
             output_image_type="?",
             padding=0,
             pga_gain=0,
@@ -108,6 +134,10 @@ class TestRawProduct(unittest.TestCase):
         d["product_id"] = "220127-000000-ncl-b"
         d["onboard_compression_ratio"] = 999
         self.assertRaises(ValueError, trp.RawProduct, **d)
+
+        d = self.d.copy()
+        d["cameraId"] = 1
+        self.assertWarns(UserWarning, trp.RawProduct, **d)
 
     # Commented out while this exception has been converted to a warning until we
     # sort out the Yamcs parameter.
