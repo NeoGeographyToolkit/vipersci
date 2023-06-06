@@ -147,6 +147,10 @@ class TestVISID(unittest.TestCase):
                 (datetime.date(2022, 1, 17), datetime.time(1, 1, 1), "ncl", "a"),
             ),
             (
+                ("220117", "010101", "ncl", "a"),
+                (datetime.date(2022, 1, 17), datetime.time(1, 1, 1), 0, "a"),
+            ),
+            (
                 ("220117", "010101", "ncl", "b"),
                 (datetime.date(2022, 1, 17), datetime.time(1, 1, 1), "ncl", 5),
             ),

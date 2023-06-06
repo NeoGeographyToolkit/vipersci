@@ -42,6 +42,7 @@ Changed
 - Explicit in documentation about developing in Python 3.8 (although earlier versions
   should still be supported).
 - Many changes to improve type checking.
+- Added numeric instrument aliases and checking for them.
 - Upgrade to SQLAlchemy >=2.
 
 
