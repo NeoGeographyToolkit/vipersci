@@ -68,6 +68,7 @@ class ImageType(Flag):
     """This Flag class can be used to interpret the outputImageMask but not the
     immediateDownloadInfo Yamcs parameters, because only a single flag value can
     be set."""
+
     LOSSLESS_ICER_IMAGE = 1
     # RESERVED_2 = 2
     # RESERVED_4 = 4
@@ -223,9 +224,9 @@ class RawProduct(Base):
         Integer,
         nullable=False,
         doc="The outputImageMask from the Yamcs imageHeader.  For each downlinked "
-            "image this can be exactly one value of the ImageType class.  This value "
-            "indicates whether the image is SLoG or not, and what level of compression "
-            "has been set."
+        "image this can be exactly one value of the ImageType class.  This value "
+        "indicates whether the image is SLoG or not, and what level of compression "
+        "has been set.",
     )
     # outputImageType is redundant with the outputImageMask, as it is just the
     # longform name of the value specified in the outputImageMask.
@@ -251,7 +252,7 @@ class RawProduct(Base):
         nullable=False,
         doc="The processingInfo parameter from the Yamcs imageHeader. This integer "
         "value must correspond to a valid value of ProcessingStage, and indicates "
-        "what onboard processing occurred."
+        "what onboard processing occurred.",
     )
     processingInfo = synonym("processing_info")
     purpose = mapped_column(
@@ -373,18 +374,34 @@ class RawProduct(Base):
             try:
                 if "slog" in kwargs:
                     # check against processing_info
-                    if kwargs["slog"] and ProcessingStage.PROCESS_SLOG not in ProcessingStage(self.processing_info):
-                        warn(f"slog is True, but ProcessingStage.PROCESS_SLOG not in {ProcessingStage(self.processing_info)}")
+                    if kwargs[
+                        "slog"
+                    ] and ProcessingStage.PROCESS_SLOG not in ProcessingStage(
+                        self.processing_info
+                    ):
+                        warn(
+                            "slog is True, but ProcessingStage.PROCESS_SLOG not "
+                            f"in {ProcessingStage(self.processing_info)}"
+                        )
 
-                    if not kwargs["slog"] and ProcessingStage.PROCESS_SLOG in ProcessingStage(self.processing_info):
-                        warn(f"slog is False, but ProcessingStage.PROCESS_SLOG in {ProcessingStage(self.processing_info)}")
+                    if not kwargs[
+                        "slog"
+                    ] and ProcessingStage.PROCESS_SLOG in ProcessingStage(
+                        self.processing_info
+                    ):
+                        warn(
+                            "slog is False, but ProcessingStage.PROCESS_SLOG "
+                            f"in {ProcessingStage(self.processing_info)}"
+                        )
                 else:
-                    if ProcessingStage.PROCESS_SLOG in ProcessingStage(self.processing_info):
+                    if ProcessingStage.PROCESS_SLOG in ProcessingStage(
+                        self.processing_info
+                    ):
                         self.slog = True
                     else:
                         self.slog = False
             except ValueError as err:
-                warn(err)
+                warn(str(err))
                 if "slog" not in kwargs and "yamcs_name" in kwargs:
                     self.slog = self.yamcs_name.endswith("slog")
         else:
@@ -672,7 +689,7 @@ class RawProduct(Base):
             inst_lid=f"{_sclid}.{_inst}",
             gain_number=(self.adc_gain * self.pga_gain),
             exposure_type="Auto" if self.auto_exposure else "Manual",
-            image_filter=None,
+            image_filters=list(),
             led_wavelength=453,  # nm
             luminaires={},
             compression_class=pid.compression_class(),
@@ -683,10 +700,16 @@ class RawProduct(Base):
         for k, v in luminaire_names.items():
             d["luminaires"][k] = onoff[getattr(self, v)]
 
+        proc_info = ProcessingStage(self.processing_info)
+        if ProcessingStage.PROCESS_FLATFIELD in proc_info:
+            d["image_filters"].append(("Onboard", "Flat field normalization."))
+
+        if ProcessingStage.PROCESS_LINEARIZATION in proc_info:
+            d["image_filters"].append(("Onboard", "Linearization."))
+
         if self.slog:
-            d["image_filter"] = dict(
-                processing_venue="Onboard",
-                processing_algorithm="Sign of the Laplacian of the Gaussian, SLoG",
+            d["image_filters"].append(
+                ("Onboard", "Sign of the Laplacian of the Gaussian, SLoG")
             )
             d["sample_bits"] = 8
             d["sample_bit_mask"] = "2#11111111"
