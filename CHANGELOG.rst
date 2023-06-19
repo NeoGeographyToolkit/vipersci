@@ -47,6 +47,12 @@ Changed
 - Upgrade to SQLAlchemy >=2.
 
 
+Fixed
+^^^^^
+- tri2gpkg - if the provided polygons have zero area, issue an error rather than
+  making a confusing GeoPackage file.
+
+
 
 0.4.0 (2023-03-01)
 ------------------
