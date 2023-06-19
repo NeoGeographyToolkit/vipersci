@@ -288,6 +288,9 @@ def vertexes_to_poly(transformer, tokens: list, z=True):
     else:
         poly = Polygon([v1[:-1], v2[:-1], v3[:-1]])
 
+    if poly.area == 0:
+        raise ValueError(f"This polygon has zero area: {poly}")
+
     return poly
 
 
