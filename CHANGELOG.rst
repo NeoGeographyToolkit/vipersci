@@ -45,6 +45,7 @@ Changed
 - Added numeric instrument aliases and checking for them.
 - Added information for procesingInfo and outputMask from Yamcs.
 - Upgrade to SQLAlchemy >=2.
+- Moved definition of Base class up to vis.db.
 
 
 Fixed

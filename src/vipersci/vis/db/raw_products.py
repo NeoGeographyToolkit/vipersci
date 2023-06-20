@@ -39,12 +39,13 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import DeclarativeBase, mapped_column, synonym, validates
+from sqlalchemy.orm import mapped_column, synonym, validates
 
 from vipersci.pds.pid import VISID, vis_instruments, vis_compression
 from vipersci.pds.xml import ns
 from vipersci.pds.datetime import fromisozformat, isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
+from vipersci.vis.db import Base
 import vipersci.vis.db.validators as vld
 
 
@@ -58,10 +59,6 @@ luminaire_names = {
     "HazLight Fore Port": "hazlight_fore_port_on",
     "HazLight Fore Starboard": "hazlight_fore_starboard_on",
 }
-
-
-class Base(DeclarativeBase):
-    pass
 
 
 class ImageType(Flag):
