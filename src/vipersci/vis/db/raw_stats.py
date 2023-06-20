@@ -32,13 +32,10 @@ from sqlalchemy import (
     Integer,
     String,
 )
-from sqlalchemy.orm import DeclarativeBase, backref, mapped_column, relationship
+from sqlalchemy.orm import backref, mapped_column, relationship
 
+from vipersci.vis.db import Base
 from vipersci.vis.db.raw_products import RawProduct
-
-
-class Base(DeclarativeBase):
-    pass
 
 
 class RawStats(Base):

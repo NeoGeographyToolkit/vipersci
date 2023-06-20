@@ -34,15 +34,12 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import DeclarativeBase, mapped_column, validates
+from sqlalchemy.orm import mapped_column, validates
 
 from vipersci.pds.pid import VISID, PanoID
 from vipersci.pds.datetime import isozformat
+from vipersci.vis.db import Base
 import vipersci.vis.db.validators as vld
-
-
-class Base(DeclarativeBase):
-    pass
 
 
 class PanoProduct(Base):
