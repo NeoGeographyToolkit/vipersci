@@ -233,6 +233,7 @@ def main():
 
     values["geometry"] = polys
     gdf = geopandas.GeoDataFrame(values, crs=t_crs)
+    logger.info(gdf.describe())
 
     if not args.keep_all_facets:
         logger.info("Dissolving polygons.")
