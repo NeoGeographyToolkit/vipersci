@@ -35,6 +35,7 @@ Added
 - colorforge program for managing colormaps.
 - mypy is now in the development dependencies to support type checking.
 - lint/mypy target added to Makefile.
+- tri2gpkg now has a --remove_facets option to remove facets with a particular value.
 
 
 Changed
