@@ -126,6 +126,12 @@ def arg_parser():
         "will be used as the value(s).",
     )
     parser.add_argument(
+        "--remove_facets",
+        type=float,
+        help="If provided, any facets with this value will not be included in the "
+        "output GeoPackage.  Ignored if there is more than one value_column.",
+    )
+    parser.add_argument(
         "--replace_with_zero",
         help="If there is a value that should be replaced with zero, it can "
         "be provided here.  If the --value_name is 'Depth (m)' this will "
@@ -207,6 +213,10 @@ def main():
         logger.info(f"Reading vertices from {args.file}")
         for line in f:
             tokens = line.split()
+
+            if len(col_idxs) == 1 and float(tokens[col_idxs[0]]) == args.remove_facets:
+                continue
+
             poly = vertexes_to_poly(transformer, tokens[:9], args.keep_z)
             polys.append(poly)
 
