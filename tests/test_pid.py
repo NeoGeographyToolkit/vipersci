@@ -191,7 +191,7 @@ class TestVISID(unittest.TestCase):
         self.assertEqual("220127-000000-ncl-b", str(vid))
 
     def test_init_bad_tuples(self):
-        tuples = ((datetime.date(2024, 1, 1), datetime.time(1, 1, 1), "ncl", "z"),)
+        tuples = ((datetime.date(2024, 1, 1), datetime.time(1, 1, 1), "ncl", "w"),)
         for t in tuples:
             with self.subTest(test=t):
                 self.assertRaises(ValueError, pid.VISID, *t)
@@ -200,7 +200,7 @@ class TestVISID(unittest.TestCase):
         strings = (
             "220117-010101-ncl",
             "220117-010101-aaa-a",
-            "220117-010101-ncl-z",
+            "220117-010101-ncl-q",
             "foobar",
         )
         for s in strings:
