@@ -193,7 +193,7 @@ class Creator:
             with self.session.begin() as s:
                 s.add(rp)
 
-        return
+        return rp
 
     def from_yamcs_parameters(self, data):
         for parameter in data.parameters:
@@ -272,7 +272,7 @@ def create(
         with session.begin() as s:
             s.add(rp)
 
-    return
+    return rp
 
 
 def check_bit_depth(pid: pds.VISID, bit_depth: Union[int, str, np.dtype]):
