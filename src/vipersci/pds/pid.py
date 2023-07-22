@@ -68,11 +68,12 @@ vis_instrument_numbers = {
 }
 instruments.update(vis_instruments)
 vis_compression = dict(
-    a=None,  # Lossless compression
+    a=1,  # 1:1 Lossless compression
     b=5,  # 5:1 compression
     c=16,  # 16:1 compression
     d=64,  # 64:1 compression
     s="SLoG",  # SLoG compression
+    z=None,  # Uncompressed
 )
 
 nirvss_instruments = dict(
