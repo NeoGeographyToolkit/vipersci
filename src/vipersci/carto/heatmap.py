@@ -1,9 +1,9 @@
 """
-This heatmaps module takes scalar values with 2D coordinates and creates a heatmap
-representation with individual points effectively averaged together.
+This heatmaps module takes scalar values with 2D coordinates and creates a density
+heatmap representation with individual points effectively averaged together.
 """
 
-# Copyright 2022, United States Government as represented by the
+# Copyright 2022-2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -135,7 +135,8 @@ def generate_density_heatmap(
     Parameters:
         x_coords: x coordinates of the data points
         y_coords: y coordinates of the data points
-        values: values of the data points
+        values: values of the data points.  Any None or np.nan values will be ignored
+            in the kernel density estimation.
         gsd: Coordinate interval at which to sample the output distribution,
             or the ground sample distance of the output arrays.
             Defaults to 1.
@@ -176,9 +177,13 @@ def generate_density_heatmap(
     if not (len(x_coords) == len(y_coords) == len(values)):
         raise ValueError("Input arrays must be of the same length.")
 
-    x_coords_np = as_ndarray(x_coords)
-    y_coords_np = as_ndarray(y_coords)
-    values_np = as_ndarray(values)
+    values_all = as_ndarray(values)
+
+    missing_idx = np.isnan(values_all.astype(float))
+
+    x_coords_np = np.delete(as_ndarray(x_coords), np.argwhere(missing_idx))
+    y_coords_np = np.delete(as_ndarray(y_coords), np.argwhere(missing_idx))
+    values_np = np.delete(values_all, np.argwhere(missing_idx))
 
     points = shapely.geometry.LineString(np.stack((x_coords_np, y_coords_np), axis=1))
     if sample_bounds is not None:
