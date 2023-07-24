@@ -47,6 +47,8 @@ Changed
 - Added information for procesingInfo and outputMask from Yamcs.
 - Upgrade to SQLAlchemy >=2.
 - Moved definition of Base class up to vis.db.
+- heatmaps.py will now accept value data lists or arrays with np.nan or None values
+  which will be appropriate ignored in the density heatmap calculation.
 
 
 Fixed

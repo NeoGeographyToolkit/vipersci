@@ -28,6 +28,7 @@ from typing import Tuple
 import unittest
 
 import numpy as np
+import numpy.testing as npt
 from rasterio import transform, windows
 import shapely
 
@@ -252,3 +253,11 @@ class TestDensityHeatmap(unittest.TestCase):
         expected_frequencies = np.full((2, 2), shape[0] * shape[1])
 
         self.assertTrue(np.array_equal(expected_frequencies, frequencies))
+
+    def test_missing_value(self):
+        t, counts, avg, freqs = hm.generate_density_heatmap(
+            (1, 2, 3), (1, 2, 3), (1, np.nan, 1), 1, 1
+        )
+        npt.assert_array_equal(
+            counts, np.array([[0, 0, 1, 1], [0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 0, 0]])
+        )
