@@ -72,7 +72,7 @@ License
 
 See LICENSE file for the full text of the license that applies to vipersci.
 
-Copyright (c) 2022, United States Government as represented by
+Copyright (c) 2022-2023, United States Government as represented by
 the Administrator of the National Aeronautics and Space
 Administration. All rights reserved.
 

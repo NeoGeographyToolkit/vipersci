@@ -28,6 +28,10 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+
+0.5.0 (2023-07-26)
+------------------
+
 Added
 ^^^^^
 - PanoID class added to pds.pid
