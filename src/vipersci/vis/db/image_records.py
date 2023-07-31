@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""Defines the VIS raw_products table using the SQLAlchemy ORM."""
+"""Defines the VIS image_records table using the SQLAlchemy ORM."""
 
-# Copyright 2022, United States Government as represented by the
+# Copyright 2022-2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -49,18 +49,6 @@ from vipersci.vis.db import Base
 import vipersci.vis.db.validators as vld
 
 
-luminaire_names = {
-    "NavLight Left": "navlight_left_on",
-    "NavLight Right": "navlight_right_on",
-    "HazLight Aft Port": "hazlight_aft_port_on",
-    "HazLight Aft Starboard": "hazlight_aft_starboard_on",
-    "HazLight Center Port": "hazlight_center_port_on",
-    "HazLight Center Starboard": "hazlight_center_starboard_on",
-    "HazLight Fore Port": "hazlight_fore_port_on",
-    "HazLight Fore Starboard": "hazlight_fore_starboard_on",
-}
-
-
 class ImageType(Flag):
     """This Flag class can be used to interpret the outputImageMask but not the
     immediateDownloadInfo Yamcs parameters, because only a single flag value can
@@ -76,17 +64,26 @@ class ImageType(Flag):
     def _missing_(cls, value):
         return None
 
+    def compression_ratio(self):
+        # This mapping reflects the current settings in RFSW
+        if self == ImageType.LOSSLESS_ICER_IMAGE or self == ImageType.SLOG_ICER_IMAGE:
+            return 1
+        if self == ImageType.LOSSY_ICER_IMAGE:
+            return 16
+        else:
+            return None
+
 
 class ProcessingStage(Flag):
     # PROCESS_RESERVED = 1
-    PROCESS_FLATFIELD = 2
+    FLATFIELD = 2
     # PROCESS_RESERVED_2 = 4
-    PROCESS_LINEARIZATION = 8
-    PROCESS_SLOG = 16
+    LINEARIZATION = 8
+    SLOG = 16
 
 
-class RawProduct(Base):
-    """An object to represent rows in the raw_products table for VIS."""
+class ImageRecord(Base):
+    """An object to represent rows in the image_records table for VIS."""
 
     # This class is derived from SQLAlchemy's orm.DeclarativeBase
     # which means that it has a variety of class properties that are
@@ -95,7 +92,7 @@ class RawProduct(Base):
 
     # The table represents many of these objects, so the __tablename__ is
     # plural while the class name is singular.
-    __tablename__ = "raw_products"
+    __tablename__ = "image_records"
 
     # The mapped_column() names below should use "snake_case" for the names that are
     # committed to the database as column names.  Furthermore, those names
@@ -115,15 +112,15 @@ class RawProduct(Base):
         doc="AUTO_EXPOSURE from the MCSE Image Header.",
     )
     autoExposure = synonym("auto_exposure")
-    bad_pixel_table_id = mapped_column(
-        Integer,
-        nullable=False,
-        # There is a Defective Pixel Map (really a list of 128 coordinates) for
-        # each MCAM.  The "state" of this is managed by the ground and not
-        # reflected in any Image Header information attached to an individual
-        # image.  It is not clear how to obtain this information from Yamcs,
-        # or even what might be recorded, so this column's value is TBD.
-    )
+    # bad_pixel_table_id = mapped_column(
+    #     Integer,
+    #     nullable=False,
+    #     # There is a Defective Pixel Map (really a list of 128 coordinates) for
+    #     # each MCAM.  The "state" of this is managed by the ground and not
+    #     # reflected in any Image Header information attached to an individual
+    #     # image.  It is not clear how to obtain this information from Yamcs,
+    #     # or even what might be recorded, so this column's value is TBD.
+    # )
     capture_id = mapped_column(
         Integer,
         nullable=False,
@@ -155,13 +152,6 @@ class RawProduct(Base):
         doc="The absolute path (POSIX style) that contains the Array_2D_Image "
         "that this metadata refers to.",
     )
-    # Not sure where we're getting info for these light booleans yet.
-    hazlight_aft_port_on = mapped_column(Boolean, nullable=False)
-    hazlight_aft_starboard_on = mapped_column(Boolean, nullable=False)
-    hazlight_center_port_on = mapped_column(Boolean, nullable=False)
-    hazlight_center_starboard_on = mapped_column(Boolean, nullable=False)
-    hazlight_fore_port_on = mapped_column(Boolean, nullable=False)
-    hazlight_fore_starboard_on = mapped_column(Boolean, nullable=False)
     image_id = mapped_column(
         Integer,
         nullable=False,
@@ -195,28 +185,22 @@ class RawProduct(Base):
         doc="The TIME_TAG from the MCSE Image Header.",
     )
     # mcam_id, The MCAM_ID from the MCSE Image Header is not returned to the ground.
-    mission_phase = mapped_column(
-        String,
-        nullable=False,
-        # Not sure what form this will take, nor where it can be looked up.
-    )
-    navlight_left_on = mapped_column(Boolean, nullable=False)
-    navlight_right_on = mapped_column(Boolean, nullable=False)
     offset = mapped_column(
         Integer,
         nullable=False,
         doc="The OFFSET parameter from the MCSE Image Header describing the dark "
         "level offset.",
     )
-    onboard_compression_ratio = mapped_column(
-        Float,
-        doc="The PDS img:Onboard_Compression parameter.  Will be NULL for "
-        "lossless compression or uncompressed images."
-        # This is a PDS img:Onboard_Compression parameter which is the ratio
-        # of the size, in bytes, of the original uncompressed data object
-        # to its compressed size.  This operation is done by RFSW, but not
-        # sure where to get this parameter from ...?
-    )
+    # onboard_compression_ratio = mapped_column(
+    #     Float,
+    #     doc="The PDS img:Onboard_Compression parameter.  Will be NULL for "
+    #     "uncompressed images, 1 for LOSSLESS compressed, 16 for 16x compressed, etc."
+    #     # This is a PDS img:Onboard_Compression parameter which is the ratio
+    #     # of the size, in bytes, of the original uncompressed data object
+    #     # to its compressed size.  This operation is done by RFSW, and fixed
+    #     # by that process.  The output_image_mask determines what happened,
+    #     # and then we must look up to find this value.
+    # )
     output_image_mask = mapped_column(
         Integer,
         nullable=False,
@@ -252,23 +236,16 @@ class RawProduct(Base):
         "what onboard processing occurred.",
     )
     processingInfo = synonym("processing_info")
-    purpose = mapped_column(
-        String,
-        nullable=False,
-        doc="This is the value for the PDS "
-        "Observation_Area/Primary_Result_Summary/purpose parameter, it "
-        "has a restricted set of allowable values.",
-    )
     samples = mapped_column(
         Integer,
         nullable=False,
         doc="The imageWidth parameter from the Yamcs imageHeader.",
     )
-    slog = mapped_column(
-        Boolean,
-        nullable=False,
-        doc="Indicates whether onboard SLoG processing occurred.",
-    )
+    # slog = mapped_column(
+    #     Boolean,
+    #     nullable=False,
+    #     doc="Indicates whether onboard SLoG processing occurred.",
+    # )
     software_name = mapped_column(String, nullable=False)
     software_version = mapped_column(String, nullable=False)
     software_program_name = mapped_column(String, nullable=False)
@@ -366,44 +343,44 @@ class RawProduct(Base):
                     f"instrument_name ({self.instrument_name})."
                 )
 
-        # Derive slog, if possible.
-        if self.processing_info is not None:
-            try:
-                if "slog" in kwargs:
-                    # check against processing_info
-                    if kwargs[
-                        "slog"
-                    ] and ProcessingStage.PROCESS_SLOG not in ProcessingStage(
-                        self.processing_info
-                    ):
-                        warn(
-                            "slog is True, but ProcessingStage.PROCESS_SLOG not "
-                            f"in {ProcessingStage(self.processing_info)}"
-                        )
+        # # Derive slog, if possible.
+        # if self.processing_info is not None:
+        #     try:
+        #         if "slog" in kwargs:
+        #             # check against processing_info
+        #             if kwargs[
+        #                 "slog"
+        #             ] and ProcessingStage.PROCESS_SLOG not in ProcessingStage(
+        #                 self.processing_info
+        #             ):
+        #                 warn(
+        #                     "slog is True, but ProcessingStage.PROCESS_SLOG not "
+        #                     f"in {ProcessingStage(self.processing_info)}"
+        #                 )
 
-                    if not kwargs[
-                        "slog"
-                    ] and ProcessingStage.PROCESS_SLOG in ProcessingStage(
-                        self.processing_info
-                    ):
-                        warn(
-                            "slog is False, but ProcessingStage.PROCESS_SLOG "
-                            f"in {ProcessingStage(self.processing_info)}"
-                        )
-                else:
-                    if ProcessingStage.PROCESS_SLOG in ProcessingStage(
-                        self.processing_info
-                    ):
-                        self.slog = True
-                    else:
-                        self.slog = False
-            except ValueError as err:
-                warn(str(err))
-                if "slog" not in kwargs and "yamcs_name" in kwargs:
-                    self.slog = self.yamcs_name.endswith("slog")
-        else:
-            if "slog" not in kwargs and "yamcs_name" in kwargs:
-                self.slog = self.yamcs_name.endswith("slog")
+        #             if not kwargs[
+        #                 "slog"
+        #             ] and ProcessingStage.PROCESS_SLOG in ProcessingStage(
+        #                 self.processing_info
+        #             ):
+        #                 warn(
+        #                     "slog is False, but ProcessingStage.PROCESS_SLOG "
+        #                     f"in {ProcessingStage(self.processing_info)}"
+        #                 )
+        #         else:
+        #             if ProcessingStage.PROCESS_SLOG in ProcessingStage(
+        #                 self.processing_info
+        #             ):
+        #                 self.slog = True
+        #             else:
+        #                 self.slog = False
+        #     except ValueError as err:
+        #         warn(str(err))
+        #         if "slog" not in kwargs and "yamcs_name" in kwargs:
+        #             self.slog = self.yamcs_name.endswith("slog")
+        # else:
+        #     if "slog" not in kwargs and "yamcs_name" in kwargs:
+        #         self.slog = self.yamcs_name.endswith("slog")
 
         # Ensure product_id consistency
         if pid:
@@ -430,39 +407,74 @@ class RawProduct(Base):
                     f"({self.instrument_name}) disagree."
                 )
 
-            if self.onboard_compression_ratio is None:
-                if self.slog and pid.compression != "s":
+            if self.output_image_mask is None:
+                if self.processing_info is not None:
+                    ps = ProcessingStage(self.processing_info)
+                    if ProcessingStage.SLOG in ps and pid.compression != "s":
+                        raise ValueError(
+                            f"The product_id compression code ({pid.compression}) is "
+                            "not s, but processing_info indicates it should be "
+                            f"({self.processing_info}). "
+                        )
+                    elif ProcessingStage.SLOG not in ps and pid.compression == "s":
+                        raise ValueError(
+                            "The product_id compression code is s, but "
+                            "processing_info indicates it shouldn't be "
+                            f"({self.processing_info}). "
+                        )
+            else:
+                t = ImageType(self.output_image_mask)
+                if t.compression_ratio() != vis_compression[pid.compression]:
                     raise ValueError(
-                        f"The product_id compression code ({pid.compression}) is not "
-                        f"s, but onboard_compression_ratio is None and slog is true. "
+                        f"The product_id compression code ({pid.compression}) and "
+                        f"the compression ratio ({t.compression_ratio()}) based on "
+                        f"the output_image_mask ({self.output_image_mask}) disagree."
                     )
-                elif not self.slog and pid.compression != "a":
-                    raise ValueError(
-                        f"The product_id compression code ({pid.compression}) is not "
-                        f"a, but onboard_compression_ratio is None and slog is false. "
-                    )
-            elif vis_compression[pid.compression] != self.onboard_compression_ratio:
-                raise ValueError(
-                    f"The product_id compression code ({pid.compression}) and "
-                    f"the provided onboard_compression_ratio "
-                    f"({self.onboard_compression_ratio}) disagree."
-                )
         elif (
             self.start_time is not None
             and self.instrument_name is not None
-            and self.slog is not None
+            and self.output_image_mask is not None
         ):
-            c = "s" if self.slog else self.onboard_compression_ratio
-            pid = VISID(
-                self.start_time.date(), self.start_time.time(), self.instrument_name, c
-            )
+            try:
+                t = ImageType(self.output_image_mask)
+                c = None
+                if (
+                    self.processing_info == ProcessingStage.SLOG
+                    or t == ImageType.SLOG_ICER_IMAGE
+                ):
+                    c = "s"
+                else:
+                    c = t.compression_ratio()
+                pid = VISID(
+                    self.start_time.date(),
+                    self.start_time.time(),
+                    self.instrument_name,
+                    c,
+                )
+            except ValueError as err:
+                # output_image_mask has bad value, last try
+                if self.yamcs_name is None:
+                    raise err
+                else:
+                    if "slog" in self.yamcs_name:
+                        pid = VISID(
+                            self.start_time.date(),
+                            self.start_time.time(),
+                            self.instrument_name,
+                            "s",
+                        )
+                    else:
+                        raise ValueError(
+                            "Could not determine the compression information "
+                            f"from output_image_mask ({self.output_image_mask})."
+                        )
         else:
             got = dict()
             for k in (
                 "product_id",
                 "start_time",
                 "instrument_name",
-                "slog",
+                "output_image_mask",
             ):
                 v = getattr(self, k)
                 if v is not None:
@@ -470,7 +482,7 @@ class RawProduct(Base):
 
             raise ValueError(
                 "Either product_id must be given, or each of start_time, "
-                f"instrument_name, and slog. Got: {got}"
+                f"instrument_name, and output_image_mask. Got: {got}"
             )
 
         self._pid = str(pid)
@@ -552,10 +564,6 @@ class RawProduct(Base):
 
         return value
 
-    @validates("purpose")
-    def validate_purpose(self, key, value: str):
-        return vld.validate_purpose(value)
-
     def asdict(self):
         d = {}
 
@@ -565,7 +573,8 @@ class RawProduct(Base):
             else:
                 d[c.name] = getattr(self, c.name)
 
-        d.update(self.labelmeta)
+        if hasattr(self, "labelmeta"):
+            d.update(self.labelmeta)
 
         return d
 
@@ -627,11 +636,11 @@ class RawProduct(Base):
         )
         d["file_path"] = _find_text(root, ".//pds:file_name")
 
-        for k, v in luminaire_names.items():
-            light = root.find(f".//img:LED_Illumination_Source[img:name='{k}']", ns)
-            d[v] = (
-                True if _find_text(light, "img:illumination_state") == "On" else False
-            )
+        # for k, v in luminaire_names.items():
+        #     light = root.find(f".//img:LED_Illumination_Source[img:name='{k}']", ns)
+        #     d[v] = (
+        #         True if _find_text(light, "img:illumination_state") == "On" else False
+        #     )
 
         osc = root.find(".//pds:Observing_System_Component[pds:type='Instrument']", ns)
         d["instrument_name"] = _find_text(osc, "pds:name")
@@ -672,48 +681,6 @@ class RawProduct(Base):
         d["stop_time"] = fromisozformat(_find_text(root, ".//pds:stop_date_time"))
 
         return cls(**d)
-
-    def label_dict(self):
-        """Returns a dictionary suitable for label generation."""
-        _inst = self.instrument_name.lower().replace(" ", "_")
-        _sclid = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
-        onoff = {True: "On", False: "Off", None: None}
-        pid = VISID(self.product_id)
-        d = dict(
-            lid=f"urn:nasa:pds:viper_vis:raw:{self.product_id}",
-            mission_lid="urn:nasa:pds:viper",
-            sc_lid=_sclid,
-            inst_lid=f"{_sclid}.{_inst}",
-            gain_number=(self.adc_gain * self.pga_gain),
-            exposure_type="Auto" if self.auto_exposure else "Manual",
-            image_filters=list(),
-            led_wavelength=453,  # nm
-            luminaires={},
-            compression_class=pid.compression_class(),
-            onboard_compression_type="ICER",
-            sample_bits=12,
-            sample_bit_mask="2#0000111111111111",
-        )
-        for k, v in luminaire_names.items():
-            d["luminaires"][k] = onoff[getattr(self, v)]
-
-        proc_info = ProcessingStage(self.processing_info)
-        if ProcessingStage.PROCESS_FLATFIELD in proc_info:
-            d["image_filters"].append(("Onboard", "Flat field normalization."))
-
-        if ProcessingStage.PROCESS_LINEARIZATION in proc_info:
-            d["image_filters"].append(("Onboard", "Linearization."))
-
-        if self.slog:
-            d["image_filters"].append(
-                ("Onboard", "Sign of the Laplacian of the Gaussian, SLoG")
-            )
-            d["sample_bits"] = 8
-            d["sample_bit_mask"] = "2#11111111"
-
-        d.update(self.asdict())
-
-        return d
 
     def update(self, other):
         for k, v in other.items():

@@ -41,13 +41,13 @@ import numpy.typing as npt
 from skimage.io import imread, imsave  # maybe just imageio here?
 from skimage.transform import resize
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 
 import vipersci
-from vipersci.vis.db.raw_products import RawProduct
-from vipersci.vis.db.pano_products import PanoProduct
+from vipersci.vis.db.image_records import ImageRecord
+from vipersci.vis.db.pano_records import PanoRecord
 from vipersci.pds import pid as pds
-from vipersci.vis.pds.create_raw import tif_info, write_json, write_xml
+from vipersci.vis.create_image import tif_info, write_json
 from vipersci import util
 
 logger = logging.getLogger(__name__)
@@ -116,33 +116,27 @@ def main():
             args.output_dir,
             None,
             args.json,
-            args.xml,
-            args.template,
             args.bottom,
         )
     else:
         engine = create_engine(args.dburl)
-        session = sessionmaker(engine, future=True)
-        create(
-            args.inputs,
-            args.output_dir,
-            session,
-            args.json,
-            args.xml,
-            args.template,
-            args.bottom,
-        )
+        with Session(engine) as session:
+            create(
+                args.inputs,
+                args.output_dir,
+                session,
+                args.json,
+                args.bottom,
+            )
 
     return
 
 
 def create(
-    inputs: Iterable[Union[Path, pds.VISID, RawProduct, str]],
+    inputs: Iterable[Union[Path, pds.VISID, ImageRecord, str]],
     outdir: Path = Path.cwd(),
     session: Optional[Session] = None,
     json: bool = True,
-    xml: bool = False,
-    template_path: Optional[Path] = None,
     bottom_row: Optional[MutableSequence[Union[Path, str]]] = None,
 ):
     """
@@ -170,7 +164,7 @@ def create(
     source_paths = []
 
     for i in inputs:
-        if isinstance(i, RawProduct):
+        if isinstance(i, ImageRecord):
             metadata["source_products"].append(i.product_id)
             source_paths.append(i.file_path)
         elif isinstance(i, pds.VISID):
@@ -226,12 +220,11 @@ def create(
     if json:
         write_json(pp.asdict(), outdir)
 
-    if xml:
-        write_xml(pp.label_dict(), outdir, template_path)
+    # if xml:
+    #     write_xml(pp.label_dict(), outdir, template_path)
 
     if session is not None:
-        with session.begin() as s:
-            s.add(pp)
+        session.add(pp)
 
     return
 
@@ -240,14 +233,14 @@ def make_pano_product(
     metadata: dict,
     image: Union[ImageType, Path, None] = None,
     outdir: Path = Path.cwd(),
-) -> PanoProduct:
+) -> PanoRecord:
     """
     Returns a PanoProduct created from the provided meta-data, and
     if *image* is a numpy array, it will also use write_tiff() to
     create a TIFF data product in *outdir* (defaults to current
     working directory).
     """
-    pp = PanoProduct(**metadata)
+    pp = PanoRecord(**metadata)
     pid = pds.PanoID(pp.product_id)
 
     if image is not None:

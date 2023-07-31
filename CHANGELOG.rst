@@ -28,10 +28,24 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+Changed the concept of primarily recording PDS-like "products" in the database and data
+structures, and changed the concept to capture "records" of various kinds (ImageRecords,
+LightRecords, and derived things like PanoRecords) in the database and as the primary
+data unit for use and interaction.  And then PDS "products" will be made at a later
+time via a process that sources one or many records.
+
+Added
+^^^^^
+- image_records.py (this replaces the concept of raw_products.py)
+- create_image.py (this replaces some of the functionality of create_raw.py)
+
 Changed
 ^^^^^^^
 - header.pga_gain_dict structure now has values that are always floats, which helps
   to determine whether this transformation needs to be applied.
+- image_stats.py is the new raw_stats.py, supporting ImageRecord objects.
+- pano_products.py is now pano_records.py, supporting ImageRecord objects.
+- create_pano.py now supports ImageRecords and PanoRecords.
 
 
 0.5.0 (2023-07-26)

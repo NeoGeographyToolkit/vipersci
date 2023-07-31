@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""Defines the VIS raw_stats table using the SQLAlchemy ORM."""
+"""Defines the VIS image_stats table using the SQLAlchemy ORM."""
 
-# Copyright 2022, United States Government as represented by the
+# Copyright 2022-2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -35,19 +35,19 @@ from sqlalchemy import (
 from sqlalchemy.orm import backref, mapped_column, relationship
 
 from vipersci.vis.db import Base
-from vipersci.vis.db.raw_products import RawProduct
+from vipersci.vis.db.image_records import ImageRecord
 
 
-class RawStats(Base):
+class ImageStats(Base):
     """An object to represent rows in the raw_stats table for VIS."""
 
-    __tablename__ = "raw_stats"
+    __tablename__ = "image_stats"
 
     id = mapped_column(Integer, Identity(start=1), primary_key=True)
     product_id = mapped_column(
-        String, ForeignKey(RawProduct.product_id), nullable=False
+        String, ForeignKey(ImageRecord.product_id), nullable=False
     )
-    raw_product = relationship(RawProduct, backref=backref("stats", uselist=False))
+    raw_product = relationship(ImageRecord, backref=backref("stats", uselist=False))
 
     blur = mapped_column(
         Float, nullable=False, doc="Blur metric from skimage.measure.blur_effect()."

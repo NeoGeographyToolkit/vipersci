@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""This module has tests for the pano_products module."""
+"""This module has tests for the pano_records module."""
 
 # Copyright 2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
@@ -26,10 +26,10 @@
 from datetime import datetime, timedelta, timezone
 import unittest
 
-from vipersci.vis.db import pano_products as tpp
+from vipersci.vis.db import pano_records as tpp
 
 
-class TestPanoProduct(unittest.TestCase):
+class TestPanoRecord(unittest.TestCase):
     def setUp(self):
         self.startUTC = datetime(2022, 1, 27, 0, 0, 0, tzinfo=timezone.utc)
         self.d = dict(
@@ -46,24 +46,24 @@ class TestPanoProduct(unittest.TestCase):
         self.extras = dict(foo="bar")
 
     def test_init(self):
-        p = tpp.PanoProduct(**self.d)
+        p = tpp.PanoRecord(**self.d)
         self.assertEqual("220127-000000-ncl-pan", str(p.product_id))
 
         d = self.d
         d.update(self.extras)
-        ppl = tpp.PanoProduct(**d)
+        ppl = tpp.PanoRecord(**d)
         self.assertEqual("220127-000000-ncl-pan", str(ppl.product_id))
 
         # Force alternate time
         d = self.d.copy()
         d["start_time"] = self.startUTC + timedelta(hours=1)
-        pp2 = tpp.PanoProduct(**d)
+        pp2 = tpp.PanoRecord(**d)
         self.assertEqual("220127-010000-ncl-pan", str(pp2.product_id))
 
         # Remove explicit time signature
         d = self.d.copy()
         del d["start_time"]
-        pp3 = tpp.PanoProduct(**d)
+        pp3 = tpp.PanoRecord(**d)
         self.assertEqual("220127-000000-ncl-pan", str(pp3.product_id))
 
         # print(f"{k}: {getattr(rp, k)}")
@@ -71,22 +71,22 @@ class TestPanoProduct(unittest.TestCase):
     def test_init_errors(self):
         d = self.d.copy()
         d["product_id"] = "220127-010000-ncl-b"
-        self.assertRaises(ValueError, tpp.PanoProduct, **d)
+        self.assertRaises(ValueError, tpp.PanoRecord, **d)
 
         d = self.d.copy()
         d["product_id"] = "220127-000000-ncr-b"
-        self.assertRaises(ValueError, tpp.PanoProduct, **d)
+        self.assertRaises(ValueError, tpp.PanoRecord, **d)
 
     def test_product_id(self):
-        p = tpp.PanoProduct(**self.d)
+        p = tpp.PanoRecord(**self.d)
         self.assertRaises(NotImplementedError, setattr, p, "product_id", "dummy")
 
     def test_purpose(self):
-        p = tpp.PanoProduct(**self.d)
+        p = tpp.PanoRecord(**self.d)
         self.assertRaises(ValueError, setattr, p, "purpose", "dummy")
 
     def test_update(self):
-        p = tpp.PanoProduct(**self.d)
+        p = tpp.PanoRecord(**self.d)
         k = "foo"
         self.assertTrue(k not in p.labelmeta)
 
@@ -96,6 +96,6 @@ class TestPanoProduct(unittest.TestCase):
     def test_labeldict(self):
         din = self.d
         din.update(self.extras)
-        p = tpp.PanoProduct(**din)
+        p = tpp.PanoRecord(**din)
         d = p.label_dict()
         self.assertEqual(d["samples"], p.samples)

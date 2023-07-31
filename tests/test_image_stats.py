@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-"""This module has tests for the raw_stats module."""
+"""This module has tests for the image_stats module."""
 
-# Copyright 2022, United States Government as represented by the
+# Copyright 2022-2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -25,7 +25,7 @@
 
 import unittest
 
-from vipersci.vis.db import raw_stats as rs
+from vipersci.vis.db import image_stats as rs
 
 
 class TestRawStats(unittest.TestCase):
@@ -37,5 +37,5 @@ class TestRawStats(unittest.TestCase):
         )
 
     def test_init(self):
-        stats = rs.RawStats(**self.d)
+        stats = rs.ImageStats(**self.d)
         self.assertEqual(2096.5, stats.mean)
