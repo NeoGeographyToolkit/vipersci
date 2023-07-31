@@ -47,6 +47,8 @@ Changed
 - image_stats.py is the new raw_stats.py, supporting ImageRecord objects.
 - pano_products.py is now pano_records.py, supporting ImageRecord objects.
 - create_pano.py now supports ImageRecords and PanoRecords.
+- create_raw.py rearchitected to gather information from "records" to build XML PDS
+  labels.
 
 
 0.5.0 (2023-07-26)
