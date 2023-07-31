@@ -28,6 +28,11 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+Changed
+^^^^^^^
+- header.pga_gain_dict structure now has values that are always floats, which helps
+  to determine whether this transformation needs to be applied.
+
 
 0.5.0 (2023-07-26)
 ------------------
