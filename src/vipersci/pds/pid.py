@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """This module contains classes for VIPER Product IDs."""
 
-# Copyright 2022, United States Government as represented by the
+# Copyright 2022-2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
