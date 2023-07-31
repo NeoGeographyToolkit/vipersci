@@ -38,6 +38,7 @@ Added
 ^^^^^
 - image_records.py (this replaces the concept of raw_products.py)
 - create_image.py (this replaces some of the functionality of create_raw.py)
+- light_records.py which handles information about luminaire state.
 
 Changed
 ^^^^^^^
