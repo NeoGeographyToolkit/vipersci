@@ -7,7 +7,7 @@ If a table already exists, no CREATE TABLE statement will be issued to
 the database.
 """
 
-# Copyright 2022, United States Government as represented by the
+# Copyright 2022-2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -36,14 +36,16 @@ from sqlalchemy import create_engine, inspect
 
 from vipersci import util
 
-from vipersci.vis.db.raw_products import RawProduct
-from vipersci.vis.db.raw_stats import RawStats
+from vipersci.vis.db.image_records import ImageRecord
+from vipersci.vis.db.image_stats import ImageStats
+from vipersci.vis.db.light_records import LightRecord
 
 # As new tables are defined, their Classes must be imported above, and
 # then also added to this tuple:
 tables = (
-    RawProduct,
-    RawStats,
+    ImageRecord,
+    ImageStats,
+    LightRecord,
 )
 
 logger = logging.getLogger(__name__)
