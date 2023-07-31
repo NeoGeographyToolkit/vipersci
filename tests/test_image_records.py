@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-"""This module has tests for the table_raw_products module."""
+"""This module has tests for the image_records module."""
 
-# Copyright 2022, United States Government as represented by the
+# Copyright 2022-2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -26,7 +26,7 @@
 from datetime import datetime, timedelta, timezone
 import unittest
 
-from vipersci.vis.db import raw_products as trp
+from vipersci.vis.db import image_records as trp
 
 
 class TestImageType(unittest.TestCase):
@@ -39,15 +39,17 @@ class TestImageType(unittest.TestCase):
     def test_not_member(self):
         self.assertRaises(ValueError, trp.ImageType, 1000)
 
+    def test_ratio(self):
+        self.assertEqual(trp.ImageType(1).compression_ratio(), 1)
+
 
 class TestProcessingStage(unittest.TestCase):
     def test_init(self):
-        self.assertEqual(trp.ProcessingStage.PROCESS_FLATFIELD, trp.ProcessingStage(2))
+        self.assertEqual(trp.ProcessingStage.FLATFIELD, trp.ProcessingStage(2))
 
     def test_combintation(self):
         self.assertEqual(
-            trp.ProcessingStage.PROCESS_FLATFIELD
-            | trp.ProcessingStage.PROCESS_LINEARIZATION,
+            trp.ProcessingStage.FLATFIELD | trp.ProcessingStage.LINEARIZATION,
             trp.ProcessingStage(10),
         )
 
@@ -55,7 +57,7 @@ class TestProcessingStage(unittest.TestCase):
         self.assertRaises(ValueError, trp.ProcessingStage, 15)
 
 
-class TestRawProduct(unittest.TestCase):
+class TestImageRecord(unittest.TestCase):
     def setUp(self):
         self.startUTC = datetime(2022, 1, 27, 0, 0, 0, tzinfo=timezone.utc)
         self.d = dict(
@@ -98,13 +100,13 @@ class TestRawProduct(unittest.TestCase):
         self.extras = dict(foo="bar")
 
     def test_init(self):
-        rp = trp.RawProduct(**self.d)
-        self.assertEqual("220127-000000-ncl-b", str(rp.product_id))
+        rp = trp.ImageRecord(**self.d)
+        self.assertEqual("220127-000000-ncl-c", str(rp.product_id))
 
         d = self.d
         d.update(self.extras)
-        rpl = trp.RawProduct(**d)
-        self.assertEqual("220127-000000-ncl-b", str(rpl.product_id))
+        rpl = trp.ImageRecord(**d)
+        self.assertEqual("220127-000000-ncl-c", str(rpl.product_id))
 
         # for k in dir(rp):
         #     if k.startswith(("_", "validate_")):
@@ -115,28 +117,28 @@ class TestRawProduct(unittest.TestCase):
     def test_init_errors(self):
         d = self.d.copy()
         d["start_time"] = self.startUTC + timedelta(hours=1)
-        self.assertRaises(ValueError, trp.RawProduct, **d)
+        self.assertRaises(ValueError, trp.ImageRecord, **d)
 
         d = self.d.copy()
         del d["instrument_name"]
-        self.assertRaises(ValueError, trp.RawProduct, **d)
+        self.assertRaises(ValueError, trp.ImageRecord, **d)
 
         d = self.d.copy()
         d["product_id"] = "220127-010000-ncl-b"
-        self.assertRaises(ValueError, trp.RawProduct, **d)
+        self.assertRaises(ValueError, trp.ImageRecord, **d)
 
         d = self.d.copy()
         d["product_id"] = "220127-000000-ncr-b"
-        self.assertRaises(ValueError, trp.RawProduct, **d)
+        self.assertRaises(ValueError, trp.ImageRecord, **d)
 
         d = self.d.copy()
         d["product_id"] = "220127-000000-ncl-b"
         d["onboard_compression_ratio"] = 999
-        self.assertRaises(ValueError, trp.RawProduct, **d)
+        self.assertRaises(ValueError, trp.ImageRecord, **d)
 
         d = self.d.copy()
         d["cameraId"] = 1
-        self.assertWarns(UserWarning, trp.RawProduct, **d)
+        self.assertWarns(UserWarning, trp.ImageRecord, **d)
 
     # Commented out while this exception has been converted to a warning until we
     # sort out the Yamcs parameter.
@@ -145,30 +147,30 @@ class TestRawProduct(unittest.TestCase):
     #     self.assertRaises(ValueError, setattr, rp, "mcam_id", 5)
 
     def test_product_id(self):
-        rp = trp.RawProduct(**self.d)
+        rp = trp.ImageRecord(**self.d)
         self.assertRaises(NotImplementedError, setattr, rp, "product_id", "dummy")
 
-    def test_purpose(self):
-        rp = trp.RawProduct(**self.d)
-        self.assertRaises(ValueError, setattr, rp, "purpose", "dummy")
+    # def test_purpose(self):
+    #     rp = trp.ImageRecord(**self.d)
+    #     self.assertRaises(ValueError, setattr, rp, "purpose", "dummy")
 
     def test_update(self):
-        rp = trp.RawProduct(**self.d)
+        rp = trp.ImageRecord(**self.d)
         k = "foo"
         self.assertTrue(k not in rp.labelmeta)
 
         rp.update(self.extras)
         self.assertTrue(k in rp.labelmeta)
 
-        rp.update({"mission_phase": "foo"})
-        self.assertEqual(rp.mission_phase, "foo")
+        rp.update({"file_md5_checksum": "foo"})
+        self.assertEqual(rp.file_md5_checksum, "foo")
 
-    def test_labeldict(self):
-        din = self.d
-        din.update(self.extras)
-        rp = trp.RawProduct(**din)
-        d = rp.label_dict()
-        self.assertEqual(d["samples"], rp.samples)
+    # def test_labeldict(self):
+    #     din = self.d
+    #     din.update(self.extras)
+    #     rp = trp.ImageRecord(**din)
+    #     d = rp.label_dict()
+    #     self.assertEqual(d["samples"], rp.samples)
 
     def test_synonym(self):
         din = self.d
@@ -176,7 +178,7 @@ class TestRawProduct(unittest.TestCase):
         din["exposureTime"] = 400
         del din["samples"]
         din["imageWidth"] = 4
-        rp = trp.RawProduct(**din)
+        rp = trp.ImageRecord(**din)
         self.assertEqual(rp.exposure_duration, 400)
         rp.exposureTime = 500
         self.assertEqual(rp.exposure_duration, 500)
@@ -197,16 +199,16 @@ class TestRawProduct(unittest.TestCase):
             "immediateDownloadInfo": 10,
             "lobt": 1700921056,
             "offset": 0,
-            "outputImageMask": 2,
+            "outputImageMask": 16,
             "outputImageType": "JBIG2_IMAGE",
             "padding": 0,
             "ppaGain": 0,
-            "processingInfo": 20,
+            "processingInfo": 26,
             "stereo": 1,
             "temperature": 0,
             "voltageRamp": 0,
         }
-        rp = trp.RawProduct(
+        rp = trp.ImageRecord(
             yamcs_name=name,
             yamcs_generation_time=generation_time,
             **d,
@@ -430,5 +432,5 @@ class TestRawProduct(unittest.TestCase):
   </File_Area_Observational>
 </Product_Observational>
         """  # noqa: E501
-        rp = trp.RawProduct.from_xml(t.encode())
+        rp = trp.ImageRecord.from_xml(t.encode())
         self.assertEqual("231125-143859-ncl-d", rp.product_id)

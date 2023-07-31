@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""This module has tests for the vis.pds.create_pano functions."""
+"""This module has tests for the vis.create_pano functions."""
 
 # Copyright 2023, vipersci developers.
 #
@@ -14,8 +14,8 @@ from unittest.mock import patch
 
 import numpy as np
 
-from vipersci.vis.db.pano_products import PanoProduct
-from vipersci.vis.pds import create_pano as cp
+from vipersci.vis.db.pano_records import PanoRecord
+from vipersci.vis import create_pano as cp
 
 
 class TestMakePano(unittest.TestCase):
@@ -30,11 +30,11 @@ class TestMakePano(unittest.TestCase):
 
     def test_no_image(self):
         pp = cp.make_pano_product(self.d)
-        self.assertIsInstance(pp, PanoProduct)
+        self.assertIsInstance(pp, PanoRecord)
 
-    @patch("vipersci.vis.pds.create_pano.imsave")
+    @patch("vipersci.vis.create_pano.imsave")
     @patch(
-        "vipersci.vis.pds.create_pano.tif_info",
+        "vipersci.vis.create_pano.tif_info",
         return_value={
             "file_byte_offset": 10,
             "file_creation_datetime": datetime.fromtimestamp(1700921056, timezone.utc),
@@ -48,7 +48,7 @@ class TestMakePano(unittest.TestCase):
     def test_image(self, mock_tif_info, mock_imsave):
         image = np.array([[5, 5], [5, 5]], dtype=np.uint16)
         pp = cp.make_pano_product(self.d, image, Path("outdir/"))
-        self.assertIsInstance(pp, PanoProduct)
+        self.assertIsInstance(pp, PanoRecord)
         mock_imsave.assert_called_once()
         mock_tif_info.assert_called_once()
 
@@ -56,6 +56,6 @@ class TestMakePano(unittest.TestCase):
         mock_tif_info.reset_mock()
 
         prp = cp.make_pano_product(self.d, Path("dummy.tif"), Path("outdir/"))
-        self.assertIsInstance(prp, PanoProduct)
+        self.assertIsInstance(prp, PanoRecord)
         mock_imsave.assert_not_called()
         mock_tif_info.assert_called_once()

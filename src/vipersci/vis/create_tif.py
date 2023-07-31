@@ -1,9 +1,9 @@
-"""Creates Raw VIS TIFF files from source 16-bit images.
+"""Creates VIS TIFF files from source 16-bit images.
 
 This program is meant to help manually build test data sets.
 """
 
-# Copyright 2022, United States Government as represented by the
+# Copyright 2022-2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -32,7 +32,7 @@ from pathlib import Path
 from skimage.io import imread
 
 from vipersci.pds import pid as pds
-from vipersci.vis.pds.create_raw import write_tiff
+from vipersci.vis.create_image import write_tiff
 from vipersci import util
 
 logger = logging.getLogger(__name__)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""Defines the VIS pano_products table using the SQLAlchemy ORM."""
+"""Defines the VIS pano_records table using the SQLAlchemy ORM."""
 
 # Copyright 2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
@@ -42,8 +42,8 @@ from vipersci.vis.db import Base
 import vipersci.vis.db.validators as vld
 
 
-class PanoProduct(Base):
-    """An object to represent rows in the pano_products table for VIS."""
+class PanoRecord(Base):
+    """An object to represent rows in the pano_records table for VIS."""
 
     # This class is derived from SQLAlchemy's orm.DeclarativeBase
     # which means that it has a variety of class properties that are
@@ -52,7 +52,7 @@ class PanoProduct(Base):
 
     # The table represents many of these objects, so the __tablename__ is
     # plural while the class name is singular.
-    __tablename__ = "pano_products"
+    __tablename__ = "pano_records"
 
     # The mapped_column() names below should use "snake_case" for the names that are
     # committed to the database as column names.  Furthermore, those names
