@@ -49,6 +49,8 @@ Changed
 - create_pano.py now supports ImageRecords and PanoRecords.
 - create_raw.py rearchitected to gather information from "records" to build XML PDS
   labels.
+- create_vis_dbs entry point changed to vis_create_dbs to conform with other vis-related
+  entry points.
 
 
 0.5.0 (2023-07-26)
