@@ -45,5 +45,5 @@ class TestMain(unittest.TestCase):
             ct.main()
             m_imread.assert_called_once_with(fn)
             m_writetiff.assert_called_once()
-            self.assertEqual(m_writetiff.call_args.args[0], pid)
-            self.assertEqual(m_writetiff.call_args.args[2], Path.cwd())
+            self.assertEqual(m_writetiff.call_args[0][0], pid)
+            self.assertEqual(m_writetiff.call_args[0][2], Path.cwd())
