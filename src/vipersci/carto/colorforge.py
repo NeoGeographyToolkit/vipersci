@@ -53,7 +53,7 @@ presets = dict(
         label="Depth to Ice Stability (m)",
         cmap="Blues_r",
         vmin=0,
-        vmax=1.1,
+        vmax=1,
         bounded=False,
         extend="neither",
     ),
@@ -61,8 +61,8 @@ presets = dict(
         label="Depth to Ice Stability (m)",
         cmap="Blues_r",
         vmin=0,
-        vmax=1.1,
-        bounded=[0, 0.01, 0.5, 1, 1.1],
+        vmax=1,
+        bounded=[0, 0.01, 0.2, 0.85, 1.0],
         extend="neither",
     ),
     stoplight_slope=dict(
@@ -342,13 +342,11 @@ def plot_colorbar(palette: Palette, orientation: str = "h", output=None):
     if orientation in o_dict:
         orientation = o_dict[orientation]
 
-    fig, ax = plt.subplots()
-
     plt.ioff()
-    if orientation == "h":
+    if orientation == "horizontal":
         fig, ax = plt.subplots(figsize=(5, 1))
         fig.subplots_adjust(bottom=0.5)
-    elif orientation == "v":
+    elif orientation == "vertical":
         fig, ax = plt.subplots(figsize=(1.2, 5))
         fig.subplots_adjust(right=0.4)
 
