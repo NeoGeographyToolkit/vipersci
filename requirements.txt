@@ -3,6 +3,7 @@ geopandas
 matplotlib
 numpy
 rasterio
+requests
 pandas
 pillow
 psycopg2
