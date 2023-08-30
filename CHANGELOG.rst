@@ -41,6 +41,8 @@ Added
   create_raw.py)
 - light_records.py which handles information about luminaire state.
 - anaglyph.py
+- pano_check.py to sort through image records and figure out what would be a good
+  panorama set.
 
 Changed
 ^^^^^^^
