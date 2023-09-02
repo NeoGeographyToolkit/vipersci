@@ -18,4 +18,5 @@ dependencies:
   - sphinxcontrib-apidoc
   - sphinxcontrib-autoprogram
   - tox
+  - types-pillow
   - twine

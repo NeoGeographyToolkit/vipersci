@@ -15,6 +15,7 @@ dependencies:
   - matplotlib
   - numpy
   - pandas
+  - pillow
   - psycopg2
   - pyproj
   - rasterio
