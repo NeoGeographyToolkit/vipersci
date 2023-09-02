@@ -40,6 +40,7 @@ Added
 - create_image.py (this replaces most of the functionality of the previous
   create_raw.py)
 - light_records.py which handles information about luminaire state.
+- anaglyph.py
 
 Changed
 ^^^^^^^

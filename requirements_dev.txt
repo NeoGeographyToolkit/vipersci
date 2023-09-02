@@ -8,5 +8,6 @@ pytest
 Sphinx
 tox
 twine
+types-pillow
 wheel
 watchdog

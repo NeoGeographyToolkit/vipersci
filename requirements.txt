@@ -4,6 +4,7 @@ matplotlib
 numpy
 rasterio
 pandas
+pillow
 psycopg2
 pyproj
 scikit-image
