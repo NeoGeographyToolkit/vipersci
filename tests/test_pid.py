@@ -246,16 +246,30 @@ class TestVISID(unittest.TestCase):
         self.assertEqual("VISID('220117-010101-ncl-a')", repr(cid))
 
     def test_lt(self):
+        vid0 = pid.VISID("220117-010101-ncl-z")
         vid1 = pid.VISID("220117-010101-ncl-a")
         vid2 = pid.VISID("220117-010101-ncl-b")
         vid3 = pid.VISID("220117-010101-ncl-c")
         vid4 = pid.VISID("220117-010101-ncl-d")
+        self.assertTrue(vid0 < vid1)
         self.assertTrue(vid1 < vid2)
         self.assertTrue(vid2 < vid3)
         self.assertTrue(vid3 < vid4)
 
-        vids = [vid3, vid4, vid1, vid2]
-        self.assertEqual(sorted(vids), [vid1, vid2, vid3, vid4])
+        vids = [vid3, vid4, vid1, vid2, vid0]
+        self.assertEqual(sorted(vids), [vid0, vid1, vid2, vid3, vid4])
+
+    def test_best_compression(self):
+        truth = [
+            "241127-010203-ncl-a", "241127-010204-ncr-z"
+        ]
+
+        test = [
+            "241127-010203-ncl-a", "241127-010203-ncl-d", "241127-010203-ncl-s",
+            "241127-010204-ncr-z", "241127-010204-ncr-s"
+        ]
+        result = pid.VISID.best_compression(test)
+        self.assertEqual(result, truth)
 
 
 class TestPanoID(unittest.TestCase):
