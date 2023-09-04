@@ -495,6 +495,12 @@ class ImageRecord(Base):
 
         return
 
+    def __lt__(self, other):
+        if isinstance(other, self.__class__):
+            return VISID(self.product_id) < VISID(other.product_id)
+        else:
+            return NotImplemented
+
     @hybrid_property
     def exposure_duration(self):
         return self._exposure_duration
