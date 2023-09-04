@@ -26,6 +26,7 @@
 from datetime import datetime, timedelta, timezone
 import unittest
 
+from vipersci.pds.pid import VISID
 from vipersci.vis.db import image_records as trp
 
 
@@ -153,6 +154,14 @@ class TestImageRecord(unittest.TestCase):
     # def test_purpose(self):
     #     rp = trp.ImageRecord(**self.d)
     #     self.assertRaises(ValueError, setattr, rp, "purpose", "dummy")
+
+    def test_lt(self):
+        ir1 = trp.ImageRecord(**self.d)
+        v = VISID("230127-000000-ncl-a")
+        ir2 = trp.ImageRecord(
+            product_id=str(v), start_time=v.datetime(), exposure_duration=111
+        )
+        self.assertTrue(ir1 < ir2)
 
     def test_update(self):
         rp = trp.ImageRecord(**self.d)
