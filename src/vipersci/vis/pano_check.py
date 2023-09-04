@@ -30,6 +30,7 @@ import itertools
 import logging
 from pathlib import Path
 import sys
+from typing import Iterable, Union
 
 import pandas as pd
 import requests
@@ -50,7 +51,7 @@ def arg_parser():
     parser.add_argument(
         "--csv",
         type=Path,
-        help="Path to CSV file with times and locations.  Ignored if --url is set."
+        help="Path to CSV file with times and locations.  Ignored if --url is set.",
     )
     parser.add_argument(
         "-d",
@@ -63,32 +64,29 @@ def arg_parser():
         "-m",
         "--mapserver",
         help="URL that will respond to requests when given an event_time and "
-        "a crs_code."
+        "a crs_code.",
     )
     parser.add_argument(
         "-s",
         "--since",
         default=0,
         help="An ISO8601 datetime after which should be searched for images "
-        "in the database."
+        "in the database.",
     )
     parser.add_argument(
         "-u",
         "--until",
         default=datetime.now(tz=timezone.utc),
         help="An ISO8601 datetime before which should be searched for images "
-        "in the database."
+        "in the database.",
     )
     parser.add_argument(
         "--url",
         help="URL to which event_times may be posted and for which location and "
-        "orientation will be returned."
+        "orientation will be returned.",
     )
     parser.add_argument(
-        "--input",
-        nargs="*",
-        required=False,
-        help="VIS Image Record Product IDs."
+        "--input", nargs="*", required=False, help="VIS Image Record Product IDs."
     )
     return parser
 
@@ -114,6 +112,8 @@ def main():
         pano_groups = check(pids, gppf)
 
     else:
+        if args.dburl is None:
+            parser.error("To query images between times, you must enter a --dburl.")
         t_since = datetime.fromisoformat(args.since)
         t_until = datetime.fromisoformat(args.until)
         if args.until < args.since:
@@ -121,21 +121,16 @@ def main():
                 f"The -s argument ({args.since}) must be less than the -u "
                 f"argument ({args.until})."
             )
-        if args.dburl is None:
-            parser.error(
-                "To query images between times, you must enter a --dburl."
-            )
 
         engine = create_engine(args.dburl)
         with Session(engine) as session:
             result = session.scalars(
                 select(ImageRecord).where(
-                    t_since <= ImageRecord.start_time,
-                    ImageRecord.start_time <= t_until
+                    t_since <= ImageRecord.start_time, ImageRecord.start_time <= t_until
                 )
             )
             pano_groups = check(result, gppf)
-       
+
     for pg in pano_groups:
         print(f"For position and pose {pg[1]}:")
         for p in pg[0]:
@@ -144,20 +139,53 @@ def main():
     return
 
 
-def check(images: list, get_pos_pose_func=None):
+def check(
+    images: Iterable[Union[pds.VISID, ImageRecord]], get_pos_pose_func=None
+) -> list:
+    """
+    Returns a list of two-tuples.  The first element in each two-tuple is a list of
+    items from *images* which could be made into a panorama, and the second element
+    is the position and pose associated with those *images*.
+
+    The *get_pos_pose_func* should be a function that takes a list of timestamp times
+    and returns an object that represents a position and pose at that time (please see
+    get_position_and_pose_from_df() and get_position_and_pose_from_mapserver() in this
+    module.  These functions may need to be wrapped via functools.partial() so that the
+    function passed here takes only a list of timestamp times.
+
+    If the iterable does not contain all ImageRecord objecs or all VISID objects,
+    a TypeError will be raised.
+    """
     if get_pos_pose_func is None:
         raise ValueError("A function must be provided to get_pos_pose_func.")
-    images.sort()
-    image_records_by_time = {}
+
+    raw_vids = []
+    image_records = None
+    if all(map(isinstance, images, itertools.repeat(ImageRecord))):
+        image_records = {}
+        for im in images:
+            vid = pds.VISID(im.product_id)
+            image_records[vid] = im
+            raw_vids.append(vid)
+    elif all(map(isinstance, images, itertools.repeat(pds.VISID))):
+        raw_vids = images
+    else:
+        raise TypeError(
+            "The provided iterable does not contain all ImageRecords or "
+            f"all VISIDs, it is {images}."
+        )
+
+    raw_vids.sort()
+    vids = pds.VISID.best_compression(raw_vids)
+
+    vids_by_time = {}
     times = []
-    for im in images:
-        if isinstance(im, ImageRecord):
-            ts = im.start_time.timestamp()
-        elif isinstance(im, pds.VISID):
-            ts = im.datetime().timestamp()
-        else:
-            raise TypeError(f"{im} is neither an ImageRecord nor a VISID.")
-        image_records_by_time[ts] = im
+    for v in vids:
+        if v.compression == "s":
+            continue
+        ts = v.datetime().timestamp()
+
+        vids_by_time[ts] = v
         times.append(ts)
 
     tpp = get_pos_pose_func(times)
@@ -167,22 +195,25 @@ def check(images: list, get_pos_pose_func=None):
     for t_list, position_pose in grouped:
         if len(t_list) > 1:
             # We have a pano group
-            irs = [image_records_by_time[t] for t in t_list]
-            pano_groups.append((irs, position_pose))
+            if image_records is not None:
+                ids = [image_records[vids_by_time[t]] for t in t_list]
+            else:
+                ids = [vids_by_time[t] for t in t_list]
+            pano_groups.append((ids, position_pose))
 
     return pano_groups
 
 
 def get_position_and_pose_from_df(
-        times: list,
-        path: Path,
-        time_column=0,
-        x_column=1,
-        y_column=2,
-        yaw_column=3,
+    times: list,
+    path: Path,
+    time_column=0,
+    x_column=1,
+    y_column=2,
+    yaw_column=3,
 ):
     """
-    Given a list of times and a Path to a CSV file with the specified columns,
+    Given a list of timestamp times and a Path to a CSV file with the specified columns,
     return a list of two-tuples whose first element is the time and whose
     second element is an N-tuple of x-location, y-location, and yaw.
 
@@ -190,24 +221,22 @@ def get_position_and_pose_from_df(
     from the CSV read.
     """
     uc = list()
-    for c in (x_column, y_column, yaw_column):
+    for c in (time_column, x_column, y_column, yaw_column):
         if c is not None:
             uc.append(c)
 
-    df = pd.read_csv(path, usecols=uc, parse_dates={"times": [time_column, ]})
+    df = pd.read_csv(path, usecols=uc)
 
     tpp = list()
     for t in times:
-        row = df.iloc[(df['time_column']-t).abs().argsort()[:1]]
-        tpp.append(t, row.tolist())
+        row = df.iloc[(df.iloc[:, time_column] - t).abs().argsort()[:1]]
+        tpp.append((t, tuple(row.values.flatten().tolist()[1:])))
 
     return tpp
 
 
 def get_position_and_pose_from_mapserver(
-        times: list,
-        url: str,
-        crs: str = "VIPER:910101"
+    times: list, url: str, crs: str = "VIPER:910101"
 ):
     """
     Given a list of times and a URL that requests can be made against,
@@ -224,7 +253,7 @@ def get_position_and_pose_from_mapserver(
             params={
                 "event_time": t,
                 "crs_code": crs,
-            }
+            },
         )
         rj = position_result.json()
 
@@ -249,10 +278,10 @@ def groupby_2nd(
 
     For example::
 
-        t = [("Alice", "foo"), ("Bob", "bar"), ("Catherine", "bar")]
-        g = groupby_2nd(t)
-        print(g)
-        >>> [(["Alice",], "foo"), (["Bob", "Catherine"], "bar")]
+        >>> t = [("Alice", "foo"), ("Bob", "bar"), ("Catherine", "bar")]
+        >>> g = groupby_2nd(t)
+        >>> print(g)
+        [(["Alice",], "foo"), (["Bob", "Catherine"], "bar")]
     """
 
     def keyfunc(t: tuple):
