@@ -55,6 +55,10 @@ Changed
   labels.
 - create_vis_dbs entry point changed to vis_create_dbs to conform with other vis-related
   entry points.
+- pid.VISID now properly sorts the uncompressed "z" state lower (better) than the
+  lossless compressed "a" state.
+- pid.VISID now has a best_compression() function to sort out the best compression state
+  from an iterable containing may compression states from a single observation.
 
 
 0.5.0 (2023-07-26)

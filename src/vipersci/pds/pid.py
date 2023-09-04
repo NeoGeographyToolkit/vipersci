@@ -24,7 +24,9 @@
 # top level of this library.
 
 import datetime
+from itertools import groupby
 import re
+from typing import Iterable
 
 instruments = dict()
 vis_instruments = dict(
@@ -341,7 +343,13 @@ class VISID(VIPERID):
     def __lt__(self, other):
         if isinstance(other, self.__class__):
             if super().__eq__(other):
-                return self.compression < other.compression
+                if "z" in (self.compression, other.compression):
+                    if other.compression == "z" and self.compression != "z":
+                        return False
+                    else:
+                        return True
+                else:
+                    return self.compression < other.compression
             else:
                 return super().__lt__(other)
         else:
@@ -365,6 +373,29 @@ class VISID(VIPERID):
             return "Lossless"
         else:
             return "Lossy"
+
+    @staticmethod
+    def best_compression(identifiers: Iterable):
+        """
+        Returns a list of elements in *identifiers* eliminating identifiers which
+        can be made into VISIDs which come from the same observation, but have poorer
+        compression.
+
+        For example:
+        >>> best = best_compression(["241127-010203-ncl-a", "241127-010203-ncl-b"])
+        >>> print(best)
+        ["241127-010203-ncl-a",]
+        """
+        d = dict()
+        for i in identifiers:
+            d[VISID(i)] = i
+
+        best_ids = list()
+        vids = sorted(d.keys())
+        for k, g in groupby(vids, key=VIPERID):
+            best_ids.append(sorted(g)[0])
+
+        return [d[x] for x in best_ids]
 
 
 class PanoID(VIPERID):
