@@ -164,11 +164,11 @@ def check(
     if all(map(isinstance, images, itertools.repeat(ImageRecord))):
         image_records = {}
         for im in images:
-            vid = pds.VISID(im.product_id)
+            vid = pds.VISID(im.product_id)  # type: ignore  # noqa
             image_records[vid] = im
             raw_vids.append(vid)
     elif all(map(isinstance, images, itertools.repeat(pds.VISID))):
-        raw_vids = images
+        raw_vids = list(images)  # type: ignore  # noqa
     else:
         raise TypeError(
             "The provided iterable does not contain all ImageRecords or "

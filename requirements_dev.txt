@@ -9,5 +9,6 @@ Sphinx
 tox
 twine
 types-pillow
+types-requests
 wheel
 watchdog
