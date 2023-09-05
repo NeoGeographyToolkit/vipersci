@@ -19,4 +19,5 @@ dependencies:
   - sphinxcontrib-autoprogram
   - tox
   - types-pillow
+  - types-requests
   - twine
