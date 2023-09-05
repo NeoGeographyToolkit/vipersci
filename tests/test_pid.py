@@ -260,13 +260,14 @@ class TestVISID(unittest.TestCase):
         self.assertEqual(sorted(vids), [vid0, vid1, vid2, vid3, vid4])
 
     def test_best_compression(self):
-        truth = [
-            "241127-010203-ncl-a", "241127-010204-ncr-z"
-        ]
+        truth = ["241127-010203-ncl-a", "241127-010204-ncr-z"]
 
         test = [
-            "241127-010203-ncl-a", "241127-010203-ncl-d", "241127-010203-ncl-s",
-            "241127-010204-ncr-z", "241127-010204-ncr-s"
+            "241127-010203-ncl-a",
+            "241127-010203-ncl-d",
+            "241127-010203-ncl-s",
+            "241127-010204-ncr-z",
+            "241127-010204-ncr-s",
         ]
         result = pid.VISID.best_compression(test)
         self.assertEqual(result, truth)
