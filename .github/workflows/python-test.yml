@@ -15,7 +15,7 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
 
     env:
-      SPATIALITE_LIBRARY_PATH: 'mod_spatialite.so'
+      SPATIALITE_LIBRARY_PATH: 'mod_spatialite'
 
     steps:
     - name: Checkout
@@ -33,7 +33,7 @@ jobs:
         python -m pip install --upgrade pip
         sudo apt-add-repository ppa:ubuntugis/ppa
         sudo apt-get update
-        sudo apt-get install gdal-bin libgdal-dev
+        sudo apt-get install gdal-bin libgdal-dev libsqlite3-mod-spatialite
         python -m pip install pytest-cov
         python -m pip install -r requirements.txt
     - name: Install
