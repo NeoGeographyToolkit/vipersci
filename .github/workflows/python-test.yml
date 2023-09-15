@@ -15,7 +15,7 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
 
     env:
-      SPATIALITE_LIBRARY_PATH: 'mod_spatialite'
+      SPATIALITE_LIBRARY_PATH: 'mod_spatialite.so'
 
     steps:
     - name: Checkout
