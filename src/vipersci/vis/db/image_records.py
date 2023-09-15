@@ -258,6 +258,23 @@ class ImageRecord(Base):
     )
     stop_time = mapped_column(DateTime(timezone=True), nullable=False)
     temperature = synonym("instrument_temperature")
+    verification_notes = mapped_column(
+        String,
+        nullable=True,
+        doc="Any notes about the verification of this image by the VIS Operator.",
+    )
+    verified = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="True if a VIS Operator has indicated that this image is a good image, if "
+        "false, the VIS Operator has determined that there is an error of some kind "
+        "with this image.",
+    )
+    verifier = mapped_column(
+        String,
+        nullable=True,
+        doc="The name of the individual that reviewed this image.",
+    )
     voltage_ramp = mapped_column(
         Integer,
         nullable=False,
