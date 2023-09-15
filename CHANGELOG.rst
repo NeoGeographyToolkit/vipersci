@@ -40,6 +40,9 @@ Added
 - create_image.py (this replaces most of the functionality of the previous
   create_raw.py)
 - image_tags.py which contains image tag information.
+- image_requests.py defines the table for holding image requests.
+- Junction tables to connect LDST information to ImageRequests and ImageTags
+  to ImageRecords.
 - ldst.py table which contains LDST information.
 - light_records.py which handles information about luminaire state.
 - anaglyph.py

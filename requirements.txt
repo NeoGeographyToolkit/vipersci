@@ -1,4 +1,5 @@
 genshi
+geoalchemy2
 geopandas
 matplotlib
 numpy

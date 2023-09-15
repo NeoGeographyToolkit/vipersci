@@ -30,21 +30,37 @@ the database.
 # top level of this library.
 
 import argparse
+import csv
 import logging
 
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, insert, inspect, select
+from sqlalchemy.orm import Session
 
 from vipersci import util
 
 from vipersci.vis.db.image_records import ImageRecord
+from vipersci.vis.db.image_requests import ImageRequest
 from vipersci.vis.db.image_stats import ImageStats
+from vipersci.vis.db.image_tags import ImageTag, taglist
+from vipersci.vis.db.junc_image_record_tags import JuncImageRecordTag
+from vipersci.vis.db.junc_image_req_ldst import JuncImageRequestLDST
+from vipersci.vis.db.ldst import LDST
+from vipersci.vis.db.ldst_verification import LDSTVerification
 from vipersci.vis.db.light_records import LightRecord
+
+# from vipersci.vis.db.pano_reocrds import PanoRecord
 
 # As new tables are defined, their Classes must be imported above, and
 # then also added to this tuple:
 tables = (
     ImageRecord,
+    ImageRequest,
     ImageStats,
+    ImageTag,
+    JuncImageRecordTag,
+    JuncImageRequestLDST,
+    LDST,
+    LDSTVerification,
     LightRecord,
 )
 
@@ -61,6 +77,9 @@ def arg_parser():
         default="postgresql://postgres:NotTheDefault@localhost/visdb",
         help="Something like  %(default)s",
     )
+    parser.add_argument(
+        "-l", "--ldst", help="Path to semi-colon CSV file with LDST info."
+    )
     return parser
 
 
@@ -74,6 +93,58 @@ def main():
     for t in tables:
         logger.info(f"Attempting to create {t.__tablename__}.")
         t.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        # Establish image_tags
+        scalars = session.scalars(select(ImageTag))
+        results = scalars.all()
+        if len(results) == 0:
+            session.execute(insert(ImageTag), [{"name": x} for x in taglist])
+            session.commit()
+        elif len(results) == len(taglist):
+            for i, row in enumerate(results):
+                if row.name != taglist[i]:
+                    raise ValueError(
+                        f"Row {i} in the database has id {row.id} and tag {row.name} "
+                        f"but should have {taglist[i]} from {taglist}."
+                    )
+        else:
+            raise ValueError(
+                f"The {ImageTag.__tablename__} table already contains the following "
+                f"{len(results)} entries: {[r.name for r in results]}, but should "
+                f"contain these {len(taglist)} entries: {taglist}"
+            )
+
+        # Set up LDST table
+        if args.ldst is not None:
+            with open(args.ldst, newline="") as csvfile:
+                ldst_rows = list()
+                reader = csv.reader(csvfile, delimiter=";")
+                next(reader)  # Skip first line.
+                next(reader)  # Skip second line.
+                for row in reader:
+                    ldst_rows.append(row)
+
+            scalars = session.scalars(select(LDST))
+            results = scalars.all()
+            if len(results) == 0:
+                session.execute(
+                    insert(LDST), [{"id": x, "description": y} for (x, y) in ldst_rows]
+                )
+                session.commit()
+            elif len(results) == len(ldst_rows):
+                for i, row in enumerate(results):
+                    if row.id != ldst_rows[i][0] or row.description != ldst_rows[i][1]:
+                        raise ValueError(
+                            f"Row {i} in the database has these values: {row} "
+                            f"but should have {ldst_rows[i]}"
+                        )
+            else:
+                raise ValueError(
+                    f"The {LDST.__tablename__} table already contains the following "
+                    f"{len(results)} entries: {results}, but should contain "
+                    f"{len(ldst_rows)} entries."
+                )
 
     # Check table names exists via inspect
     ins = inspect(engine)
