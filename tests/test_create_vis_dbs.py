@@ -11,7 +11,9 @@ from argparse import ArgumentParser
 import unittest
 from unittest.mock import patch
 
+from geoalchemy2 import load_spatialite
 from sqlalchemy import create_engine
+from sqlalchemy.event import listen
 from sqlalchemy.orm import Session
 
 from vipersci.vis.db import Base
@@ -30,14 +32,17 @@ class TestParser(unittest.TestCase):
 class TestDatabase(unittest.TestCase):
     def setUp(self) -> None:
         self.engine = create_engine("sqlite:///:memory:")
+        listen(self.engine, "connect", load_spatialite)
         self.session = Session(self.engine)
 
     def tearDown(self):
         Base.metadata.drop_all(self.engine)
 
-    @patch("vipersci.vis.db.create_vis_dbs.arg_parser")
-    def test_main(self, m_arg_parser):
-        with patch(
-            "vipersci.vis.db.create_vis_dbs.create_engine", return_value=self.engine
-        ):
-            cvd.main()
+    def test_main(self):
+        pa_ret_val = cvd.arg_parser().parse_args(["-d", "foo"])
+        with patch("vipersci.vis.db.create_vis_dbs.arg_parser") as parser:
+            parser.return_value.parse_args.return_value = pa_ret_val
+            with patch(
+                "vipersci.vis.db.create_vis_dbs.create_engine", return_value=self.engine
+            ):
+                cvd.main()

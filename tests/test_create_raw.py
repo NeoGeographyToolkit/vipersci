@@ -12,7 +12,9 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
+from geoalchemy2 import load_spatialite
 from sqlalchemy import create_engine
+from sqlalchemy.event import listen
 from sqlalchemy.orm import Session
 
 from vipersci.vis.db import Base
@@ -79,6 +81,7 @@ class TestDatabase(unittest.TestCase):
             yamcs_name="/ViperGround/Images/ImageData/Navcam_left_icer",
         )
         self.engine = create_engine("sqlite:///:memory:")
+        listen(self.engine, "connect", load_spatialite)
         self.session = Session(self.engine)
         Base.metadata.create_all(self.engine)
         self.session.add(self.ir)
