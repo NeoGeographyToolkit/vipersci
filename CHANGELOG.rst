@@ -39,6 +39,8 @@ Added
 - image_records.py (this replaces the concept of raw_products.py)
 - create_image.py (this replaces most of the functionality of the previous
   create_raw.py)
+- image_tags.py which contains image tag information.
+- ldst.py table which contains LDST information.
 - light_records.py which handles information about luminaire state.
 - anaglyph.py
 - pano_check.py to sort through image records and figure out what would be a good
