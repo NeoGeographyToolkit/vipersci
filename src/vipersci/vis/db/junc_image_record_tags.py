@@ -31,7 +31,7 @@ from sqlalchemy import (
     Integer,
     String,
 )
-from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import mapped_column, relationship
 
 from vipersci.vis.db import Base
 from vipersci.vis.db.image_records import ImageRecord
@@ -55,3 +55,6 @@ class JuncImageRecordTag(Base):
         doc="Any extra information about the the application of the tag to the image "
         "record.",
     )
+
+    image_record = relationship("ImageRecord", back_populates="image_tag_associations")
+    image_tag = relationship("ImageTag", back_populates="image_record_associations")

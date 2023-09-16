@@ -34,12 +34,13 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     Float,
+    ForeignKey,
     Identity,
     Integer,
     String,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import mapped_column, synonym, validates
+from sqlalchemy.orm import mapped_column, relationship, synonym, validates
 
 from vipersci.pds.pid import VISID, vis_instruments, vis_compression
 from vipersci.pds.xml import ns
@@ -157,6 +158,23 @@ class ImageRecord(Base):
         nullable=False,
         doc="The IMG_ID from the MCSE Image Header used for CCU storage and "
         "retrieval.",
+    )
+    # This image_request_id column and image_request relationship allow a many
+    # ImageRecords to one ImageRequest relationship, and the nullable allows it to be
+    # optional.  So an ImageRecord may be connected to an ImageRequest, but it may not.
+    image_request_id = mapped_column(ForeignKey("image_requests.id"), nullable=True)
+    image_request = relationship("ImageRequest", back_populates="image_records")
+
+    # The image_tags and image_tag_associations allow a many ImageTag to many
+    # ImageRecord relationship.
+    image_tags = relationship(
+        "ImageTag",
+        secondary="junc_image_record_tags",
+        back_populates="image_records",
+        viewonly=True,
+    )
+    image_tag_associations = relationship(
+        "JuncImageRecordTag", back_populates="image_record"
     )
     imageHeight = synonym("lines")
     imageId = synonym("image_id")
