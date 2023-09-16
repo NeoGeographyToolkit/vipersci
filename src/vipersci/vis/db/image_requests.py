@@ -156,6 +156,9 @@ class ImageRequest(Base):
     first_slice_index = mapped_column(Integer, doc="First slice of pano, >= 1.")
     last_slice_index = mapped_column(Integer, doc="Last slice of pano, <= slices.")
 
+    # These establish the many-to-many relationship between ImageRequests and LDST
+    # hypotheses.  The junction table allows the relation to be marked "critical"
+    # or not.
     ldst_hypotheses = relationship(
         "LDST",
         secondary="junc_image_request_ldst",
@@ -165,6 +168,9 @@ class ImageRequest(Base):
     ldst_associations = relationship(
         "JuncImageRequestLDST", back_populates="image_request"
     )
+
+    # This establishes a many ImageRequests to one ImageRecord relationship.
+    image_records = relationship("ImageRecord", back_populates="image_request")
 
     # legal values for things.
     # could do some of these as enum columns but very annoying for things that

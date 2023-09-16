@@ -30,7 +30,7 @@ from sqlalchemy import (
     Integer,
     String,
 )
-from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import mapped_column, relationship
 
 from vipersci.vis.db import Base
 
@@ -42,6 +42,16 @@ class ImageTag(Base):
 
     id = mapped_column(Integer, Identity(start=1), primary_key=True)
     name = mapped_column(String, nullable=False, doc="The name of the tag.")
+
+    image_records = relationship(
+        "ImageRecord",
+        secondary="junc_image_record_tags",
+        back_populates="image_tags",
+        viewonly=True,
+    )
+    image_record_associations = relationship(
+        "JuncImageRecordTag", back_populates="image_tag"
+    )
 
 
 # Unlike other tables, the image_tags table should not have arbitrary contents, and the
