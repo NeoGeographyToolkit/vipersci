@@ -94,7 +94,7 @@ class ImageRequest(Base):
     users = mapped_column(String, nullable=False, doc="requesting user(s)")
     # note: autofilled; this will also track edit time / backfill time.
     request_time = mapped_column(
-        DateTime, nullable=False, doc="time of request submission/update"
+        DateTime(timezone=True), nullable=False, doc="time of request submission/update"
     )
     # all remaining fields may be null for backfilled requests. they are
     # intended for use in ops.
@@ -140,7 +140,7 @@ class ImageRequest(Base):
     )
     exposure_time = mapped_column(String, default="default")
 
-    # What follows are panorama-only parameters:
+    # Start panorama-only parameters:
     caltarget_required = mapped_column(
         Boolean, default=True, doc="acquire caltarget image?"
     )
@@ -155,6 +155,7 @@ class ImageRequest(Base):
     # last slice is the number of slices, a.k.a a 360 pano.
     first_slice_index = mapped_column(Integer, doc="First slice of pano, >= 1.")
     last_slice_index = mapped_column(Integer, doc="Last slice of pano, <= slices.")
+    # End panorama-only parameters.
 
     # These establish the many-to-many relationship between ImageRequests and LDST
     # hypotheses.  The junction table allows the relation to be marked "critical"
