@@ -28,6 +28,9 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+0.6.0 (2023-09-25)
+------------------
+
 Changed the concept of primarily recording PDS-like "products" in the database and data
 structures, and changed the concept to capture "records" of various kinds (ImageRecords,
 LightRecords, and derived things like PanoRecords) in the database and as the primary
