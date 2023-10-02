@@ -25,7 +25,7 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from vipersci.pds.datetime import fromisozformat
 
@@ -34,6 +34,8 @@ def validate_datetime_asutc(key, value):
     if isinstance(value, datetime):
         if value.utcoffset() is None:
             raise ValueError(f"{key} must be tz aware.")
+        elif value.utcoffset() != timedelta():
+            raise ValueError(f"{key} must be tz aware with a UTC offset.")
         dt = value
     elif isinstance(value, str):
         if value.endswith("Z"):
