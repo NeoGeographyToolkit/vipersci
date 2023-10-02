@@ -23,7 +23,7 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import unittest
 
 from vipersci.pds.datetime import fromisozformat
@@ -46,6 +46,9 @@ class TestValidators(unittest.TestCase):
 
         dt_e = datetime(2022, 1, 27, 0, 0, 0)
         self.assertRaises(ValueError, vld.validate_datetime_asutc, "foo", dt_e)
+
+        dt_offset = datetime(2022, 1, 27, 0, 0, 0, tzinfo=timezone(timedelta(hours=2)))
+        self.assertRaises(ValueError, vld.validate_datetime_asutc, "foo", dt_offset)
 
         self.assertRaises(
             ValueError,

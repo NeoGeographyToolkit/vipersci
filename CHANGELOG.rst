@@ -28,6 +28,13 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+Fixed
+^^^^^
+- validators.validate_dateimte_asutc now properly raises a ValueError if the provided
+  tz-aware datetime has a non-UTC tz offset (before any tz-aware datetime would pass
+  the validator).
+
+
 0.6.0 (2023-09-25)
 ------------------
 
