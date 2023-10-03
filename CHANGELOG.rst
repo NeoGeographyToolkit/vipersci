@@ -35,6 +35,10 @@ Fixed
   the validator).
 - image_records.ImageRecord object now has pgaGain instead of ppaGain (which was surely
   a typo in the early upstream data.
+- create_image.py now correctly imports all of the tables that have a relation to the
+  image_records table so that SQLAlchemy can properly resolve them, and downstream
+  users of the create_image.create() function don't need to worry about sorting that
+  out.
 
 
 0.6.0 (2023-09-25)
