@@ -245,7 +245,7 @@ class ImageRecord(Base):
         doc="The translated floating point multiplier derived from PGA_GAIN "
         "from the MCSE Image Header.",
     )
-    ppaGain = synonym("pga_gain")  # Surely, this is a Yamcs typo, should be pgaGain
+    pgaGain = synonym("pga_gain")
     processing_info = mapped_column(
         Integer,
         nullable=False,
