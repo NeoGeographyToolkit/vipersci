@@ -33,6 +33,8 @@ Fixed
 - validators.validate_dateimte_asutc now properly raises a ValueError if the provided
   tz-aware datetime has a non-UTC tz offset (before any tz-aware datetime would pass
   the validator).
+- image_records.ImageRecord object now has pgaGain instead of ppaGain (which was surely
+  a typo in the early upstream data.
 
 
 0.6.0 (2023-09-25)
