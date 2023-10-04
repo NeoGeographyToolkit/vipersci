@@ -165,8 +165,8 @@ def correlate_and_shift(left: NDArray, right: NDArray) -> NDArray:
     """
     shift = tuple(
         phase_cross_correlation(
-            left, right, return_error=False, normalization=None
-        ).astype(int)
+            left, right, return_error="always", normalization=None
+        )[0].astype(int)
     )
     logger.info(f"Right image shift: {shift}")
     return np.roll(right, shift, (0, 1))
