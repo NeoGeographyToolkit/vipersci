@@ -2,4 +2,4 @@
 
 __author__ = """vipersci Developers"""
 __email__ = "rbeyer@seti.org"
-__version__ = "0.6.0"
+__version__ = "0.6.1-dev"
