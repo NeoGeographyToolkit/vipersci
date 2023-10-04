@@ -41,6 +41,8 @@ Fixed
   out.
 - nss_simulator.py, when asked to produce an output set of maps, uses a zero nodata value
   rather than whatever nodata value was present in the input burial depth map.
+- anaglyph.py needed some minor changes to align with upcoming changes in the
+  scikit-image architecture.
 
 
 0.6.0 (2023-09-25)
