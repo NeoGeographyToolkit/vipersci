@@ -182,6 +182,7 @@ def main():
         d2_arr = d2.reshape(bd_data.shape)
 
         kwds = bd_data.profile
+        kwds["nodata"] = 0.0
         write_tif(args.output, "_d1.tif", d1_arr, kwds)
         write_tif(args.output, "_d2.tif", d2_arr, kwds)
         return

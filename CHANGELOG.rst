@@ -39,6 +39,8 @@ Fixed
   image_records table so that SQLAlchemy can properly resolve them, and downstream
   users of the create_image.create() function don't need to worry about sorting that
   out.
+- nss_simulator.py, when asked to produce an output set of maps, uses a zero nodata value
+  rather than whatever nodata value was present in the input burial depth map.
 
 
 0.6.0 (2023-09-25)
