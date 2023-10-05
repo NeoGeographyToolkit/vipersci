@@ -28,6 +28,9 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+0.6.1 (2023-09-25)
+------------------
+
 Fixed
 ^^^^^
 - validators.validate_dateimte_asutc now properly raises a ValueError if the provided
