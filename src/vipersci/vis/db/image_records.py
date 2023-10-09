@@ -230,6 +230,17 @@ class ImageRecord(Base):
     # outputImageType is redundant with the outputImageMask, as it is just the
     # longform name of the value specified in the outputImageMask.
     outputImageMask = synonym("output_image_mask")
+    # The pano_records and pano_record_associations allow a many PanoRecords to many
+    # ImageRecords relationship.
+    pano_records = relationship(
+        "PanoRecord",
+        secondary="junc_image_pano",
+        back_populates="image_records",
+        viewonly=True,
+    )
+    pano_record_associations = relationship(
+        "JuncImagePano", back_populates="image_record"
+    )
     _pid = mapped_column(
         "product_id", String, nullable=False, unique=True, doc="The PDS Product ID."
     )
@@ -588,7 +599,7 @@ class ImageRecord(Base):
         "start_time",
         "stop_time",
         "yamcs_generation_time",
-        "yamcs_reception_time"
+        "yamcs_reception_time",
     )
     def validate_datetime_asutc(self, key, value):
         return vld.validate_datetime_asutc(key, value)

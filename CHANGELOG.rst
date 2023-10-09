@@ -31,6 +31,9 @@ Unreleased
 Added
 ^^^^^
 - yamcs_reception_time column added to the image_records.py table.
+- Association table junc_image_pano created which provides a many-to-many
+  connection between ImageRecords and PanoRecords and added bidirectional
+  relationship entries to each table.
 
 0.6.1 (2023-09-25)
 ------------------

@@ -27,11 +27,17 @@ from datetime import datetime, timedelta, timezone
 import unittest
 
 from vipersci.vis.db import pano_records as tpp
+from vipersci.vis.db.image_records import ImageRecord  # noqa
+from vipersci.vis.db.image_requests import ImageRequest  # noqa
+from vipersci.vis.db.junc_image_pano import JuncImagePano  # noqa
+from vipersci.vis.db.junc_image_record_tags import JuncImageRecordTag  # noqa
+from vipersci.vis.db.junc_image_req_ldst import JuncImageRequestLDST  # noqa
 
 
 class TestPanoRecord(unittest.TestCase):
     def setUp(self):
         self.startUTC = datetime(2022, 1, 27, 0, 0, 0, tzinfo=timezone.utc)
+        self.source_products = ["220127-000000-ncl-d", "220127-000005-ncl-d"]
         self.d = dict(
             file_creation_datetime=datetime.now(timezone.utc),
             file_path="/path/to/dummy",
@@ -40,7 +46,7 @@ class TestPanoRecord(unittest.TestCase):
             mission_phase="Test",
             purpose="Engineering",
             samples=2048,
-            source_products=["220127-000000-ncl-d", "220127-000005-ncl-d"],
+            image_records=self.source_products,
             start_time=self.startUTC,
         )
         self.extras = dict(foo="bar")

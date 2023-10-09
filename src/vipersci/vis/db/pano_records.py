@@ -34,7 +34,7 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import mapped_column, validates
+from sqlalchemy.orm import mapped_column, relationship, validates
 
 from vipersci.pds.pid import VISID, PanoID
 from vipersci.pds.datetime import isozformat
@@ -77,6 +77,17 @@ class PanoRecord(Base):
         doc="The absolute path (POSIX style) that contains the Array_2D_Image "
         "that this metadata refers to.",
     )
+    # The image_records and image_record_associations allow a many PanoRecord to many
+    # ImageRecord relationship.
+    image_records = relationship(
+        "ImageRecord",
+        secondary="junc_image_pano",
+        back_populates="pano_records",
+        viewonly=True,
+    )
+    image_record_associations = relationship(
+        "JuncImagePano", back_populates="pano_record"
+    )
     lines = mapped_column(
         Integer,
         nullable=False,
@@ -100,13 +111,6 @@ class PanoRecord(Base):
     software_name = mapped_column(String, nullable=False)
     software_version = mapped_column(String, nullable=False)
     software_program_name = mapped_column(String, nullable=False)
-    # source_products
-    #   Eventually, this will be a Many-to-Many mapping element, but
-    #   we have not yet determined exactly which derived product type
-    #   is to be the source type, so we're not going to wire this up here,
-    #   but will shove it in the "labelmeta" for now.
-    # source_products: Mapped[List["???Product"]] =
-    # relationship(back_populates="panorama")
     start_time = mapped_column(DateTime(timezone=True), nullable=False)
     stop_time = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -138,10 +142,8 @@ class PanoRecord(Base):
                     f"provided start_time ({kwargs['start_time']}) disagree."
                 )
 
-        elif (
-            "source_products" in otherargs and otherargs["source_products"] is not None
-        ):
-            source_pids = list(map(VISID, otherargs["source_products"]))
+        elif "image_records" in kwargs:
+            source_pids = list(map(VISID, kwargs["image_records"]))
             instruments = set([p.instrument for p in source_pids])
             inst = "pan"
             if len(instruments) == 1:
@@ -163,11 +165,11 @@ class PanoRecord(Base):
                 if v is not None:
                     got[k] = v
 
-            if "source_products" in otherargs:
-                got["source_products"] = otherargs["source_products"]
+            if "image_records" in kwargs:
+                got["image_records"] = kwargs["image_records"]
 
             raise ValueError(
-                "Either product_id must be given, or a list of source_products. "
+                "Either product_id must be given, or a list of source image_records. "
                 f"Got: {got}"
             )
 
