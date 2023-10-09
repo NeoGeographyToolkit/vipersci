@@ -194,7 +194,8 @@ class TestImageRecord(unittest.TestCase):
 
     def test_fromyamcs(self):
         name = "/ViperGround/Images/ImageData/Navcam_left_slog"
-        generation_time = datetime.now(timezone.utc)
+        reception_time = datetime.now(timezone.utc)
+        generation_time = reception_time - timedelta(minutes=1)
         d = {
             "adcGain": 0,
             "autoExposure": 0,
@@ -220,6 +221,7 @@ class TestImageRecord(unittest.TestCase):
         rp = trp.ImageRecord(
             yamcs_name=name,
             yamcs_generation_time=generation_time,
+            yamcs_reception_time=reception_time,
             **d,
             onboard_compression_ratio=16
         )

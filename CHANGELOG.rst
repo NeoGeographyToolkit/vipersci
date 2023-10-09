@@ -28,6 +28,10 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+Added
+^^^^^
+- yamcs_reception_time column added to the image_records.py table.
+
 0.6.1 (2023-09-25)
 ------------------
 

@@ -310,6 +310,11 @@ class ImageRecord(Base):
         doc="The full parameter name from Yamcs that this product data came from, "
         "formatted like a / separated string.",
     )
+    yamcs_reception_time = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        doc="The reception time of the source record from Yamcs.",
+    )
 
     def __init__(self, **kwargs):
         if "lobt" in kwargs:
@@ -583,6 +588,7 @@ class ImageRecord(Base):
         "start_time",
         "stop_time",
         "yamcs_generation_time",
+        "yamcs_reception_time"
     )
     def validate_datetime_asutc(self, key, value):
         return vld.validate_datetime_asutc(key, value)
