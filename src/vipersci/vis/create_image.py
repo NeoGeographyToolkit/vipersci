@@ -50,8 +50,10 @@ from tifftools import read_tiff
 import vipersci
 from vipersci.vis.db.image_records import ImageRecord
 from vipersci.vis.db.image_requests import ImageRequest  # noqa
+from vipersci.vis.db.junc_image_pano import JuncImagePano  # noqa
 from vipersci.vis.db.junc_image_record_tags import JuncImageRecordTag  # noqa
 from vipersci.vis.db.junc_image_req_ldst import JuncImageRequestLDST  # noqa
+from vipersci.vis.db.pano_records import PanoRecord  # noqa
 from vipersci.pds import pid as pds
 from vipersci import util
 
