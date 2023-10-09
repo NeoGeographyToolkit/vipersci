@@ -34,6 +34,8 @@ Added
 - Association table junc_image_pano created which provides a many-to-many
   connection between ImageRecords and PanoRecords and added bidirectional
   relationship entries to each table.
+- pano_records table now has azimuth and elevation angle min/max values to indicate
+  angular range of panorama coverage.
 
 0.6.1 (2023-09-25)
 ------------------

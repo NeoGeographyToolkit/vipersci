@@ -29,6 +29,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     DateTime,
+    Float,
     Identity,
     Integer,
     String,
@@ -92,6 +93,34 @@ class PanoRecord(Base):
         Integer,
         nullable=False,
         doc="The number of lines or rows in the Pano Product image.",
+    )
+    rover_az_min = mapped_column(
+        Float,
+        nullable=False,
+        doc="The minimum or leftmost azimuth of this panorama in degrees, where zero "
+        "is the rover forward (+x) direction.  " 
+        "This azimuth is relative to the rover frame."
+    )
+    rover_az_max = mapped_column(
+        Float,
+        nullable=False,
+        doc="The maximum or rightmost azimuth of this panorama in degrees, where zero "
+        "is the rover forward (+x) direction.  "
+        "This azimuth is relative to the rover frame."
+    )
+    rover_el_min = mapped_column(
+        Float,
+        nullable=False,
+        doc="The minimum or lower elevation angle of this panorama in degrees, "
+            "where zero is the rover level plane.  "
+            "This elevation angle is relative to the rover frame."
+    )
+    rover_el_max = mapped_column(
+        Float,
+        nullable=False,
+        doc="The maximum or upper elevation angle of this panorama in degrees, "
+            "where zero is the rover level plane.  "
+            "This elevation angle is relative to the rover frame."
     )
     _pid = mapped_column(
         "product_id", String, nullable=False, unique=True, doc="The PDS Product ID."
