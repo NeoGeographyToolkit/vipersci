@@ -38,7 +38,7 @@ The command-line version is primarily to aide testing.
 # top level of this library.
 
 import argparse
-from datetime import date
+from datetime import date, timedelta
 from importlib import resources
 import json
 import logging
@@ -249,15 +249,25 @@ def main():
 
 def get_lights(ir: ImageRecord, session: Session):
     lights = {k: False for k in luminaire_names.values()}
-    stmt = select(LightRecord).where(
-        and_(
-            LightRecord.start_time < ir.start_time,
-            ir.start_time < LightRecord.last_time,
+    for light in lights:
+        prev_stmt = (
+            select(LightRecord)
+            .where(
+                and_(
+                    LightRecord.name == light,
+                    LightRecord.datetime < ir.start_time,
+                )
+            )
+            .order_by(LightRecord.datetime.desc())
         )
-    )
-    result = session.scalars(stmt)
-    for row in result.all():
-        lights[row.name] = True
+        prev_light = session.scalars(prev_stmt).first()
+
+        if (
+            prev_light is not None
+            and prev_light.on
+            and ir.start_time - prev_light.datetime < timedelta(seconds=10)
+        ):
+            lights[light] = True
 
     return lights
 

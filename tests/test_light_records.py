@@ -32,15 +32,13 @@ from vipersci.vis.db import light_records as lr
 
 class TestLights(unittest.TestCase):
     def setUp(self):
-        self.t1 = datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-        self.t2 = datetime(2023, 1, 1, 0, 0, 8, tzinfo=timezone.utc)
-        self.t3 = datetime(2023, 1, 1, 0, 0, 12, tzinfo=timezone.utc)
+        self.dt = datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
     def test_init(self):
         good = lr.LightRecord(
             name="navLeft",
-            start_time=self.t1,
-            last_time=self.t2,
+            on=True,
+            datetime=self.dt,
         )
         self.assertEqual(good.name, "NavLight Left")
 
@@ -49,14 +47,14 @@ class TestLights(unittest.TestCase):
             ValueError,
             lr.LightRecord,
             name="not a name",
-            start_time=self.t1,
-            last_time=self.t2,
+            on=False,
+            datetime=self.dt,
         )
 
         self.assertRaises(
             ValueError,
             lr.LightRecord,
-            name="not a name",
-            start_time=self.t3,
-            last_time=self.t2,
+            name="navRight",
+            on=True,
+            datetime="not a datetime",
         )
