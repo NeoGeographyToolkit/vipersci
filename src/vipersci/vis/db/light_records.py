@@ -26,6 +26,7 @@
 # top level of this library.
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     Identity,
     Integer,
@@ -51,7 +52,8 @@ luminaire_names = {
 
 class LightRecord(Base):
     """An object to represent rows in the light_records table for VIS.  Each row
-    represents a single 'on' period for one light."""
+    represents a single state change (from 'on' to 'off' or vice-versa) for one
+    light."""
 
     # This class is derived from SQLAlchemy's orm.DeclarativeBase
     # which means that it has a variety of class properties that are
@@ -73,17 +75,18 @@ class LightRecord(Base):
     name = mapped_column(
         String, nullable=False, doc="The luminaire that was activated."
     )
-    start_time = mapped_column(
+    on = mapped_column(
+        Boolean,
+        nullable=False,
+        doc="If this light, at this time, turned 'on', this column is TRUE, if the "
+        "this light was detected to go from ON to OFF at this time, this column is "
+        "FALSE.",
+    )
+    datetime = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        doc="The time at which the luminaire was first measured to be on "
-        "(measuredState = ON).",
-    )
-    last_time = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        doc="The last time which the luminaire was measured to be on "
-        "(measuredState = ON).",
+        doc="The time at which the luminaire was first measured to change state "
+        "(via measuredState) from ON to OFF or vice-versa.",
     )
 
     @validates("name")
@@ -97,24 +100,10 @@ class LightRecord(Base):
                 )
         return value
 
-    @validates(
-        "start_time",
-        "last_time",
-    )
+    @validates("on")
+    def validate_on(self, key, value):
+        return bool(value)
+
+    @validates("datetime")
     def validate_datetime_asutc(self, key, value):
-        dt = vld.validate_datetime_asutc(key, value)
-        if key == "start_time" and self.last_time is not None:
-            if dt > self.last_time:
-                raise ValueError(
-                    f"The start_time ({dt}) must be before the "
-                    f"last_time ({self.last_time})."
-                )
-
-        if key == "last_time" and self.start_time is not None:
-            if dt < self.start_time:
-                raise ValueError(
-                    f"The start_time ({self.start_time}) must be before the "
-                    f"last_time ({dt})."
-                )
-
-        return dt
+        return vld.validate_datetime_asutc(key, value)

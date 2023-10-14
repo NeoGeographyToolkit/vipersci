@@ -28,6 +28,11 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+Changed
+^^^^^^^
+- The light_records.py table now just records state changes (from 'on' to 'off' or
+  vice-versa).
+
 Added
 ^^^^^
 - yamcs_reception_time column added to the image_records.py table.

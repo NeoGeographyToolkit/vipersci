@@ -98,12 +98,41 @@ class TestDatabase(unittest.TestCase):
         li = cr.get_lights(self.ir, self.session)
         self.assertEqual(truth, li)
 
-        # Add a light
+        # Add an early light
         self.session.add(
             LightRecord(
                 name=light_name,
-                start_time="2023-11-25T14:04:10Z",
-                last_time="2023-11-25T14:04:20Z",
+                on=True,
+                datetime="2023-11-25T13:04:10Z",
+            )
+        )
+        early = cr.get_lights(self.ir, self.session)
+        self.assertEqual(truth, early)
+
+        # A previous light "off" event w/in 10 s
+        self.session.add(
+            LightRecord(
+                name=light_name,
+                on=False,
+                datetime="2023-11-25T13:04:09Z",
+            )
+        )
+        off = cr.get_lights(self.ir, self.session)
+        self.assertEqual(truth, off)
+
+        # Add a light "on" w/in 10 s:
+        self.session.add(
+            LightRecord(
+                name=light_name,
+                on=True,
+                datetime="2023-11-25T14:04:10Z",
+            )
+        )
+        self.session.add(
+            LightRecord(
+                name=light_name,
+                on=False,
+                datetime="2023-11-25T14:04:20Z",
             )
         )
         truth[light_name] = True
