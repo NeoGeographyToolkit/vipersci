@@ -100,10 +100,6 @@ class LightRecord(Base):
                 )
         return value
 
-    @validates("on")
-    def validate_on(self, key, value):
-        return bool(value)
-
     @validates("datetime")
     def validate_datetime_asutc(self, key, value):
         return vld.validate_datetime_asutc(key, value)
