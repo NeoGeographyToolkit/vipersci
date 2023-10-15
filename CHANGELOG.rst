@@ -32,6 +32,8 @@ Changed
 ^^^^^^^
 - The light_records.py table now just records state changes (from 'on' to 'off' or
   vice-versa).
+- junc_image_req_ldst.py got some additional columns to manage the Science Team
+  evaluation of images acquired from Image Requests.
 
 Added
 ^^^^^
@@ -41,6 +43,11 @@ Added
   relationship entries to each table.
 - pano_records table now has azimuth and elevation angle min/max values to indicate
   angular range of panorama coverage.
+
+Removed
+^^^^^^^
+- ldst_verification.py because the evaluation activity reflected here was on a per-image
+  basis, but it has been revised to be on a per-Image-Request basis.
 
 0.6.1 (2023-09-25)
 ------------------

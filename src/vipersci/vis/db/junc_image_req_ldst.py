@@ -50,6 +50,25 @@ class JuncImageRequestLDST(Base):
         doc="If true, indicates that this ImageRequest is critical for this LDST "
         "hypothesis.",
     )
+    evaluation = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="True if a Scientist has indicated that the acquired images for the "
+        "indicated ImageRequest supports the LDST Hypothesis.  If false, a Scientist "
+        "has determined that the images do not support the LDST Hypothesis.",
+    )
+    evaluation_notes = mapped_column(
+        String,
+        nullable=True,
+        doc="Any notes about the evaluation of the ImageRequest's images against the "
+            "LDST hypothesis.",
+    )
+    evaluator = mapped_column(
+        String,
+        nullable=True,
+        doc="The name of the individual that reviewed the acquired images against the "
+            "LDST hypothesis.",
+    )
 
     image_request = relationship("ImageRequest", back_populates="ldst_associations")
     ldst = relationship("LDST", back_populates="image_request_associations")

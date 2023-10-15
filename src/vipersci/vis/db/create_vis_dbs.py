@@ -46,7 +46,6 @@ from vipersci.vis.db.junc_image_pano import JuncImagePano
 from vipersci.vis.db.junc_image_record_tags import JuncImageRecordTag
 from vipersci.vis.db.junc_image_req_ldst import JuncImageRequestLDST
 from vipersci.vis.db.ldst import LDST
-from vipersci.vis.db.ldst_verification import LDSTVerification
 from vipersci.vis.db.light_records import LightRecord
 from vipersci.vis.db.pano_records import PanoRecord
 
@@ -61,7 +60,6 @@ tables = (
     JuncImageRecordTag,
     JuncImageRequestLDST,
     LDST,
-    LDSTVerification,
     LightRecord,
     PanoRecord,
 )
