@@ -61,13 +61,13 @@ class JuncImageRequestLDST(Base):
         String,
         nullable=True,
         doc="Any notes about the evaluation of the ImageRequest's images against the "
-            "LDST hypothesis.",
+        "LDST hypothesis.",
     )
     evaluator = mapped_column(
         String,
         nullable=True,
         doc="The name of the individual that reviewed the acquired images against the "
-            "LDST hypothesis.",
+        "LDST hypothesis.",
     )
 
     image_request = relationship("ImageRequest", back_populates="ldst_associations")
