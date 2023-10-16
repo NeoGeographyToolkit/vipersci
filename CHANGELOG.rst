@@ -43,6 +43,8 @@ Added
   relationship entries to each table.
 - pano_records table now has azimuth and elevation angle min/max values to indicate
   angular range of panorama coverage.
+- image_requests.py - "Acquired," "Not Acquired," and "Not Planned" statuses added to
+  enum.
 
 Removed
 ^^^^^^^

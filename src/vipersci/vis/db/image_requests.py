@@ -85,12 +85,14 @@ class Status(enum.Enum):
     """
     This describes the status of an Image Request.
     """
-
     WORKING = 1
     READY_FOR_VIS = 2
     READY_FOR_PLANNING = 3
     PLANNED = 4
-    IMMEDIATE = 5
+    NOT_PLANNED = 5
+    IMMEDIATE = 6
+    ACQUIRED = 7
+    NOT_AQUIRED = 8
 
 
 class CameraType(enum.Enum):
