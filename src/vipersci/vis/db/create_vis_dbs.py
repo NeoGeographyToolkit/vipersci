@@ -48,6 +48,7 @@ from vipersci.vis.db.junc_image_req_ldst import JuncImageRequestLDST
 from vipersci.vis.db.ldst import LDST
 from vipersci.vis.db.light_records import LightRecord
 from vipersci.vis.db.pano_records import PanoRecord
+from vipersci.vis.db.ptu_records import PanRecord, TiltRecord
 
 # As new tables are defined, their Classes must be imported above, and
 # then also added to this tuple:
@@ -62,6 +63,8 @@ tables = (
     LDST,
     LightRecord,
     PanoRecord,
+    PanRecord,
+    TiltRecord,
 )
 
 logger = logging.getLogger(__name__)
