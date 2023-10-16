@@ -45,6 +45,7 @@ Added
   angular range of panorama coverage.
 - image_requests.py - "Acquired," "Not Acquired," and "Not Planned" statuses added to
   enum.
+- ptu_records.py - Tables to record the pan and tilt of the rover's pan-tilt-unit (PTU).
 
 Removed
 ^^^^^^^
