@@ -62,4 +62,6 @@ taglist = [
     "Over Exposed",
     "Under Exposed",
     "Compression Artifacts",
+    "Missing row(s) of pixels",
+    # Image header damaged in downlink?  Not sure how we'd know.
 ]
