@@ -35,6 +35,8 @@ Changed
 - junc_image_req_ldst.py got some additional columns to manage the Science Team
   evaluation of images acquired from Image Requests.
 - create_pano.py's make_pano_product() function renamed to make_pano_record().
+- nss_simulator.py - nodata defaults for ideal detector count maps updated to more
+  realistic values for dry terrain.
 
 Added
 ^^^^^
