@@ -94,33 +94,33 @@ class PanoRecord(Base):
         nullable=False,
         doc="The number of lines or rows in the Pano Product image.",
     )
-    rover_az_min = mapped_column(
+    rover_pan_min = mapped_column(
         Float,
         nullable=False,
-        doc="The minimum or leftmost azimuth of this panorama in degrees, where zero "
-        "is the rover forward (+x) direction.  "
-        "This azimuth is relative to the rover frame.",
+        doc="The minimum or leftmost pan angle of this panorama in degrees, where "
+        "zero is the rover forward (+x) direction. "
+        "This angle is relative to the rover frame.",
     )
-    rover_az_max = mapped_column(
+    rover_pan_max = mapped_column(
         Float,
         nullable=False,
-        doc="The maximum or rightmost azimuth of this panorama in degrees, where zero "
-        "is the rover forward (+x) direction.  "
-        "This azimuth is relative to the rover frame.",
+        doc="The maximum or rightmost pan angle of this panorama in degrees, where "
+        "zero is the rover forward (+x) direction.  "
+        "This angle is relative to the rover frame.",
     )
-    rover_el_min = mapped_column(
+    rover_tilt_min = mapped_column(
         Float,
         nullable=False,
-        doc="The minimum or lower elevation angle of this panorama in degrees, "
+        doc="The minimum or lower tilt angle of this panorama in degrees, "
         "where zero is the rover level plane.  "
-        "This elevation angle is relative to the rover frame.",
+        "This tilt angle is relative to the rover frame.",
     )
-    rover_el_max = mapped_column(
+    rover_tilt_max = mapped_column(
         Float,
         nullable=False,
-        doc="The maximum or upper elevation angle of this panorama in degrees, "
+        doc="The maximum or upper tilt angle of this panorama in degrees, "
         "where zero is the rover level plane.  "
-        "This elevation angle is relative to the rover frame.",
+        "This tilt angle is relative to the rover frame.",
     )
     _pid = mapped_column(
         "product_id", String, nullable=False, unique=True, doc="The PDS Product ID."
@@ -171,8 +171,8 @@ class PanoRecord(Base):
                     f"provided start_time ({kwargs['start_time']}) disagree."
                 )
 
-        elif "image_records" in kwargs:
-            source_pids = list(map(VISID, kwargs["image_records"]))
+        elif "source_pids" in kwargs:
+            source_pids = list(map(VISID, kwargs["source_pids"]))
             instruments = set([p.instrument for p in source_pids])
             inst = "pan"
             if len(instruments) == 1:
@@ -194,11 +194,11 @@ class PanoRecord(Base):
                 if v is not None:
                     got[k] = v
 
-            if "image_records" in kwargs:
-                got["image_records"] = kwargs["image_records"]
+            if "source_pids" in kwargs:
+                got["source_pids"] = kwargs["source_pids"]
 
             raise ValueError(
-                "Either product_id must be given, or a list of source image_records. "
+                "Either product_id must be given, or a list of source product IDs. "
                 f"Got: {got}"
             )
 

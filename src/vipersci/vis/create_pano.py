@@ -33,18 +33,19 @@ Panorama Product, only a mock-up of one.
 
 import argparse
 import logging
-from typing import Any, Dict, Iterable, Union, Optional, MutableSequence
+from typing import Any, Dict, Union, Optional, MutableSequence
 from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 from skimage.io import imread, imsave  # maybe just imageio here?
 from skimage.transform import resize
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 import vipersci
 from vipersci.vis.db.image_records import ImageRecord
+from vipersci.vis.db.junc_image_pano import JuncImagePano
 from vipersci.vis.db.pano_records import PanoRecord
 from vipersci.pds import pid as pds
 from vipersci.vis.create_image import tif_info, write_json
@@ -133,8 +134,8 @@ def main():
 
 
 def create(
-    inputs: Iterable[Union[Path, pds.VISID, ImageRecord, str]],
-    outdir: Path = Path.cwd(),
+    inputs: MutableSequence[Union[Path, pds.VISID, ImageRecord, str]],
+    outdir: Optional[Path] = None,
     session: Optional[Session] = None,
     json: bool = True,
     bottom_row: Optional[MutableSequence[Union[Path, str]]] = None,
@@ -142,37 +143,52 @@ def create(
     """
     Creates a Panorama Product in *outdir*. Returns None.
 
-    At this time, session, xml, and template_path are ignored.
+    At this time, session is ignored.
 
     At this time, *inputs* should be a list of file paths.  In the
     future, it could be a list of product IDs.
 
     If a path is provided to *outdir* the created files
-    will be written there. Defaults to the current working
-    directory.
+    will be written there.
 
-    If *session* is given, information for the raw product will be
-    written to the raw_products table.  If not, no database activity
+    If *session* is given, information for the PanoRecord will be
+    written to the pano_records table.  If not, no database activity
     will occur.
-
-    The *template_path* argument is passed to the write_xml() function, please see
-    its documentation for details.
     """
+    if outdir is None:
+        raise ValueError("A Path for outdir must be supplied.")
+
     metadata: Dict[str, Any] = dict(
-        source_products=[],
+        source_pids=[],
     )
     source_paths = []
+    image_records = []
+
+    for i, vid in enumerate(inputs):
+        if isinstance(vid, str):
+            temp_vid = pds.VISID(vid)
+            if str(temp_vid) == vid:
+                vid = temp_vid
+            else:
+                continue
+
+        if isinstance(vid, pds.VISID):
+            if session is not None:
+                ir = session.scalars(
+                    select(ImageRecord).where(ImageRecord.product_id == str(vid))
+                ).first()
+                if ir is None:
+                    raise ValueError(f"{vid} was not found in the database.")
+                else:
+                    inputs[i] = ir
 
     for i in inputs:
         if isinstance(i, ImageRecord):
-            metadata["source_products"].append(i.product_id)
+            metadata["source_pids"].append(i.product_id)
             source_paths.append(i.file_path)
-        elif isinstance(i, pds.VISID):
-            raise NotImplementedError(
-                "One day, this will fire up a db connection and get the info needed."
-            )
+            image_records.append(i)
         elif isinstance(i, (Path, str)):
-            metadata["source_products"].append([str(pds.VISID(i))])
+            metadata["source_pids"].append([str(pds.VISID(i))])
             source_paths.append(i)
         else:
             raise ValueError(
@@ -215,7 +231,7 @@ def create(
         bot_arr = np.hstack(bottom_list)
         pano_arr = np.vstack((pano_arr, bot_arr))
 
-    pp = make_pano_product(metadata, pano_arr, outdir)
+    pp = make_pano_record(metadata, pano_arr, outdir)
 
     if json:
         write_json(pp.asdict(), outdir)
@@ -224,12 +240,25 @@ def create(
     #     write_xml(pp.label_dict(), outdir, template_path)
 
     if session is not None:
-        session.add(pp)
+        if image_records:
+            to_add = list(
+                pp,
+            )
+            for ir in image_records:
+                a = JuncImagePano()
+                a.image_record = ir
+                a.pano_record = pp
+                to_add.append(a)
+
+            session.add_all(to_add)
+
+        else:
+            session.add(pp)
 
     return
 
 
-def make_pano_product(
+def make_pano_record(
     metadata: dict,
     image: Union[ImageType, Path, None] = None,
     outdir: Path = Path.cwd(),

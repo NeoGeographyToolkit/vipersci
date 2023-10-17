@@ -29,7 +29,7 @@ class TestMakePano(unittest.TestCase):
         }
 
     def test_no_image(self):
-        pp = cp.make_pano_product(self.d)
+        pp = cp.make_pano_record(self.d)
         self.assertIsInstance(pp, PanoRecord)
 
     @patch("vipersci.vis.create_pano.imsave")
@@ -47,7 +47,7 @@ class TestMakePano(unittest.TestCase):
     )
     def test_image(self, mock_tif_info, mock_imsave):
         image = np.array([[5, 5], [5, 5]], dtype=np.uint16)
-        pp = cp.make_pano_product(self.d, image, Path("outdir/"))
+        pp = cp.make_pano_record(self.d, image, Path("outdir/"))
         self.assertIsInstance(pp, PanoRecord)
         mock_imsave.assert_called_once()
         mock_tif_info.assert_called_once()
@@ -55,7 +55,7 @@ class TestMakePano(unittest.TestCase):
         mock_imsave.reset_mock()
         mock_tif_info.reset_mock()
 
-        prp = cp.make_pano_product(self.d, Path("dummy.tif"), Path("outdir/"))
+        prp = cp.make_pano_record(self.d, Path("dummy.tif"), Path("outdir/"))
         self.assertIsInstance(prp, PanoRecord)
         mock_imsave.assert_not_called()
         mock_tif_info.assert_called_once()

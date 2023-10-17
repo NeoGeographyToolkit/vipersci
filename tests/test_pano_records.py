@@ -46,7 +46,7 @@ class TestPanoRecord(unittest.TestCase):
             mission_phase="Test",
             purpose="Engineering",
             samples=2048,
-            image_records=self.source_products,
+            source_pids=self.source_products,
             start_time=self.startUTC,
         )
         self.extras = dict(foo="bar")
