@@ -64,11 +64,19 @@ def main():
     return
 
 
-def compute(image: ImageType) -> dict:
+def compute(
+        image: ImageType,
+        overexposed_thresh=(4096 * 0.8),
+        underexposed_thresh=(4096 * 0.2),
+) -> dict:
     d = {
         "blur": measure.blur_effect(image),
         "mean": np.mean(image),
         "std": np.std(image),
+        "over_exposed": (image > overexposed_thresh).sum(),
+        "under_exposed": (image < underexposed_thresh).sum(),
+        # "aggregate_noise":
+        # number of dead pixels
     }
 
     return d
