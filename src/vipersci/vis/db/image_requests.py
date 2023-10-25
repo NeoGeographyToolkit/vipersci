@@ -93,6 +93,7 @@ class Status(enum.Enum):
     IMMEDIATE = 6
     ACQUIRED = 7
     NOT_AQUIRED = 8
+    NOT_OBTAINABLE = 9
 
 
 class CameraType(enum.Enum):
