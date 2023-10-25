@@ -52,6 +52,7 @@ Added
 - ptu_records.py - Tables to record the pan and tilt of the rover's pan-tilt-unit (PTU).
 - create_pano.py - updated to correctly add PanoRecord associations, can now query
   database for ImageRecords.
+- get_position.py - Gets position and yaw from a REST-based service.
 
 Removed
 ^^^^^^^
