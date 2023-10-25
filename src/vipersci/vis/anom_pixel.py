@@ -43,6 +43,14 @@ def arg_parser():
         description=__doc__, parents=[util.parent_parser()]
     )
     parser.add_argument(
+        "-t",
+        "--tolerance",
+        type=float,
+        default=3,
+        help="The number of standard deviations of the difference between the image "
+        "and its median filter to 'trigger' on."
+    )
+    parser.add_argument(
         "input", type=Path, help="VIS Image."
     )
     return parser
@@ -55,7 +63,10 @@ def main():
 
     image = imread(args.input)
 
-    print(check(image))
+    indices = check(image, args.tolerance)
+
+    print(f"There are {len(indices[0])} anomalous pixels.")
+    print(indices)
 
     return
 
@@ -69,6 +80,7 @@ def check(image, tolerance=3):
     blurred = median(image)
     difference = image - blurred
     threshold = tolerance * np.std(difference)
+    logger.info(f"threshold: {threshold}")
 
     anom_pixel_indices = np.nonzero(np.abs(difference) > threshold)
 
