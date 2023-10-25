@@ -47,8 +47,8 @@ Added
   relationship entries to each table.
 - pano_records table now has pan and tilt angle min/max values to indicate
   angular range of panorama coverage.
-- image_requests.py - "Acquired," "Not Acquired," and "Not Planned" statuses added to
-  enum.
+- image_requests.py - "Acquired," "Not Acquired," "Not Planned," and "Not Obtainable"
+  statuses added to enum.
 - ptu_records.py - Tables to record the pan and tilt of the rover's pan-tilt-unit (PTU).
 - create_pano.py - updated to correctly add PanoRecord associations, can now query
   database for ImageRecords.
