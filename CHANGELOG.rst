@@ -37,7 +37,8 @@ Changed
 - create_pano.py's make_pano_product() function renamed to make_pano_record().
 - nss_simulator.py - nodata defaults for ideal detector count maps updated to more
   realistic values for dry terrain.
-- image_statistics.py - Added additional stats in the compute() function.
+- image_statistics.py - Added additional stats in the compute() function, and added
+  a pprint() function to format the info nicely.
 
 Added
 ^^^^^

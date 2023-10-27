@@ -36,6 +36,7 @@ from scipy import stats
 from skimage.exposure import equalize_adapthist
 from skimage.io import imread
 
+from vipersci.vis import image_statistics
 from vipersci import util
 
 logger = logging.getLogger(__name__)
@@ -92,6 +93,7 @@ def main():
         imtitle = args.input.name
 
     logger.info(describe(image, "image as loaded:"))
+    logger.info(image_statistics.pprint(image))
 
     if args.clahe:
         image = equalize_adapthist(image)
