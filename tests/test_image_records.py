@@ -28,6 +28,16 @@ import unittest
 
 from vipersci.pds.pid import VISID
 from vipersci.vis.db import image_records as trp
+from vipersci.vis.db.image_requests import ImageRequest  # noqa
+from vipersci.vis.db.image_stats import ImageStats  # noqa
+from vipersci.vis.db.image_tags import ImageTag, taglist  # noqa
+from vipersci.vis.db.junc_image_pano import JuncImagePano  # noqa
+from vipersci.vis.db.junc_image_record_tags import JuncImageRecordTag  # noqa
+from vipersci.vis.db.junc_image_req_ldst import JuncImageRequestLDST  # noqa
+from vipersci.vis.db.ldst import LDST  # noqa
+from vipersci.vis.db.light_records import LightRecord  # noqa
+from vipersci.vis.db.pano_records import PanoRecord  # noqa
+from vipersci.vis.db.ptu_records import PanRecord, TiltRecord  # noqa
 
 
 class TestImageType(unittest.TestCase):
@@ -104,10 +114,38 @@ class TestImageRecord(unittest.TestCase):
         rp = trp.ImageRecord(**self.d)
         self.assertEqual("220127-000000-ncl-c", str(rp.product_id))
 
-        d = self.d
+        d = self.d.copy()
         d.update(self.extras)
         rpl = trp.ImageRecord(**d)
         self.assertEqual("220127-000000-ncl-c", str(rpl.product_id))
+
+        d_slog = {
+            "adcGain": 0,
+            "autoExposure": 0,
+            "cameraId": 0,
+            "captureId": 1,
+            "exposureTime": 511,
+            "imageDepth": 2,
+            "imageHeight": 2048,
+            "imageWidth": 2048,
+            "imageId": 0,
+            "immediateDownloadInfo": 24,
+            "temperature": 0,
+            "lobt": 1698350400,
+            "offset": 0,
+            "outputImageMask": 16,
+            "padding": 0,
+            "pgaGain": 1.0,
+            "processingInfo": 26,
+            "product_id": "231026-200000-ncl-s",
+            "stereo": 1,
+            "voltageRamp": 0,
+            "yamcs_generation_time": "2023-10-26T20:00:00Z",
+            "yamcs_reception_time": "2023-10-26T20:03:00Z",
+            "yamcs_name": "/ViperGround/Images/ImageData/Navcam_left_slog"
+        }
+        ir_slog = trp.ImageRecord(**d_slog)
+        self.assertEqual("NavCam Left", ir_slog.instrument_name)
 
         # for k in dir(rp):
         #     if k.startswith(("_", "validate_")):
