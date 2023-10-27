@@ -142,7 +142,7 @@ class TestImageRecord(unittest.TestCase):
             "voltageRamp": 0,
             "yamcs_generation_time": "2023-10-26T20:00:00Z",
             "yamcs_reception_time": "2023-10-26T20:03:00Z",
-            "yamcs_name": "/ViperGround/Images/ImageData/Navcam_left_slog"
+            "yamcs_name": "/ViperGround/Images/ImageData/Navcam_left_slog",
         }
         ir_slog = trp.ImageRecord(**d_slog)
         self.assertEqual("NavCam Left", ir_slog.instrument_name)

@@ -68,9 +68,9 @@ def main():
 
 
 def compute(
-        image: ImageType,
-        overexposed_thresh=OVEREXPOSED_THRESHOLD,
-        underexposed_thresh=UNDEREXPOSED_THRESHOLD
+    image: ImageType,
+    overexposed_thresh=OVEREXPOSED_THRESHOLD,
+    underexposed_thresh=UNDEREXPOSED_THRESHOLD,
 ) -> dict:
     d = {
         "blur": measure.blur_effect(image),
@@ -86,9 +86,9 @@ def compute(
 
 
 def pprint(
-        image: ImageType,
-        overexposed_thresh=OVEREXPOSED_THRESHOLD,
-        underexposed_thresh=UNDEREXPOSED_THRESHOLD,
+    image: ImageType,
+    overexposed_thresh=OVEREXPOSED_THRESHOLD,
+    underexposed_thresh=UNDEREXPOSED_THRESHOLD,
 ) -> str:
     d = compute(image, overexposed_thresh, underexposed_thresh)
 
@@ -96,9 +96,11 @@ def pprint(
         f"""\
         blur: {d['blur']} (0 for no blur, 1 for maximal blur)
         mean: {d['mean']}
-        std: {d['std']} 
-        over-exposed: {d['over_exposed']} pixels, {100 * d['over_exposed'] / image.size} %
-        under-exposed: {d['under_exposed']} pixels, {100 * d['under_exposed'] / image.size} %\
+        std: {d['std']}
+        over-exposed: {d['over_exposed']} pixels,\
+         {100 * d['over_exposed'] / image.size} %
+        under-exposed: {d['under_exposed']} pixels,\
+         {100 * d['under_exposed'] / image.size} %\
         """
     )
     return s

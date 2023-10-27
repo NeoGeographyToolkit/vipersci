@@ -46,21 +46,20 @@ def arg_parser():
         "-s",
         "--start",
         default=datetime(2020, 1, 1, tz=timezone.utc),
-        help="An ISO8601 datetime to start the query at."
+        help="An ISO8601 datetime to start the query at.",
     )
     parser.add_argument(
         "-e",
         "--end",
         default=datetime.now(tz=timezone.utc),
-        help="An ISO8601 datetime to end the query at."
+        help="An ISO8601 datetime to end the query at.",
     )
     parser.add_argument(
         "-f",
         "--frequency",
         help="A frequency between the start and end times, using pandas 'Offset alias' "
-        "string notation "
-        "(https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases). "
-        "Could be 'S' for secondly."
+        "string notation (https://pandas.pydata.org/pandas-docs/stable/user_guide/"
+        "timeseries.html#offset-aliases). Could be 'S' for secondly.",
     )
     parser.add_argument(
         "-u",
@@ -70,10 +69,7 @@ def arg_parser():
         "orientation will be returned.",
     )
     parser.add_argument(
-        "-o",
-        "--output",
-        type=Path,
-        help="Output path for CSV file output."
+        "-o", "--output", type=Path, help="Output path for CSV file output."
     )
     return parser
 
@@ -100,17 +96,20 @@ def main():
         )
 
     if args.output is not None:
-        with open(args.output, 'w', newline='') as csvfile:
+        with open(args.output, "w", newline="") as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(["UTC datetime", "x", "y", "yaw"])
             for row in tpp:
                 dt = datetime.fromtimestamp(row[0], tz=timezone.utc)
-                writer.writerow([dt.isoformat(), ] + list(row[1:]))
+                writer.writerow(
+                    [
+                        dt.isoformat(),
+                    ]
+                    + list(row[1:])
+                )
 
 
-def get_position_and_pose(
-    times: list, url: str, crs: str = "VIPER:910101"
-):
+def get_position_and_pose(times: list, url: str, crs: str = "VIPER:910101"):
     """
     Given a list of unix times and a URL that requests can be made against,
     return a list of two-tuples whose first element is the time and
@@ -138,13 +137,15 @@ def get_position_and_pose(
         rj = position_result.json()
         logger.info(rj)
 
-        tpp.append((rj["event_seconds"], (rj["location"][0], rj["location"][1], rj["yaw"])))
+        tpp.append(
+            (rj["event_seconds"], (rj["location"][0], rj["location"][1], rj["yaw"]))
+        )
 
     return tpp
 
 
 def get_position_and_pose_range(
-        start_time, stop_time, url: str, crs: str = "VIPER:910101"
+    start_time, stop_time, url: str, crs: str = "VIPER:910101"
 ):
     tpp = list()
 
@@ -160,7 +161,7 @@ def get_position_and_pose_range(
             "source": "ROVER",
             "start_end_only": False,
             "simplify": False,
-            "order": "asc"
+            "order": "asc",
         },
         verify=False,
     )
