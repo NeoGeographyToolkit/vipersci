@@ -33,7 +33,9 @@ import argparse
 import csv
 import logging
 
+from geoalchemy2 import load_spatialite
 from sqlalchemy import create_engine, insert, inspect, select
+from sqlalchemy.event import listen
 from sqlalchemy.orm import Session
 
 from vipersci import util
@@ -91,6 +93,9 @@ def main():
     util.set_logger(args.verbose)
 
     engine = create_engine(args.dburl)
+    if args.dburl.startswith("sqlite://"):
+        # This required because we have spatialite tables in the db:
+        listen(engine, "connect", load_spatialite)
 
     # Create tables
     for t in tables:

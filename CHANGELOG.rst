@@ -54,6 +54,7 @@ Added
 - create_pano.py - updated to correctly add PanoRecord associations, can now query
   database for ImageRecords.
 - get_position.py - Gets position and yaw from a REST-based service.
+- create_vis_dbs.py - Now also supports spatialite databases, primarily for testing.
 
 Removed
 ^^^^^^^
