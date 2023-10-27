@@ -475,7 +475,9 @@ class ImageRecord(Base):
                         )
             else:
                 t = ImageType(self.output_image_mask)
-                if t.compression_ratio() != vis_compression[pid.compression]:
+                if ImageType.SLOG_ICER_IMAGE == t and pid.compression == "s":
+                    pass
+                elif t.compression_ratio() != vis_compression[pid.compression]:
                     raise ValueError(
                         f"The product_id compression code ({pid.compression}) and "
                         f"the compression ratio ({t.compression_ratio()}) based on "
