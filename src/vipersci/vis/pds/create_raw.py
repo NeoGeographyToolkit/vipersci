@@ -121,7 +121,7 @@ def main():
         if pid is None or args.input.endswith(".json"):
             if Path(args.input).exists():
                 with open(args.input) as f:
-                    ir = ImageRecord(json.load(f))
+                    ir = ImageRecord(**json.load(f))
             else:
                 parser.error(f"The file {args.input} does not exist.")
         else:
@@ -279,6 +279,7 @@ def label_dict(ir: ImageRecord, lights: dict):
     onoff = {True: "On", False: "Off", None: None}
     pid = pds.VISID(ir.product_id)
     d = dict(
+        data_quality="",
         lid=f"urn:nasa:pds:viper_vis:raw:{ir.product_id}",
         mission_lid="urn:nasa:pds:viper",
         sc_lid=_sclid,
@@ -289,6 +290,8 @@ def label_dict(ir: ImageRecord, lights: dict):
         led_wavelength=453,  # nm
         luminaires={},
         compression_class=pid.compression_class(),
+        minloss=0 if pid.compression_class() == "Lossless" else 12,
+        observational_intent={},
         onboard_compression_ratio=pds.vis_compression[pid.compression],
         onboard_compression_type="ICER",
         sample_bits=12,
@@ -320,6 +323,21 @@ def label_dict(ir: ImageRecord, lights: dict):
         )
         d["sample_bits"] = 8
         d["sample_bit_mask"] = "2#11111111"
+
+    if ir.image_request is not None:
+        d["observational_intent"]["goal"] = ir.image_request.justification
+        d["observational_intent"]["task"] = ir.image_request.title
+        d["observational_intent"]["activity_id"] = f"Image Request {ir.image_request.id}"
+        d["observational_intent"]["target_id"] = ir.image_request.target_location
+
+    if ir.verified is not None:
+        if ir.verified:
+            d["data_quality"] += "Image manually verified."
+        else:
+            d["data_quality"] += "Image determined to have errors."
+
+        if ir.verification_notes is not None:
+            d["data_quality"] += " " + ir.verification_notes
 
     return d
 
