@@ -55,6 +55,8 @@ Added
   database for ImageRecords.
 - get_position.py - Gets position and yaw from a REST-based service.
 - create_vis_dbs.py - Now also supports spatialite databases, primarily for testing.
+- create_raw.py - Added components for adding observational intent and data quality
+  to the XML label.
 
 Removed
 ^^^^^^^

@@ -3,6 +3,7 @@
 <?xml-model href="PDS4_DISP_1I00_1510.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
 <?xml-model href="PDS4_IMG_1I00_1860.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
 <?xml-model href="PDS4_MSN_1I00_1300.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<?xml-model href="PDS4_MSN_SURFACE_1I00_1300.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
 <?xml-model href="PDS4_PROC_1I00_1210.sch" schematypens="http://purl.oclc.org/dsdl/schematron"?>
 
 <Product_Observational
@@ -11,6 +12,7 @@
 	xmlns:disp="http://pds.nasa.gov/pds4/disp/v1"
 	xmlns:img="http://pds.nasa.gov/pds4/img/v1"
 	xmlns:msn="http://pds.nasa.gov/pds4/msn/v1"
+    xmlns:msn_surface="http://pds.nasa.gov/pds4/msn_surface/v1"
 	xmlns:proc="http://pds.nasa.gov/pds4/proc/v1"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="
@@ -18,6 +20,7 @@
 		http://pds.nasa.gov/pds4/disp/v1 http://pds.nasa.gov/pds4/disp/v1/PDS4_DISP_1I00_1510.xsd
 		http://pds.nasa.gov/pds4/img/v1 http://pds.nasa.gov/pds4/img/v1/PDS4_IMG_1I00_1860.xsd
 		http://pds.nasa.gov/pds4/msn/v1 http://pds.nasa.gov/pds4/msn/v1/PDS4_MSN_1I00_1300.xsd
+		http://pds.nasa.gov/pds4/msn_surface/v1 http://pds.nasa.gov/pds4/msn/v1/PDS4_MSN_SURFACE_1I00_1300.xsd
 		http://pds.nasa.gov/pds4/proc/v1 http://pds.nasa.gov/pds4/proc/v1/PDS4_PROC_1I00_1210.xsd
 ">
   <Identification_Area>
@@ -95,6 +98,9 @@
 				<local_identifier_reference>image2d</local_identifier_reference>
 				<local_reference_type>imaging_parameters_to_image_object</local_reference_type>
 			</Local_Internal_Reference>
+            <img:Data_Quality py:if="data_quality">
+                <comment>${data_quality}</comment>
+            </img:Data_Quality>
     		<img:Detector>
 				<img:first_line>1</img:first_line>
 				<img:first_sample>1</img:first_sample>
@@ -121,8 +127,11 @@
             </img:Image_Filter>
 			<img:Onboard_Compression>
 				<img:onboard_compression_class>${compression_class}</img:onboard_compression_class>
-				<img:onboard_compression_type>${onboard_compression_type}</img:onboard_compression_type>
                 <img:onboard_compression_ratio py:if="compression_class == 'Lossy'">${onboard_compression_ratio}</img:onboard_compression_ratio>
+				<img:onboard_compression_type>${onboard_compression_type}</img:onboard_compression_type>
+                <img:ICER_Parameters>
+                    <img:icer_quality>${minloss}</img:icer_quality>
+                </img:ICER_Parameters>
 			</img:Onboard_Compression>
 			<img:Sampling>
 				<img:original_sample_bits>12</img:original_sample_bits>
@@ -141,6 +150,14 @@
     	<msn:Mission_Information>
     		<msn:mission_phase_name>${mission_phase}</msn:mission_phase_name>
     	</msn:Mission_Information>
+        <msn_surface:Surface_Mission_Information py:if="observational_intent">
+            <msn_surface:Observational_Intent>
+                <msn_surface:goal>${observational_intent.goal}</msn_surface:goal>
+                <msn_surface:task>${observational_intent.task}</msn_surface:task>
+                <msn_surface:activity_id>${observational_intent.activity_id}</msn_surface:activity_id>
+                <msn_surface:target_id>${observational_intent.target_id}</msn_surface:target_id>
+            </msn_surface:Observational_Intent>
+        </msn_surface:Surface_Mission_Information>
     	<proc:Processing_Information>
     		<Local_Internal_Reference>
     			<local_identifier_reference>image2d</local_identifier_reference>
