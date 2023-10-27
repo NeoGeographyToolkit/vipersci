@@ -131,6 +131,7 @@ def main():
                 session,
                 args.json,
             )
+            session.commit()
 
     return
 
