@@ -327,7 +327,9 @@ def label_dict(ir: ImageRecord, lights: dict):
     if ir.image_request is not None:
         d["observational_intent"]["goal"] = ir.image_request.justification
         d["observational_intent"]["task"] = ir.image_request.title
-        d["observational_intent"]["activity_id"] = f"Image Request {ir.image_request.id}"
+        d["observational_intent"][
+            "activity_id"
+        ] = f"Image Request {ir.image_request.id}"
         d["observational_intent"]["target_id"] = ir.image_request.target_location
 
     if ir.verified is not None:

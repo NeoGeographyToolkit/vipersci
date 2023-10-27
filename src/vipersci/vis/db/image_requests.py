@@ -85,6 +85,7 @@ class Status(enum.Enum):
     """
     This describes the status of an Image Request.
     """
+
     WORKING = 1
     READY_FOR_VIS = 2
     READY_FOR_PLANNING = 3

@@ -48,11 +48,9 @@ def arg_parser():
         type=float,
         default=3,
         help="The number of standard deviations of the difference between the image "
-        "and its median filter to 'trigger' on."
+        "and its median filter to 'trigger' on.",
     )
-    parser.add_argument(
-        "input", type=Path, help="VIS Image."
-    )
+    parser.add_argument("input", type=Path, help="VIS Image.")
     return parser
 
 
