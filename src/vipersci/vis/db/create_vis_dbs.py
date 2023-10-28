@@ -33,7 +33,7 @@ import argparse
 import csv
 import logging
 
-from geoalchemy2 import load_spatialite
+from geoalchemy2 import load_spatialite  # type: ignore
 from sqlalchemy import create_engine, insert, inspect, select
 from sqlalchemy.event import listen
 from sqlalchemy.orm import Session

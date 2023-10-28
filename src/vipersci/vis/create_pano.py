@@ -33,7 +33,7 @@ Panorama Product, only a mock-up of one.
 
 import argparse
 import logging
-from typing import Any, Dict, Union, Optional, MutableSequence
+from typing import Any, Dict, Union, Optional, MutableSequence, List
 from pathlib import Path
 
 import numpy as np
@@ -182,17 +182,17 @@ def create(
                 else:
                     inputs[i] = ir
 
-    for i in inputs:
-        if isinstance(i, ImageRecord):
-            metadata["source_pids"].append(i.product_id)
-            source_paths.append(i.file_path)
-            image_records.append(i)
-        elif isinstance(i, (Path, str)):
-            metadata["source_pids"].append([str(pds.VISID(i))])
-            source_paths.append(i)
+    for inp in inputs:
+        if isinstance(inp, ImageRecord):
+            metadata["source_pids"].append(inp.product_id)
+            source_paths.append(inp.file_path)
+            image_records.append(inp)
+        elif isinstance(inp, (Path, str)):
+            metadata["source_pids"].append([str(pds.VISID(inp))])
+            source_paths.append(inp)
         else:
             raise ValueError(
-                f"an element in input is not the right type: {i} ({type(i)})"
+                f"an element in input is not the right type: {inp} ({type(inp)})"
             )
 
     # At this time, image pointing information is not available, so we assume that
@@ -241,9 +241,9 @@ def create(
 
     if session is not None:
         if image_records:
-            to_add = list(
+            to_add: List[Union[PanoRecord, JuncImagePano]] = [
                 pp,
-            )
+            ]
             for ir in image_records:
                 a = JuncImagePano()
                 a.image_record = ir
