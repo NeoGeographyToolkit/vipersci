@@ -43,7 +43,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import mapped_column, relationship, synonym, validates
 
 from vipersci.pds.pid import VISID, vis_instruments, vis_compression
-from vipersci.pds.xml import ns
+from vipersci.pds.xml import find_text, ns
 from vipersci.pds.datetime import fromisozformat, isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
 from vipersci.vis.db import Base
@@ -646,29 +646,10 @@ class ImageRecord(Base):
         """
         d = {}
 
-        def _find_text(root, xpath, unit_check=None):
-            element = root.find(xpath, ns)
-            if element is not None:
-                if unit_check is not None:
-                    if element.get("unit") != unit_check:
-                        raise ValueError(
-                            f"The {xpath} element does not have units of "
-                            f"{unit_check}, has {element.get('unit')}"
-                        )
-                el_text = element.text
-                if el_text:
-                    return el_text
-                else:
-                    raise ValueError(
-                        f"The XML {xpath} element contains no information."
-                    )
-            else:
-                raise ValueError(f"XML text does not have a {xpath} element.")
-
         root = ET.fromstring(text)
-        lid = _find_text(
-            root, "./pds:Identification_Area/pds:logical_identifier"
-        ).split(":")
+        lid = find_text(root, "./pds:Identification_Area/pds:logical_identifier").split(
+            ":"
+        )
 
         if lid[3] != "viper_vis":
             raise ValueError(
@@ -682,19 +663,19 @@ class ImageRecord(Base):
         d["product_id"] = lid[5]
 
         d["auto_exposure"] = (
-            True if _find_text(root, ".//img:exposure_type") == "Auto" else False
+            True if find_text(root, ".//img:exposure_type") == "Auto" else False
         )
         d["bad_pixel_table_id"] = int(
-            _find_text(root, ".//img:bad_pixel_replacement_table_id")
+            find_text(root, ".//img:bad_pixel_replacement_table_id")
         )
         d["exposure_duration"] = int(
-            _find_text(root, ".//img:exposure_duration", unit_check="microseconds")
+            find_text(root, ".//img:exposure_duration", unit_check="microseconds")
         )
 
         d["file_creation_datetime"] = fromisozformat(
-            _find_text(root, ".//pds:creation_date_time")
+            find_text(root, ".//pds:creation_date_time")
         )
-        d["file_path"] = _find_text(root, ".//pds:file_name")
+        d["file_path"] = find_text(root, ".//pds:file_name")
 
         # for k, v in luminaire_names.items():
         #     light = root.find(f".//img:LED_Illumination_Source[img:name='{k}']", ns)
@@ -703,42 +684,42 @@ class ImageRecord(Base):
         #     )
 
         osc = root.find(".//pds:Observing_System_Component[pds:type='Instrument']", ns)
-        d["instrument_name"] = _find_text(osc, "pds:name")
+        d["instrument_name"] = find_text(osc, "pds:name")
 
         d["instrument_temperature"] = float(
-            _find_text(root, ".//img:temperature_value", unit_check="K")
+            find_text(root, ".//img:temperature_value", unit_check="K")
         )
 
         aa = root.find(".//pds:Axis_Array[pds:axis_name='Line']", ns)
-        d["lines"] = int(_find_text(aa, "./pds:elements"))
-        d["file_md5_checksum"] = _find_text(root, ".//pds:md5_checksum")
-        d["mission_phase"] = _find_text(root, ".//msn:mission_phase_name")
-        d["offset"] = _find_text(root, ".//img:analog_offset")
+        d["lines"] = int(find_text(aa, "./pds:elements"))
+        d["file_md5_checksum"] = find_text(root, ".//pds:md5_checksum")
+        d["mission_phase"] = find_text(root, ".//msn:mission_phase_name")
+        d["offset"] = find_text(root, ".//img:analog_offset")
 
         try:
             d["onboard_compression_ratio"] = float(
-                _find_text(root, ".//img:onboard_compression_ratio")
+                find_text(root, ".//img:onboard_compression_ratio")
             )
         except ValueError:
             pass
 
-        d["purpose"] = _find_text(root, ".//pds:purpose")
+        d["purpose"] = find_text(root, ".//pds:purpose")
 
         aa = root.find(".//pds:Axis_Array[pds:axis_name='Sample']", ns)
-        d["samples"] = int(_find_text(aa, "./pds:elements"))
+        d["samples"] = int(find_text(aa, "./pds:elements"))
 
         sw = root.find(".//proc:Software", ns)
-        d["software_name"] = _find_text(sw, "./proc:name")
-        d["software_version"] = _find_text(sw, "./proc:software_version_id")
-        d["software_program_name"] = _find_text(sw, "./proc:Software_Program/proc:name")
+        d["software_name"] = find_text(sw, "./proc:name")
+        d["software_version"] = find_text(sw, "./proc:software_version_id")
+        d["software_program_name"] = find_text(sw, "./proc:Software_Program/proc:name")
 
         # Start times must be on the whole second, which is why we don't use
         # fromisozformat() here.
         d["start_time"] = datetime.strptime(
-            _find_text(root, ".//pds:start_date_time"), "%Y-%m-%dT%H:%M:%SZ"
+            find_text(root, ".//pds:start_date_time"), "%Y-%m-%dT%H:%M:%SZ"
         ).replace(tzinfo=timezone.utc)
 
-        d["stop_time"] = fromisozformat(_find_text(root, ".//pds:stop_date_time"))
+        d["stop_time"] = fromisozformat(find_text(root, ".//pds:stop_date_time"))
 
         return cls(**d)
 
