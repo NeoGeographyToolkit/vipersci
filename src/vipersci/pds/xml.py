@@ -38,3 +38,25 @@ dd = dict(
 ns = {}
 for k in dd.keys():
     ns[k] = f"http://pds.nasa.gov/pds4/{k}/v1"
+
+
+def find_text(root, xpath, unit_check=None, namespace=None):
+    """Convenience function for returning the text from an element."""
+    if namespace is None:
+        namespace = ns
+
+    element = root.find(xpath, namespace)
+    if element is not None:
+        if unit_check is not None:
+            if element.get("unit") != unit_check:
+                raise ValueError(
+                    f"The {xpath} element does not have units of "
+                    f"{unit_check}, has {element.get('unit')}"
+                )
+        el_text = element.text
+        if el_text:
+            return el_text
+        else:
+            raise ValueError(f"The XML {xpath} element contains no information.")
+    else:
+        raise ValueError(f"XML text does not have a {xpath} element.")
