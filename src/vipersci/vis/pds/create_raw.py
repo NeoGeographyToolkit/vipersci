@@ -280,7 +280,7 @@ def label_dict(ir: ImageRecord, lights: dict):
     pid = pds.VISID(ir.product_id)
     d = dict(
         data_quality="",
-        lid=f"urn:nasa:pds:viper_vis:raw:{ir.product_id}",
+        lid=f"urn:nasa:pds:viper_vis:data_raw:{ir.product_id}",
         mission_lid="urn:nasa:pds:viper",
         sc_lid=_sclid,
         inst_lid=f"{_sclid}.{_inst}",
