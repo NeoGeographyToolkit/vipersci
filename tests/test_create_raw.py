@@ -141,7 +141,9 @@ class TestDatabase(unittest.TestCase):
 
     def test_label_dict(self):
         d = cr.label_dict(self.ir, cr.get_lights(self.ir, self.session))
-        self.assertEqual(d["lid"], f"urn:nasa:pds:viper_vis:raw:{self.ir.product_id}")
+        self.assertEqual(
+            d["lid"], f"urn:nasa:pds:viper_vis:data_raw:{self.ir.product_id}"
+        )
         self.assertEqual(d["exposure_type"], "Manual")
         self.assertEqual(d["luminaires"][list(luminaire_names.values())[0]], "Off")
         self.assertEqual(
