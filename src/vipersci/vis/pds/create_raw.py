@@ -145,7 +145,6 @@ def main():
         metadata = {
             "mission_phase": "TEST",
             "bad_pixel_table_id": 0,
-            "purpose": "Engineering",
         }
 
         # This allows values in these dicts to override the hard-coded values above.
@@ -159,6 +158,12 @@ def main():
                 "software_program_name": __name__,
             }
         )
+        if metadata["verification_purpose"] is None:
+            metadata["purpose"] = "Science"
+        else:
+            metadata["purpose"] = (
+                metadata["verification_purpose"].value.replace("_", " ").title()
+            )
 
     if args.input.endswith(".tif"):
         args.tiff = Path(args.input)

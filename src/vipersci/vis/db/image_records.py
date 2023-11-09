@@ -26,13 +26,14 @@
 # top level of this library.
 
 from datetime import datetime, timedelta, timezone
-from enum import Flag
+import enum
 from warnings import warn
 import xml.etree.ElementTree as ET
 
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Enum,
     Float,
     ForeignKey,
     Identity,
@@ -50,7 +51,7 @@ from vipersci.vis.db import Base
 import vipersci.vis.db.validators as vld
 
 
-class ImageType(Flag):
+class ImageType(enum.Flag):
     """This Flag class can be used to interpret the outputImageMask but not the
     immediateDownloadInfo Yamcs parameters, because only a single flag value can
     be set."""
@@ -75,12 +76,32 @@ class ImageType(Flag):
             return None
 
 
-class ProcessingStage(Flag):
+class ProcessingStage(enum.Flag):
     # PROCESS_RESERVED = 1
     FLATFIELD = 2
     # PROCESS_RESERVED_2 = 4
     LINEARIZATION = 8
     SLOG = 16
+
+
+class Purpose(enum.Enum):
+    # These definitions are taken from the allowable values for
+    # Product_Observational/Observation_Area/Primary_Result_Summary/purpose
+    # in the PDS4 Data Dictionary.
+    CALIBRATION = "Data collected to determine the relationship between measurement "
+    "values and physical units."
+    CHECKOUT = "Data collected during operational tests."
+    ENGINEERING = "Data collected about support systems and structures, which are "
+    "ancillary to the primary measurements."
+    NAVIGATION = "Data collected to support navigation."
+    OBSERVATION_GEOMETRY = "Data used to compute instrument observation geometry, "
+    "such as SPICE kernels."
+    SCIENCE = "Data collected primarily to answer questions about the targets of "
+    "the investigation."
+    SUPPORTING_OBSERVATION = "A science observation that was acquired to provide "
+    "support for another science observation (e.g., a context image for a very "
+    "high resolution observation, or an image intended to support an observation "
+    "by a spectral imager)."
 
 
 class ImageRecord(Base):
@@ -291,6 +312,9 @@ class ImageRecord(Base):
         String,
         nullable=True,
         doc="Any notes about the verification of this image by the VIS Operator.",
+    )
+    verification_purpose = mapped_column(
+        Enum(Purpose), nullable=True, doc="Purpose of Observation, as defined by PDS."
     )
     verified = mapped_column(
         Boolean,
