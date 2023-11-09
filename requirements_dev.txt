@@ -10,5 +10,6 @@ tox
 twine
 types-pillow
 types-requests
+types-pyyaml
 wheel
 watchdog

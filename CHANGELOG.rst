@@ -57,6 +57,9 @@ Added
 - create_vis_dbs.py - Now also supports spatialite databases, primarily for testing.
 - create_raw.py - Added components for adding observational intent and data quality
   to the XML label.
+- labelmaker - A program to help build PDS4 bundle and collection labels.
+- bundle_install - A program to copy just the files related to a PDS4 bundle into a
+  new location.  Fundamentally allowing a "make install" for PDS4 bundles.
 
 Removed
 ^^^^^^^
