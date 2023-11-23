@@ -42,6 +42,8 @@ Changed
 
 Added
 ^^^^^
+- pds.Purpose now provides names and explanations for the PDS-allowable values
+  for "purpose."
 - yamcs_reception_time column added to the image_records.py table.
 - Association table junc_image_pano created which provides a many-to-many
   connection between ImageRecords and PanoRecords and added bidirectional

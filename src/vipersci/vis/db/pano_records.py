@@ -29,6 +29,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     DateTime,
+    Enum,
     Float,
     Identity,
     Integer,
@@ -37,6 +38,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import mapped_column, relationship, validates
 
+from vipersci.pds import Purpose
 from vipersci.pds.pid import VISID, PanoID
 from vipersci.pds.datetime import isozformat
 from vipersci.vis.db import Base
@@ -126,8 +128,8 @@ class PanoRecord(Base):
         "product_id", String, nullable=False, unique=True, doc="The PDS Product ID."
     )
     purpose = mapped_column(
-        String,
-        nullable=False,
+        Enum(Purpose),
+        nullable=True,
         doc="This is the value for the PDS "
         "Observation_Area/Primary_Result_Summary/purpose parameter, it "
         "has a restricted set of allowable values.",

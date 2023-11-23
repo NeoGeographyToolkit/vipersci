@@ -58,6 +58,6 @@ class TestValidators(unittest.TestCase):
         )
 
     def test_validate_purpose(self):
-        self.assertEqual(vld.validate_purpose("Science"), "Science")
+        self.assertEqual(vld.validate_purpose("Science"), "SCIENCE")
 
         self.assertRaises(ValueError, vld.validate_purpose, "not a Purpose")
