@@ -43,6 +43,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import mapped_column, relationship, synonym, validates
 
+from vipersci.pds import Purpose
 from vipersci.pds.pid import VISID, vis_instruments, vis_compression
 from vipersci.pds.xml import find_text, ns
 from vipersci.pds.datetime import fromisozformat, isozformat
@@ -82,26 +83,6 @@ class ProcessingStage(enum.Flag):
     # PROCESS_RESERVED_2 = 4
     LINEARIZATION = 8
     SLOG = 16
-
-
-class Purpose(enum.Enum):
-    # These definitions are taken from the allowable values for
-    # Product_Observational/Observation_Area/Primary_Result_Summary/purpose
-    # in the PDS4 Data Dictionary.
-    CALIBRATION = "Data collected to determine the relationship between measurement "
-    "values and physical units."
-    CHECKOUT = "Data collected during operational tests."
-    ENGINEERING = "Data collected about support systems and structures, which are "
-    "ancillary to the primary measurements."
-    NAVIGATION = "Data collected to support navigation."
-    OBSERVATION_GEOMETRY = "Data used to compute instrument observation geometry, "
-    "such as SPICE kernels."
-    SCIENCE = "Data collected primarily to answer questions about the targets of "
-    "the investigation."
-    SUPPORTING_OBSERVATION = "A science observation that was acquired to provide "
-    "support for another science observation (e.g., a context image for a very "
-    "high resolution observation, or an image intended to support an observation "
-    "by a spectral imager)."
 
 
 class ImageRecord(Base):

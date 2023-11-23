@@ -27,6 +27,7 @@
 
 from datetime import datetime, timedelta, timezone
 
+from vipersci.pds import Purpose
 from vipersci.pds.datetime import fromisozformat
 
 
@@ -49,15 +50,11 @@ def validate_datetime_asutc(key, value):
 
 
 def validate_purpose(value: str):
-    s = {
-        "Calibration",
-        "Checkout",
-        "Engineering",
-        "Navigation",
-        "Observation Geometry",
-        "Science",
-        "Supporting Observation",
-    }
-    if value not in s:
-        raise ValueError(f"purpose must be one of {s}")
-    return value
+    s = set(Purpose.__members__.keys())
+    if value in s:
+        return value
+
+    if value.upper() in s:
+        return value.upper()
+
+    raise ValueError(f"purpose must be one of {s}")
