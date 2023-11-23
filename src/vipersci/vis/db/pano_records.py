@@ -182,7 +182,9 @@ class PanoRecord(Base):
 
             source_pids.sort()
             st = source_pids[0].datetime()
-            if self.start_time is not None:
+            if self.start_time is None:
+                self.start_time = st
+            else:
                 st = self.start_time
 
             pid = PanoID(st.date(), st.time(), inst)
