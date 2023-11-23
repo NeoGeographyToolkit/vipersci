@@ -93,6 +93,7 @@ def main():
 
 
 def write_tif(path: Path, ending: str, arr: np.typing.ArrayLike, kwds: dict):
-    with rasterio.open(path.with_name(path.name + ending), "w", **kwds) as dst_dataset:
+    p = path.with_name(path.name + ending)
+    with rasterio.open(p, "w", **kwds) as dst_dataset:
         dst_dataset.write(arr, 1)
-    return
+    return p
