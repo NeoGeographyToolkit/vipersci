@@ -32,6 +32,7 @@ Panorama Product, only a mock-up of one.
 # top level of this library.
 
 import argparse
+from datetime import timezone
 import logging
 from typing import Any, Dict, Union, Optional, MutableSequence, List
 from pathlib import Path
@@ -129,6 +130,7 @@ def main():
                 args.json,
                 args.bottom,
             )
+            session.commit()
 
     return
 
@@ -196,7 +198,12 @@ def create(
             )
 
     # At this time, image pointing information is not available, so we assume that
-    # the images provided are provided in left-to-right order.
+    # the images provided are provided in left-to-right order and fake these values:
+    half_width = (len(inputs) / 2) * 60
+    metadata["rover_pan_min"] = -1 * half_width
+    metadata["rover_pan_max"] = half_width
+    metadata["rover_tilt_max"] = 15
+    metadata["rover_tilt_min"] = -50 if bottom_row is None else -80
 
     image_list = list()
     for path in source_paths:
@@ -232,6 +239,30 @@ def create(
         pano_arr = np.vstack((pano_arr, bot_arr))
 
     pp = make_pano_record(metadata, pano_arr, outdir)
+
+    if image_records:
+        purposes = set()
+        start_times = []
+        stop_times = []
+        for ir in image_records:
+            purposes.add(ir.verification_purpose)
+            start_times.append(
+                ir.start_time
+                if session.get_bind().name != "sqlite"
+                else ir.start_time.replace(tzinfo=timezone.utc)
+            )
+            stop_times.append(
+                ir.stop_time
+                if session.get_bind().name != "sqlite"
+                else ir.stop_time.replace(tzinfo=timezone.utc)
+            )
+
+        purp = purposes.pop()
+        if purp is not None:
+            pp.purpose = purp
+
+        pp.start_time = min(start_times)
+        pp.stop_time = max(stop_times)
 
     if json:
         write_json(pp.asdict(), outdir)
