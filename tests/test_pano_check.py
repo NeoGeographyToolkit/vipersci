@@ -89,7 +89,7 @@ class TestPositionAndPose(unittest.TestCase):
             tpp = pc.get_position_and_pose_from_mapserver(self.times, url="foo")
             self.assertEqual(tpp, self.truth)
 
-    def test_get_pp_from_df(self):
+    def test_get_pp_from_csv(self):
         my_times = self.times.copy()
         my_times[0] += 10
 
@@ -98,7 +98,7 @@ class TestPositionAndPose(unittest.TestCase):
         ]
 
         with patch("vipersci.vis.pano_check.pd.read_csv", return_value=self.df):
-            tpp = pc.get_position_and_pose_from_df(my_times, Path("dummy.csv"))
+            tpp = pc.get_position_and_pose_from_csv(my_times, Path("dummy.csv"))
             self.assertEqual(tpp, my_truth)
 
     def test_check(self):
@@ -133,7 +133,7 @@ class TestPositionAndPose(unittest.TestCase):
         self.assertRaises(TypeError, pc.check, pid_list, "dummy_function")
 
         with patch("vipersci.vis.pano_check.pd.read_csv", return_value=self.df):
-            gffp = partial(pc.get_position_and_pose_from_df, path="dummy.csv")
+            gffp = partial(pc.get_position_and_pose_from_csv, path="dummy.csv")
             p_groups = pc.check(pids, gffp)
             self.assertEqual(p_groups, truth)
 
