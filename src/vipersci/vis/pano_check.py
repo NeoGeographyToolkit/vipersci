@@ -29,7 +29,6 @@ from functools import partial
 import itertools
 import logging
 from pathlib import Path
-import sys
 from typing import Iterable, Union
 
 import pandas as pd
@@ -100,7 +99,7 @@ def main():
     if args.url is not None:
         gppf = partial(get_position_and_pose_from_mapserver, url=args.url)
     elif args.csv is not None:
-        gppf = partial(get_position_and_pose_from_df, path=args.csv)
+        gppf = partial(get_position_and_pose_from_csv, path=args.csv)
     else:
         parser.error(
             "Neither --url nor --csv were given.  Need at least one to be a "
@@ -153,7 +152,7 @@ def check(
     module.  These functions may need to be wrapped via functools.partial() so that the
     function passed here takes only a list of timestamp times.
 
-    If the iterable does not contain all ImageRecord objecs or all VISID objects,
+    If the iterable does not contain all ImageRecord objects or all VISID objects,
     a TypeError will be raised.
     """
     if get_pos_pose_func is None:
@@ -184,9 +183,9 @@ def check(
         if v.compression == "s":
             continue
         ts = v.datetime().timestamp()
-
-        vids_by_time[ts] = v
-        times.append(ts)
+        if ts not in vids_by_time:
+            vids_by_time[ts] = v
+            times.append(ts)
 
     tpp = get_pos_pose_func(times)
     grouped = groupby_2nd(tpp)
@@ -204,7 +203,7 @@ def check(
     return pano_groups
 
 
-def get_position_and_pose_from_df(
+def get_position_and_pose_from_csv(
     times: list,
     path: Path,
     time_column=0,
@@ -215,7 +214,7 @@ def get_position_and_pose_from_df(
     """
     Given a list of timestamp times and a Path to a CSV file with the specified columns,
     return a list of two-tuples whose first element is the time and whose
-    second element is an N-tuple of x-location, y-location, and yaw.
+    second element is three-tuple of x-location, y-location, and yaw.
 
     If None is given for any of the x-, y-, or yaw- columns, they are ignored
     from the CSV read.
@@ -297,7 +296,3 @@ def groupby_2nd(
         grouped.append((first, second))
 
     return grouped
-
-
-if __name__ == "__main__":
-    sys.exit(main())
