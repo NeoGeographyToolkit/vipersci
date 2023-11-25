@@ -100,6 +100,14 @@ def arg_parser():
         "Output file names are fixed based on product_id, and will be over-written.",
     )
     parser.add_argument(
+        "--prefix",
+        type=Path,
+        default=Path.cwd(),
+        help="A directory path that, if given, will be prepended to paths given via "
+        "inputs or will be prepended to the file_path values returned from a database "
+        "query."
+    )
+    parser.add_argument(
         "-x", "--xml", action="store_true", help="Create a PDS4 .XML label file."
     )
     parser.add_argument(
@@ -115,6 +123,7 @@ def main():
     if args.dburl is None:
         create(
             args.inputs,
+            args.prefix,
             args.output_dir,
             None,
             args.json,
@@ -125,6 +134,7 @@ def main():
         with Session(engine) as session:
             create(
                 args.inputs,
+                args.prefix,
                 args.output_dir,
                 session,
                 args.json,
@@ -137,6 +147,7 @@ def main():
 
 def create(
     inputs: MutableSequence[Union[Path, pds.VISID, ImageRecord, str]],
+    prefixdir: Optional[Path] = None,
     outdir: Optional[Path] = None,
     session: Optional[Session] = None,
     json: bool = True,
@@ -187,11 +198,15 @@ def create(
     for inp in inputs:
         if isinstance(inp, ImageRecord):
             metadata["source_pids"].append(inp.product_id)
-            source_paths.append(inp.file_path)
+            source_paths.append(
+                inp.file_path if prefixdir is None else prefixdir / inp.file_path
+            )
             image_records.append(inp)
         elif isinstance(inp, (Path, str)):
             metadata["source_pids"].append([str(pds.VISID(inp))])
-            source_paths.append(inp)
+            source_paths.append(
+                inp if prefixdir is None else prefixdir / inp
+            )
         else:
             raise ValueError(
                 f"an element in input is not the right type: {inp} ({type(inp)})"
@@ -240,7 +255,8 @@ def create(
 
     pp = make_pano_record(metadata, pano_arr, outdir)
 
-    if image_records:
+    if image_records and session is not None:
+        bound_name = getattr(session.get_bind(), "name", None)
         purposes = set()
         start_times = []
         stop_times = []
@@ -248,12 +264,12 @@ def create(
             purposes.add(ir.verification_purpose)
             start_times.append(
                 ir.start_time
-                if session.get_bind().name != "sqlite"
+                if bound_name != "sqlite"
                 else ir.start_time.replace(tzinfo=timezone.utc)
             )
             stop_times.append(
                 ir.stop_time
-                if session.get_bind().name != "sqlite"
+                if bound_name != "sqlite"
                 else ir.stop_time.replace(tzinfo=timezone.utc)
             )
 
