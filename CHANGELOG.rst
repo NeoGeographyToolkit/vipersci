@@ -55,6 +55,7 @@ Added
 - ptu_records.py - Tables to record the pan and tilt of the rover's pan-tilt-unit (PTU).
 - create_pano.py - updated to correctly add PanoRecord associations, can now query
   database for ImageRecords.
+- create_pano_product.py - takes PanoRecords and makes a PDS Pano Product.
 - get_position.py - Gets position and yaw from a REST-based service.
 - create_vis_dbs.py - Now also supports spatialite databases, primarily for testing.
 - create_raw.py - Added components for adding observational intent and data quality
