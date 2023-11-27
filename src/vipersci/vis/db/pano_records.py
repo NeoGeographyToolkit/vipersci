@@ -250,7 +250,8 @@ class PanoRecord(Base):
             else:
                 d[c.name] = getattr(self, c.name)
 
-        d.update(self.labelmeta)
+        if hasattr(self, "labelmeta"):
+            d.update(self.labelmeta)
 
         return d
 
@@ -261,20 +262,6 @@ class PanoRecord(Base):
         as XML.
         """
         raise NotImplementedError()
-
-    def label_dict(self):
-        """Returns a dictionary suitable for label generation."""
-        _sclid = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
-        d = dict(
-            lid=f"urn:nasa:pds:viper_vis:panoramas:{self.product_id}",
-            mission_lid="urn:nasa:pds:viper",
-            sc_lid=_sclid,
-            # inst_lid=f"{_sclid}.{_inst}",
-        )
-
-        d.update(self.asdict())
-
-        return d
 
     def update(self, other):
         for k, v in other.items():
