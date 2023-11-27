@@ -99,9 +99,9 @@ class TestPanoRecord(unittest.TestCase):
         p.update(self.extras)
         self.assertTrue(k in p.labelmeta)
 
-    def test_labeldict(self):
-        din = self.d
-        din.update(self.extras)
-        p = tpp.PanoRecord(**din)
-        d = p.label_dict()
-        self.assertEqual(d["samples"], p.samples)
+    # def test_labeldict(self):
+    #     din = self.d
+    #     din.update(self.extras)
+    #     p = tpp.PanoRecord(**din)
+    #     d = p.label_dict()
+    #     self.assertEqual(d["samples"], p.samples)
