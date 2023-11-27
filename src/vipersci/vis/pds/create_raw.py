@@ -38,15 +38,13 @@ The command-line version is primarily to aide testing.
 # top level of this library.
 
 import argparse
-from datetime import date, timedelta
-from importlib import resources
+from datetime import timedelta
 import json
 import logging
-from typing import Union, Optional
+from typing import Union
 from pathlib import Path
 from warnings import warn
 
-from genshi.template import MarkupTemplate
 import numpy as np
 import numpy.typing as npt
 from sqlalchemy import and_, create_engine, select
@@ -56,6 +54,7 @@ import vipersci
 from vipersci.vis.db.image_records import ImageRecord, ProcessingStage
 from vipersci.vis.db.light_records import LightRecord, luminaire_names
 from vipersci.vis.create_image import tif_info
+from vipersci.vis.pds import lids, write_xml
 from vipersci.pds import pid as pds
 from vipersci import util
 
@@ -79,7 +78,7 @@ def arg_parser():
     parser.add_argument(
         "-t",
         "--template",
-        type=Path,
+        default="raw-template.xml",
         help="Genshi XML file template.  Will default to the raw-template.xml "
         "file distributed with the module.  Only relevant when --xml is provided.",
     )
@@ -183,7 +182,7 @@ def main():
                 )
         metadata.update(t_info)
 
-    write_xml(metadata, args.output_dir, args.template)
+    write_xml(metadata, args.template, args.output_dir)
 
     return
 
@@ -280,15 +279,14 @@ def get_lights(ir: ImageRecord, session: Session):
 def label_dict(ir: ImageRecord, lights: dict):
     """Returns a dictionary suitable for label generation."""
     _inst = ir.instrument_name.lower().replace(" ", "_")
-    _sclid = "urn:nasa:pds:context:instrument_host:spacecraft.viper"
     onoff = {True: "On", False: "Off", None: None}
     pid = pds.VISID(ir.product_id)
     d = dict(
         data_quality="",
-        lid=f"urn:nasa:pds:viper_vis:data_raw:{ir.product_id}",
-        mission_lid="urn:nasa:pds:viper",
-        sc_lid=_sclid,
-        inst_lid=f"{_sclid}.{_inst}",
+        lid=f"{lids['bundle']}:data_raw:{ir.product_id}",
+        mission_lid=lids["mission"],
+        sc_lid=lids["spacecraft"],
+        inst_lid=f"{lids['spacecraft']}.{_inst}",
         gain_number=(ir.adc_gain * ir.pga_gain),
         exposure_type="Auto" if ir.auto_exposure else "Manual",
         image_filters=list(),
@@ -347,48 +345,3 @@ def label_dict(ir: ImageRecord, lights: dict):
             d["data_quality"] += " " + ir.verification_notes
 
     return d
-
-
-def version_info():
-    # This should reach into a database and do something smart to figure
-    # out how to populate this, but for now, hardcoding:
-    d = {
-        "modification_details": [
-            {
-                "version": 0.1,
-                "date": date.today().isoformat(),
-                "description": "Illegal version number for testing",
-            }
-        ],
-        "vid": 0.1,
-    }
-    return d
-
-
-def write_xml(
-    product: dict, outdir: Path = Path.cwd(), template_path: Optional[Path] = None
-):
-    """
-    Writes a PDS4 XML label in *outdir* based on the contents of
-    the *product* object, which must be of type Raw_Product.
-
-    The *template_path* can be a path to an appropriate template
-    XML file, but defaults to the raw-template.xml file provided
-    with this library.
-    """
-    if template_path is None:
-        tmpl = MarkupTemplate(
-            resources.read_text("vipersci.vis.pds.data", "raw-template.xml")
-        )
-    else:
-        tmpl = MarkupTemplate(template_path.read_text())
-
-    d = version_info()
-    d.update(product)
-
-    logger.info(d)
-
-    stream = tmpl.generate(**d)
-    out_path = (outdir / product["product_id"]).with_suffix(".xml")
-    out_path.write_text(stream.render())
-    return
