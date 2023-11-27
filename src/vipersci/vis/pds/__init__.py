@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 lids = {
     "bundle": "urn:nasa:pds:viper_vis",
     "mission": "urn:nasa:pds:viper",
-    "spacecraft": "urn:nasa:pds:context:instrument_host:spacecraft.viper"
+    "spacecraft": "urn:nasa:pds:context:instrument_host:spacecraft.viper",
 }
 
 

@@ -105,7 +105,7 @@ def arg_parser():
         default=Path.cwd(),
         help="A directory path that, if given, will be prepended to paths given via "
         "inputs or will be prepended to the file_path values returned from a database "
-        "query."
+        "query.",
     )
     parser.add_argument(
         "-x", "--xml", action="store_true", help="Create a PDS4 .XML label file."
@@ -204,9 +204,7 @@ def create(
             image_records.append(inp)
         elif isinstance(inp, (Path, str)):
             metadata["source_pids"].append([str(pds.VISID(inp))])
-            source_paths.append(
-                inp if prefixdir is None else prefixdir / inp
-            )
+            source_paths.append(inp if prefixdir is None else prefixdir / inp)
         else:
             raise ValueError(
                 f"an element in input is not the right type: {inp} ({type(inp)})"
