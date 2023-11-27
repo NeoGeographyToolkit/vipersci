@@ -167,7 +167,7 @@ class TestDatabase(unittest.TestCase):
                 with patch("vipersci.vis.db.image_records.isozformat", new=isozformat):
                     cr.main()
                     m_write_xml.assert_called_once()
-                    (metadata, outdir, template) = m_write_xml.call_args[0]
+                    (metadata, template, outdir) = m_write_xml.call_args[0]
                     self.assertEqual(metadata["product_id"], self.ir.product_id)
                     self.assertEqual(outdir, Path.cwd())
-                    self.assertIsNone(template)
+                    self.assertEqual(template, "raw-template.xml")
