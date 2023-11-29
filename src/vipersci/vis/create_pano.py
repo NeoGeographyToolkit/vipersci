@@ -85,13 +85,6 @@ def arg_parser():
         help="Disables creation of .json output.",
     )
     parser.add_argument(
-        "-t",
-        "--template",
-        type=Path,
-        help="Genshi XML file template.  Will default to the pano-template.xml "
-        "file distributed with the module.  Only relevant when --xml is provided.",
-    )
-    parser.add_argument(
         "-o",
         "--output_dir",
         type=Path,
@@ -108,10 +101,7 @@ def arg_parser():
         "query.",
     )
     parser.add_argument(
-        "-x", "--xml", action="store_true", help="Create a PDS4 .XML label file."
-    )
-    parser.add_argument(
-        "inputs", nargs="*", help="Either VIS raw product IDs or files."
+        "inputs", nargs="+", help="Either VIS raw product IDs or files."
     )
     return parser
 
@@ -148,7 +138,7 @@ def main():
 def create(
     inputs: MutableSequence[Union[Path, pds.VISID, ImageRecord, str]],
     prefixdir: Optional[Path] = None,
-    outdir: Optional[Path] = None,
+    outdir: Path = Path.cwd(),
     session: Optional[Session] = None,
     json: bool = True,
     bottom_row: Optional[MutableSequence[Union[Path, str]]] = None,
@@ -156,10 +146,7 @@ def create(
     """
     Creates a Panorama Product in *outdir*. Returns None.
 
-    At this time, session is ignored.
-
-    At this time, *inputs* should be a list of file paths.  In the
-    future, it could be a list of product IDs.
+    At this time, *inputs* should be a list of file paths or product IDs.
 
     If a path is provided to *outdir* the created files
     will be written there.
@@ -168,8 +155,6 @@ def create(
     written to the pano_records table.  If not, no database activity
     will occur.
     """
-    if outdir is None:
-        raise ValueError("A Path for outdir must be supplied.")
 
     metadata: Dict[str, Any] = dict(
         source_pids=[],
@@ -280,9 +265,6 @@ def create(
 
     if json:
         write_json(pp.asdict(), outdir)
-
-    # if xml:
-    #     write_xml(pp.label_dict(), outdir, template_path)
 
     if session is not None:
         if image_records:
