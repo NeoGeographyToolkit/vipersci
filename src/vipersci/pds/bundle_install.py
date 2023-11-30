@@ -125,6 +125,7 @@ def main():
                 f_lidvid = f["lid"] + "::" + f["vid"]
                 if f_lidvid in col_lidvids:
                     dest_path = bld_col_dir / p.relative_to(src_col_dir)
+                    dest_path.parent.mkdir(parents=True, exist_ok=True)
                     copy2(p, dest_path)
                     copy2(p.with_name(f["productfile"]), dest_path.parent)
                     col_lidvids.remove(f_lidvid)
