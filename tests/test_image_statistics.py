@@ -56,7 +56,9 @@ class TestCompute(unittest.TestCase):
         )
 
     def test_compute(self):
+        # print(image_statistics.pprint(self.image))
         stats = image_statistics.compute(self.image)
         self.assertEqual(stats["blur"], 1.0)
         self.assertAlmostEqual(stats["mean"], 2374.36363636)
         self.assertAlmostEqual(stats["std"], 1310.43637928)
+        self.assertEqual(stats["central_clear"], 13)

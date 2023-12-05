@@ -31,6 +31,9 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+from rasterio.windows import Window
+from scipy.ndimage import generic_filter
+from skimage.morphology import disk
 from skimage.io import imread
 from skimage import measure
 
@@ -42,6 +45,15 @@ ImageType = Union[npt.NDArray[np.uint16], npt.NDArray[np.uint8]]
 
 UNDEREXPOSED_THRESHOLD = 4095 * 0.2
 OVEREXPOSED_THRESHOLD = 4095 * 0.8
+
+
+class CentralMask:
+    def __init__(self, image):
+        self.array = np.zeros_like(image, dtype=int)
+        quarter_width = int(image.shape[0] / 4)
+        self.disk = disk(quarter_width)
+        self.window = Window(quarter_width, quarter_width, *self.disk.shape)
+        self.array[self.window.toslices()] += self.disk
 
 
 def arg_parser():
@@ -64,7 +76,20 @@ def main():
 
     print(pprint(image))
 
+    print(f"aggregate_noise: {aggregate_noise(image)} DN")
+
     return
+
+
+def aggregate_noise(image):
+    # This seems to yield a high value, and is slooooooow
+    logger.info("aggregate_noise start")
+    logger.info("Start std filtering.")
+    std_filtered = generic_filter(image, np.std, size=(3, 3))
+    logger.info("Start mean filtering.")
+    mean_filtered = generic_filter(image, np.mean, size=(3, 3))
+    logger.info("Dividing.")
+    return np.nansum(np.divide(std_filtered, mean_filtered, where=mean_filtered != 0))
 
 
 def compute(
@@ -72,13 +97,21 @@ def compute(
     overexposed_thresh=OVEREXPOSED_THRESHOLD,
     underexposed_thresh=UNDEREXPOSED_THRESHOLD,
 ) -> dict:
+    mask_indices = np.logical_and(
+        np.logical_and(
+            image > underexposed_thresh,
+            image < overexposed_thresh,
+        ),
+        CentralMask(image).array,
+    )
     d = {
         "blur": measure.blur_effect(image),
         "mean": np.mean(image),
         "std": np.std(image),
         "over_exposed": (image > overexposed_thresh).sum(),
         "under_exposed": (image < underexposed_thresh).sum(),
-        # "aggregate_noise":
+        "central_clear": np.count_nonzero(mask_indices),
+        # "aggregate_noise": aggregate_noise(image)
         # number of dead pixels
     }
 
@@ -91,16 +124,21 @@ def pprint(
     underexposed_thresh=UNDEREXPOSED_THRESHOLD,
 ) -> str:
     d = compute(image, overexposed_thresh, underexposed_thresh)
+    disk_size = CentralMask(image).disk.sum()
 
     s = dedent(
         f"""\
         blur: {d['blur']} (0 for no blur, 1 for maximal blur)
         mean: {d['mean']}
         std: {d['std']}
-        over-exposed: {d['over_exposed']} pixels,\
+        over-exposed (>{overexposed_thresh}): {d['over_exposed']} pixels,\
          {100 * d['over_exposed'] / image.size} %
-        under-exposed: {d['under_exposed']} pixels,\
-         {100 * d['under_exposed'] / image.size} %\
+        under-exposed (<{underexposed_thresh}): {d['under_exposed']} pixels,\
+         {100 * d['under_exposed'] / image.size} %
+        central_clear: {d['central_clear']} pixels, \
+         {100 * d['central_clear'] / disk_size} %
         """
+        # aggregate_noise: {d['aggregate_noise']} DN
+        # """
     )
     return s
