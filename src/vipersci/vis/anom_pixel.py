@@ -64,6 +64,7 @@ def main():
     indices = check(image, args.tolerance)
 
     print(f"There are {len(indices[0])} anomalous pixels.")
+    print(f"or {100 * len(indices[0]) / image.size} %")
     print(indices)
 
     return
@@ -76,7 +77,7 @@ def check(image, tolerance=3):
     """
 
     blurred = median(image)
-    difference = image - blurred
+    difference = image.astype(int) - blurred.astype(int)
     threshold = tolerance * np.std(difference)
     logger.info(f"threshold: {threshold}")
 
