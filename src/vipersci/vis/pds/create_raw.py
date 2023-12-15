@@ -278,7 +278,7 @@ def get_lights(ir: ImageRecord, session: Session):
 
 def label_dict(ir: ImageRecord, lights: dict):
     """Returns a dictionary suitable for label generation."""
-    _inst = ir.instrument_name.lower().replace(" ", "_")
+    # _inst = ir.instrument_name.lower().replace(" ", "_")
     onoff = {True: "On", False: "Off", None: None}
     pid = pds.VISID(ir.product_id)
     d = dict(
@@ -286,7 +286,7 @@ def label_dict(ir: ImageRecord, lights: dict):
         lid=f"{lids['bundle']}:data_raw:{ir.product_id}",
         mission_lid=lids["mission"],
         sc_lid=lids["spacecraft"],
-        inst_lid=f"{lids['spacecraft']}.{_inst}",
+        inst_lid=f"{lids['instrument']}",
         gain_number=(ir.adc_gain * ir.pga_gain),
         exposure_type="Auto" if ir.auto_exposure else "Manual",
         image_filters=list(),
