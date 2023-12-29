@@ -61,8 +61,8 @@ def arg_parser():
         "-m",
         "--mapserver",
         help="URL that will respond to requests when given an event_time and "
-             "a crs_code.  Alternately, if a float is provided, this will be used as "
-             "the rover yaw (zero==north) for testing.",
+        "a crs_code.  Alternately, if a float is provided, this will be used as "
+        "the rover yaw (zero==north) for testing.",
     )
     parser.add_argument(
         "-o",
@@ -80,9 +80,7 @@ def arg_parser():
         "inputs or will be prepended to the file_path values returned from a database "
         "query.",
     )
-    parser.add_argument(
-        "input", help="Either VIS Pano product IDs or a JSON file."
-    )
+    parser.add_argument("input", help="Either VIS Pano product IDs or a JSON file.")
     return parser
 
 
@@ -110,7 +108,7 @@ def create(
     info: Union[Path, pds.PanoID, PanoRecord, str],
     prefixdir: Optional[Path] = None,
     outdir: Path = Path.cwd(),
-    mapserver: str = None,
+    mapserver: Optional[str] = None,
     session: Optional[Session] = None,
 ):
     """
@@ -148,32 +146,38 @@ def create(
             raise ValueError(f"Without a database session, can't lookup {info}")
 
     if isinstance(info, PanoRecord):
-        vid = pds.PanoID(info.product_id)
-        source_path = Path(info.file_path) if prefixdir is None else prefixdir / info.file_path
+        # vid = pds.PanoID(info.product_id)
+        source_path = (
+            Path(info.file_path) if prefixdir is None else prefixdir / info.file_path
+        )
         pano = info.asdict()
     elif isinstance(info, (Path, str)):
-        vid = pds.PanoID(info)
+        # vid = pds.PanoID(info)
         with open(info) as f:
             pano = json.load(f)
-        source_path = Path(pano["file_path"]) if prefixdir is None else prefixdir / pano["file_path"]
+        source_path = (
+            Path(pano["file_path"])
+            if prefixdir is None
+            else prefixdir / pano["file_path"]
+        )
     else:
         raise ValueError(
             f"an element in input is not the right type: {info} ({type(info)})"
         )
 
     if mapserver is None:
-        yaw = 0
+        yaw = 0.0
     else:
         try:
             yaw = float(mapserver)
         except ValueError:
-            raise NotImplementedError(f"mapserver queries are not yet implemented.")
+            raise NotImplementedError("mapserver queries are not yet implemented.")
 
     # Convert to PNG
     image = equalize_adapthist(imread(str(source_path)))
-    image8 = rescale_intensity(
-        image, in_range="image", out_range="uint8"
-    ).astype("uint8")
+    image8 = rescale_intensity(image, in_range="image", out_range="uint8").astype(
+        "uint8"
+    )
 
     outpath = outdir / source_path.with_suffix(".png").name
 
