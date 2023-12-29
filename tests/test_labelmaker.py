@@ -169,8 +169,8 @@ class TestFunctions(unittest.TestCase):
             "target_type": "Satellite",
             "target_lid": "urn:nasa:pds:context:target:satellite.earth.moon",
             "instruments": {
-                f"{host_lid}.navcam_left": "NavCam Left",
-                f"{host_lid}.navcam_right": "NavCam Right",
+                "NavCam Left": f"{host_lid}.navcam_left",
+                "NavCam Right": f"{host_lid}.navcam_right",
             },
             "purposes": [
                 "Engineering",
