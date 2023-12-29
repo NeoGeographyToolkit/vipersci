@@ -178,6 +178,7 @@ Added
 
 Changed
 ^^^^^^^
+- Updated templates and modules for PDS information model 21.
 - Flattened test directory structure.
 - tri2gpkg -v is no longer an alias for --value-names, as it now determines verbosity
   since logging has been added.
