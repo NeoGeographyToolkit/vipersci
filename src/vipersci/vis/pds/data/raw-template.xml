@@ -121,14 +121,14 @@
 					<img:illumination_wavelength unit="nm">${led_wavelength}</img:illumination_wavelength>
 				</img:LED_Illumination_Source>
 			</img:Illumination>
-            <img:Image_Filter py:for="venue, algorithm in image_filters">
-                <img:processing_venue>${venue}</img:processing_venue>
-                <img:processing_algorithm>${algorithm}</img:processing_algorithm>
+            <img:Image_Filter py:if="image_filters">
+               <img:processing_venue>Onboard</img:processing_venue>
+               <img:processing_algorithm>${image_filters}</img:processing_algorithm>
             </img:Image_Filter>
 			<img:Onboard_Compression>
 				<img:onboard_compression_class>${compression_class}</img:onboard_compression_class>
-                <img:onboard_compression_ratio py:if="compression_class == 'Lossy'">${onboard_compression_ratio}</img:onboard_compression_ratio>
 				<img:onboard_compression_type>${onboard_compression_type}</img:onboard_compression_type>
+                <img:onboard_compression_ratio py:if="compression_class == 'Lossy'">${onboard_compression_ratio}</img:onboard_compression_ratio>
                 <img:ICER_Parameters>
                     <img:icer_quality>${minloss}</img:icer_quality>
                 </img:ICER_Parameters>

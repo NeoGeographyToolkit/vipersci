@@ -197,6 +197,7 @@ Fixed
 - heatmap's generate_density_heatmap() function now properly returns values of zero
   in the returned out_count numpy array when there are no counts in those grid cells
   instead of the provided nodata value.
+- raw-template.xml can only have one Image_Filter object.
 - tri2gpkg now works correctly if --keep_z is specified
 - tri2gpkg now uses the correct srs if a pre-defined site is selected.
 
