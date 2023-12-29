@@ -194,7 +194,10 @@ def check_bit_depth(pid: pds.VISID, bit_depth: Union[int, str, np.dtype]):
     if isinstance(bit_depth, int):
         bd = bit_depth
     elif isinstance(bit_depth, str):
-        bd = int(bit_depth[-1]) * 8
+        if bit_depth.endswith("Byte"):
+            bd = 8
+        else:
+            bd = int(bit_depth[-1]) * 8
     elif isinstance(bit_depth, np.dtype):
         if bit_depth == np.uint16:
             bd = 16
@@ -287,11 +290,18 @@ def tif_info(p: Path) -> dict:
 
     end = "MSB" if info["bigEndian"] else "LSB"
 
+    # Tag 258 is bits per pixel:
+    bpp = int(tags[258]['data'][0] / 8)
+
+    if bpp == 1:
+        dt_end = "Byte"
+    else:
+        dt_end = end + str(bpp)
+
     d = {
         "file_byte_offset": tags[273]["data"][0],  # Tag 273 is StripOffsets
         "file_creation_datetime": dt,
-        # Tag 258 is bits per pixel:
-        "file_data_type": f"Unsigned{end}{int(tags[258]['data'][0] / 8)}",
+        "file_data_type": f"Unsigned{dt_end}",
         "file_md5_checksum": md5.hexdigest(),
         "file_path": p.name,
         "lines": tags[257]["data"][0],  # Tag 257 is ImageWidth,
