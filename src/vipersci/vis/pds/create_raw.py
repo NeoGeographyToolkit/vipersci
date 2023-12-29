@@ -167,11 +167,7 @@ def main():
     if args.input.endswith(".tif"):
         args.tiff = Path(args.input)
 
-    if args.tiff is None:
-        # Make up some values:
-        metadata["file_byte_offset"] = 0
-        metadata["file_data_type"] = "UnsignedLSB2"
-    else:
+    if args.tiff is not None:
         t_info = tif_info(args.tiff)
 
         for k, v in t_info.items():
@@ -289,7 +285,7 @@ def label_dict(ir: ImageRecord, lights: dict):
         inst_lid=f"{lids['instrument']}",
         gain_number=(ir.adc_gain * ir.pga_gain),
         exposure_type="Auto" if ir.auto_exposure else "Manual",
-        image_filters=list(),
+        image_filters="",
         led_wavelength=453,  # nm
         luminaires={},
         compression_class=pid.compression_class(),
@@ -314,18 +310,21 @@ def label_dict(ir: ImageRecord, lights: dict):
             f"processing_info ({ir.processing_info}) is not one "
             f"of {list(ProcessingStage)}, so assuming a value of {proc_info}"
         )
+
+    im_filt = list()
     if ProcessingStage.FLATFIELD in proc_info:
-        d["image_filters"].append(("Onboard", "Flat field normalization."))
+        im_filt.append("Flat field normalization.")
 
     if ProcessingStage.LINEARIZATION in proc_info:
-        d["image_filters"].append(("Onboard", "Linearization."))
+        im_filt.append("Linearization.")
 
     if ProcessingStage.SLOG in proc_info:
-        d["image_filters"].append(
-            ("Onboard", "Sign of the Laplacian of the Gaussian, SLoG")
-        )
+        im_filt.append("Sign of the Laplacian of the Gaussian, SLoG.")
         d["sample_bits"] = 8
         d["sample_bit_mask"] = "2#11111111"
+
+    if len(im_filt ) > 0:
+        d["image_filters"] = " ".join(im_filt)
 
     if ir.image_request is not None:
         d["observational_intent"]["goal"] = ir.image_request.justification
