@@ -207,9 +207,9 @@ def label_dict(pr: PanoRecord):
             "lid": f"{lids['spacecraft']}.{_inst}",
         }
         # todo: need to figure out how to set version id here
-        d["source_product_lidvids"].append(
+        d["source_product_lidvids"].append(  # type: ignore
             f"urn:nasa:pds:viper_vis:data_raw:{ir.product_id}:0.1"
-        )  # type: ignore
+        )
 
     for inst in instruments_dict.values():
         d["instruments"].append(inst)  # type: ignore

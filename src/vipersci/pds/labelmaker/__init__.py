@@ -57,9 +57,9 @@ def get_common_label_info(element: ET.Element, area="pds:Observation_Area"):
         for i in element.findall(
             ".//pds:Observing_System_Component[pds:type='Instrument']", ns
         ):
-            instruments[
-                find_text(i, "pds:name")
-            ] = find_text(i, "pds:Internal_Reference/pds:lid_reference")
+            instruments[find_text(i, "pds:name")] = find_text(
+                i, "pds:Internal_Reference/pds:lid_reference"
+            )
 
         purposes = []
         for p in element.findall(

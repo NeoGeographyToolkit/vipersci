@@ -146,9 +146,7 @@ class TestDatabase(unittest.TestCase):
         )
         self.assertEqual(d["exposure_type"], "Manual")
         self.assertEqual(d["luminaires"][list(luminaire_names.values())[0]], "Off")
-        self.assertEqual(
-            d["image_filters"], "Flat field normalization. Linearization."
-        )
+        self.assertEqual(d["image_filters"], "Flat field normalization. Linearization.")
         self.assertEqual(d["sample_bits"], 12)
 
     @patch("vipersci.vis.pds.create_raw.create_engine")

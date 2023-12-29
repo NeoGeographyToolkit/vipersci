@@ -291,7 +291,7 @@ def tif_info(p: Path) -> dict:
     end = "MSB" if info["bigEndian"] else "LSB"
 
     # Tag 258 is bits per pixel:
-    bpp = int(tags[258]['data'][0] / 8)
+    bpp = int(tags[258]["data"][0] / 8)
 
     if bpp == 1:
         dt_end = "Byte"

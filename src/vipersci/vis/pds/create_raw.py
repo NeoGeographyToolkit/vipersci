@@ -323,7 +323,7 @@ def label_dict(ir: ImageRecord, lights: dict):
         d["sample_bits"] = 8
         d["sample_bit_mask"] = "2#11111111"
 
-    if len(im_filt ) > 0:
+    if len(im_filt) > 0:
         d["image_filters"] = " ".join(im_filt)
 
     if ir.image_request is not None:
