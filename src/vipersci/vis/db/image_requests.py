@@ -62,6 +62,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from datetime import datetime
 import enum
 from typing import Sequence, Union
 
@@ -76,6 +77,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import mapped_column, relationship, validates
 from geoalchemy2 import Geometry  # type: ignore
 
+from vipersci.pds.datetime import isozformat
 from vipersci.pds.pid import vis_instruments
 from vipersci.vis.db import Base
 from vipersci.vis.db.light_records import luminaire_names
@@ -270,3 +272,17 @@ class ImageRequest(Base):
                 )
 
         return ",".join(value)
+
+    def asdict(self):
+        d = {}
+
+        for c in self.__table__.columns:
+            if isinstance(getattr(self, c.name), datetime):
+                d[c.name] = isozformat(getattr(self, c.name))
+            else:
+                d[c.name] = getattr(self, c.name)
+
+        if hasattr(self, "labelmeta"):
+            d.update(self.labelmeta)
+
+        return d
