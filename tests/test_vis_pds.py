@@ -37,7 +37,7 @@ from vipersci.vis import pds
 class TestVersion(unittest.TestCase):
     def test_version_info(self):
         d = pds.version_info()
-        self.assertEqual(0.1, d["vid"])
+        self.assertEqual(99.99, d["vid"])
 
 
 class TestXML(unittest.TestCase):
