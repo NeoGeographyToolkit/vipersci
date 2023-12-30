@@ -46,12 +46,14 @@ def version_info():
     d = {
         "modification_details": [
             {
-                "version": 0.1,
+                "version": 99.99,
                 "date": date.today().isoformat(),
-                "description": "Illegal version number for testing",
+                "description": "Dumb information model forces this to be a 'valid' "
+                "version instead of 0.1 for testing, which should be "
+                "allowed.",
             }
         ],
-        "vid": 0.1,
+        "vid": 99.99,
     }
     return d
 
