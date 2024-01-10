@@ -38,7 +38,7 @@ The command-line version is primarily to aide testing.
 # top level of this library.
 
 import argparse
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import logging
 from typing import Union
@@ -47,7 +47,9 @@ from warnings import warn
 
 import numpy as np
 import numpy.typing as npt
+from geoalchemy2 import load_spatialite  # type: ignore
 from sqlalchemy import and_, create_engine, select
+from sqlalchemy.event import listen
 from sqlalchemy.orm import Session
 
 import vipersci
@@ -56,6 +58,7 @@ from vipersci.vis.db.light_records import LightRecord, luminaire_names
 from vipersci.vis.create_image import tif_info
 from vipersci.vis.pds import lids, write_xml
 from vipersci.pds import pid as pds
+from vipersci.pds.datetime import isozformat
 from vipersci import util
 
 logger = logging.getLogger(__name__)
@@ -110,6 +113,9 @@ def main():
     util.set_logger(args.verbose)
 
     engine = create_engine(args.dburl)
+    if args.dburl.startswith("sqlite://"):
+        listen(engine, "connect", load_spatialite)
+
     with Session(engine) as session:
         try:
             pid = pds.VISID(args.input)
@@ -148,6 +154,12 @@ def main():
 
         # This allows values in these dicts to override the hard-coded values above.
         metadata.update(label_dict(ir, get_lights(ir, session)))
+        if args.dburl.startswith("sqlite://"):
+            for c in ir.__table__.columns:
+                dt = getattr(ir, c.name)
+                if isinstance(dt, datetime) and dt.tzinfo is None:
+                    setattr(ir, c.name, dt.replace(tzinfo=timezone.utc))
+
         metadata.update(ir.asdict())
         metadata.update(
             {
@@ -169,14 +181,21 @@ def main():
 
     if args.tiff is not None:
         t_info = tif_info(args.tiff)
+    else:
+        t_info = tif_info(Path(ir.file_path))
 
-        for k, v in t_info.items():
-            if hasattr(metadata, k) and metadata[k] != v:
+    for k, v in t_info.items():
+        if hasattr(metadata, k):
+            if metadata[k] != v:
                 raise ValueError(
                     f"The value of {k} in the metadata ({metadata[k]}) does not match "
                     f"the value ({v}) in the image ({args.tiff})"
                 )
-        metadata.update(t_info)
+        else:
+            if isinstance(v, datetime):
+                metadata[k] = isozformat(v)
+            else:
+                metadata[k] = v
 
     write_xml(metadata, args.template, args.output_dir)
 
