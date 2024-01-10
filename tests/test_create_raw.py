@@ -151,7 +151,8 @@ class TestDatabase(unittest.TestCase):
 
     @patch("vipersci.vis.pds.create_raw.create_engine")
     @patch("vipersci.vis.pds.create_raw.write_xml")
-    def test_main(self, m_write_xml, m_create_engine):
+    @patch("vipersci.vis.pds.create_raw.tif_info")
+    def test_main(self, m_tif_info, m_write_xml, m_create_engine):
         with patch("vipersci.vis.pds.create_raw.Session", return_value=self.session):
             pa_ret_val = cr.arg_parser().parse_args(
                 [
