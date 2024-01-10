@@ -545,6 +545,11 @@ class ImageRecord(Base):
 
         self._pid = str(pid)
 
+        if self.capture_id is not None and self.capture_id > int(
+            "1111111111111111", base=2
+        ):  # 65535
+            self.image_request_id = int(bin(self.capture_id)[-16:], base=2)
+
         # Is this really a good idea?  Not sure.  This instance variable plus
         # label_dict() and update() allow other key/value pairs to be carried around
         # in this object, which is handy.  If these are well enough known, perhaps

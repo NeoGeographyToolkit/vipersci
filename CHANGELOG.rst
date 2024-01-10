@@ -50,6 +50,8 @@ Added
   relationship entries to each table.
 - pano_records table now has pan and tilt angle min/max values to indicate
   angular range of panorama coverage.
+- ImageRecord objects will now extract an ImageRequest ID from the provided capture_id
+  if it is larger than the 16 bit range.
 - image_requests.py - "Acquired," "Not Acquired," "Not Planned," and "Not Obtainable"
   statuses added to enum.  Also added asdict() method.
 - ptu_records.py - Tables to record the pan and tilt of the rover's pan-tilt-unit (PTU).
