@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="http://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1L00.sch" schematypens="http://purl.oclc.org/dsdl/schematron" ?>
+
+<Product_Browse
+	xmlns="http://pds.nasa.gov/pds4/pds/v1"
+	xmlns:py="http://genshi.edgewall.org/"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+		http://pds.nasa.gov/pds4/pds/v1 http://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1L00.xsd
+">
+  <Identification_Area>
+    <logical_identifier>${lid}</logical_identifier>
+    <version_id>${vid}</version_id>
+    <title>${title}</title>
+    <information_model_version>1.21.0.0</information_model_version>
+    <product_class>Product_Browse</product_class>
+    <Modification_History>
+      <Modification_Detail py:for="detail in modification_details">
+        <modification_date>${detail.modification_date}</modification_date>
+        <version_id>${detail.version_id}</version_id>
+        <description>${detail.description}</description>
+      </Modification_Detail>
+    </Modification_History>
+  </Identification_Area>
+  <Reference_List>
+      <Source_Product_Internal>
+          <lidvid_reference>${source_lidvid}</lidvid_reference>
+          <reference_type>${source_product_type}</reference_type>
+      </Source_Product_Internal>
+  </Reference_List>
+  <File_Area_Browse>
+    <File>
+      <file_name>${file_path}</file_name>
+      <creation_date_time>${file_creation_datetime}</creation_date_time>
+    </File>
+    <Encoded_Image>
+    	<md5_checksum>${file_md5_checksum}</md5_checksum>
+    	<offset unit="byte">0</offset>
+        <encoding_standard_id>PNG</encoding_standard_id>
+        <description>Reduced-size 8-bit version of the source product.</description>
+    </Encoded_Image>
+  </File_Area_Browse>
+</Product_Browse>
