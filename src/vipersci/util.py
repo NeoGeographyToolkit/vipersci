@@ -24,9 +24,22 @@
 # top level of this library.
 
 import argparse
+import hashlib
 import logging
+import os
 
 import vipersci
+
+
+def md5(path: os.PathLike):
+    """Returns a string objects of hexadecimal digits representing the md5 hash
+    of the file at *path*."""
+    m = hashlib.md5()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            m.update(chunk)
+
+    return m.hexdigest()
 
 
 def parent_parser() -> argparse.ArgumentParser:

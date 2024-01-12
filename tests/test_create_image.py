@@ -10,7 +10,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 import unittest
-from unittest.mock import create_autospec, mock_open, patch
+from unittest.mock import create_autospec, patch
 
 import numpy as np
 
@@ -117,7 +117,7 @@ class TestTIFF(unittest.TestCase):
         mock_path = create_autospec(Path)
         mock_path.name = "dummy.tif"
 
-        with patch("vipersci.vis.create_image.open", mock_open(read_data=b"test")):
+        with patch("vipersci.vis.create_image.util.md5", return_value="hex"):
             with patch("vipersci.vis.create_image.read_tiff", return_value=info):
                 d = ci.tif_info(mock_path)
 

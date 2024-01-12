@@ -34,7 +34,6 @@ The command-line version is primarily to aide testing.
 
 import argparse
 from datetime import datetime, timezone
-import hashlib
 import json
 import logging
 from typing import Union, Optional
@@ -280,11 +279,6 @@ def tif_info(p: Path) -> dict:
     """
     dt = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc)
 
-    md5 = hashlib.md5()
-    with open(p, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            md5.update(chunk)
-
     info = read_tiff(str(p))
     tags = info["ifds"][0]["tags"]
 
@@ -302,7 +296,7 @@ def tif_info(p: Path) -> dict:
         "file_byte_offset": tags[273]["data"][0],  # Tag 273 is StripOffsets
         "file_creation_datetime": dt,
         "file_data_type": f"Unsigned{dt_end}",
-        "file_md5_checksum": md5.hexdigest(),
+        "file_md5_checksum": util.md5(p),
         "file_path": p.name,
         "lines": tags[257]["data"][0],  # Tag 257 is ImageWidth,
         "samples": tags[256]["data"][0],  # Tag 256 is ImageWidth,
