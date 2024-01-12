@@ -70,14 +70,14 @@ def main():
         copy2(args.source_directory / readme.text, args.build_directory)
 
     for bme in bundle.findall(".//pds:Bundle_Member_Entry", ns):
-        col_lidvid = find_text(bme, "pds:lid_reference")
-        if find_text(bme, "pds:member_status") == "Primary":
-            if "::" in col_lidvid:
-                col_lid, col_vid = col_lidvid.split("::")
-            else:
-                col_lid = col_lidvid
-                col_vid = None
+        try:
+            lidvid_ref = find_text(bme, "pds:lidvid_reference")
+            col_lid, col_vid = lidvid_ref.split("::")
+        except ValueError:
+            col_lid = find_text(bme, "pds:lid_reference")
+            col_vid = None
 
+        if find_text(bme, "pds:member_status") == "Primary":
             col_name = col_lid.split(":")[-1]
             src_col_dir = args.source_directory / col_name
             if src_col_dir.exists() is False:
