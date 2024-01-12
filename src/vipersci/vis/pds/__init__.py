@@ -36,7 +36,7 @@ lids = {
     "bundle": "urn:nasa:pds:viper_vis",
     "mission": "urn:nasa:pds:viper",
     "spacecraft": "urn:nasa:pds:context:instrument_host:spacecraft.viper",
-    "instrument": "urn:nasa:pds:context:instrument:spacecraft.vis",
+    "instrument": "urn:nasa:pds:context:instrument:viper.vis",
 }
 
 
