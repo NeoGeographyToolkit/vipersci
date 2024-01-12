@@ -27,7 +27,6 @@ This module builds "browse" VIS data products from VIS Image Products.
 
 import argparse
 from datetime import datetime, timezone
-import hashlib
 import logging
 from typing import Union
 from pathlib import Path
@@ -130,11 +129,7 @@ def main():
     metadata["file_creation_datetime"] = isozformat(
         datetime.fromtimestamp(out_im_path.stat().st_mtime, timezone.utc)
     )
-    md5 = hashlib.md5()
-    with open(out_im_path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            md5.update(chunk)
-    metadata["file_md5_checksum"] = md5.hexdigest()
+    metadata["file_md5_checksum"] = util.md5(out_im_path)
 
     write_xml(metadata, args.template, args.output_dir)
 

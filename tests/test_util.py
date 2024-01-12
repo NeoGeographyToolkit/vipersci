@@ -28,11 +28,17 @@
 import argparse
 import logging
 import unittest
+from unittest.mock import mock_open, patch
 
 import vipersci.util as util
 
 
 class TestUtil(unittest.TestCase):
+    def test_md5(self):
+        with patch("vipersci.util.open", mock_open(read_data=b"test")):
+            h = util.md5("bogus.file")
+            self.assertEqual("098f6bcd4621d373cade4e832627b4f6", h)
+
     def test_parent_parser(self):
         self.assertIsInstance(util.parent_parser(), argparse.ArgumentParser)
 
