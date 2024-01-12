@@ -115,6 +115,7 @@ def check_and_derive(config: dict, labelinfo: list):
     df = pd.DataFrame(labelinfo)
 
     check = {
+        "Browse": ("collection_lid",),
         "Data": (
             "collection_lid",
             "investigation_name",
@@ -136,7 +137,7 @@ def check_and_derive(config: dict, labelinfo: list):
     # Generate values from gathered labels:
     if config["collection_type"] == "Data":
         d = gather_info(df, config["modification_details"])
-    elif config["collection_type"] == "Document":
+    elif config["collection_type"] in ("Document", "Browse"):
         d = {
             "vid": str(
                 vid_max(config["modification_details"], pd.to_numeric(df["vid"]).max())

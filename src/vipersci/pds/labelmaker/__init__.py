@@ -153,6 +153,7 @@ def get_lidvidfile(path: Path) -> dict:
     for fxpath in (
         "./pds:File_Area_Observational/pds:File/pds:file_name",
         "./pds:Document/pds:Document_Edition/pds:Document_File/pds:file_name",
+        "./pds:File_Area_Browse/pds:File/pds:file_name",
     ):
         element = root.find(fxpath, ns)
         if element is not None:
