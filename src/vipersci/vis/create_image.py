@@ -42,6 +42,7 @@ from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 from skimage.io import imread, imsave  # maybe just imageio here?
+from skimage.util import img_as_ubyte, img_as_uint
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from tifftools import read_tiff
@@ -319,6 +320,10 @@ def write_tiff(pid: pds.VISID, image: ImageType, outdir: Path = Path.cwd()) -> P
     Returns the path where a TIFF with a name based on *pid* and the array
     *image* was written in *outdir* (defaults to current working directory).
     """
+    if image.dtype == np.bool_:
+        image = img_as_ubyte(image)
+    if image.dtype == np.int32:
+        image = img_as_uint(image)
 
     check_bit_depth(pid, image.dtype)
 
