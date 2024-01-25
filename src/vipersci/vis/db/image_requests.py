@@ -119,6 +119,12 @@ class ImageMode(enum.Enum):
     CALIBRATION = 5  # Only NavCams: initiates "standard" calibration sequence.
 
 
+class RoverWaitFor(enum.Enum):
+    DOWNLINK = 1
+    VIS_VERIFICATION = 2
+    DOWNLINK_AND_VIS = 3
+
+
 class ImageRequest(Base):
     """An object to represent rows in the image_requests table for VIS."""
 
@@ -164,6 +170,9 @@ class ImageRequest(Base):
         String,
         default="any",
         doc="One-line description of desired rover orientation",
+    )
+    rover_wait_for = mapped_column(
+        Enum(RoverWaitFor), doc="Details of a rover stop request."
     )
     # TODO: how do we handle attached images? are we responsible for file
     #  management?
