@@ -41,6 +41,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+from PIL.PngImagePlugin import PngInfo
 from skimage.io import imread, imsave  # maybe just imageio here?
 from skimage.util import img_as_ubyte, img_as_uint
 from sqlalchemy import create_engine
@@ -142,6 +143,7 @@ def create(
     outdir: Path = Path.cwd(),
     session: Optional[Session] = None,
     json: bool = True,
+    png: bool = False,
 ):
     """
     Creates a TIFF file / JSON file pair in *outdir* based on the provided
@@ -169,7 +171,7 @@ def create(
     # db insert (otherwise the outfile-writing would need to happen in the
     # context of the session).  However, if the db insert fails, the files
     # already exist on disk.  Is that a problem?  Maybe that's fine?
-    rp = make_image_record(metadata, image, outdir)
+    rp = make_image_record(metadata, image, outdir, png)
 
     if json:
         write_json(rp.asdict(), outdir)
@@ -225,6 +227,7 @@ def make_image_record(
     metadata: dict,
     image: Union[ImageType, Path, None] = None,
     outdir: Path = Path.cwd(),
+    make_png=False,
 ) -> ImageRecord:
     """
     Returns an ImageRecord created from the provided meta-data, and
@@ -240,6 +243,8 @@ def make_image_record(
             tif_d = tif_info(image)
         else:
             tif_d = tif_info(write_tiff(pid, image, outdir))
+            if make_png:
+                write_png(pid, image, outdir)
 
         for k in ("lines", "samples"):
             if getattr(ir, k) != tif_d[k]:
@@ -333,4 +338,28 @@ def write_tiff(pid: pds.VISID, image: ImageType, outdir: Path = Path.cwd()) -> P
     outpath = (outdir / str(pid)).with_suffix(".tif")
 
     imsave(str(outpath), image, check_contrast=False, description=desc, metadata=None)
+    return outpath
+
+
+def write_png(pid: pds.VISID, image: ImageType, outdir: Path = Path.cwd()) -> Path:
+    """
+    Returns the path where a PNG with a name based on *pid* and the array
+    *image* was written in *outdir* (defaults to current working directory).
+    """
+    if image.dtype == np.bool_:
+        image = img_as_ubyte(image)
+    if image.dtype == np.int32:
+        image = img_as_uint(image)
+
+    check_bit_depth(pid, image.dtype)
+
+    desc = f"VIPER {pds.vis_instruments[pid.instrument]} {pid}"
+
+    info = PngInfo()
+    info.add_itxt("Title", desc)
+
+    logger.debug(desc)
+    outpath = (outdir / str(pid)).with_suffix(".png")
+
+    imsave(str(outpath), image, check_contrast=False, pnginfo=info, compress_level=0)
     return outpath
