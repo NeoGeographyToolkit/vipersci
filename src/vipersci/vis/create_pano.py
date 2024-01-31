@@ -39,6 +39,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+from skimage.exposure import rescale_intensity
 from skimage.io import imread, imsave  # maybe just imageio here?
 from skimage.transform import resize
 from sqlalchemy import create_engine, select
@@ -101,6 +102,15 @@ def arg_parser():
         "query.",
     )
     parser.add_argument(
+        "-t",
+        "--thumb",
+        nargs="?",
+        default=None,  # If not given.
+        const=1024,  # If just -t with no arg is given.
+        help="If provided, will also generate a JPEG thumbnail, whose largest dimension"
+        "will be %(const)s unless a different integer is indicated.",
+    )
+    parser.add_argument(
         "inputs", nargs="+", help="Either VIS raw product IDs or files."
     )
     return parser
@@ -118,6 +128,7 @@ def main():
             None,
             args.json,
             args.bottom,
+            args.thumb,
         )
     else:
         engine = create_engine(args.dburl)
@@ -129,6 +140,7 @@ def main():
                 session,
                 args.json,
                 args.bottom,
+                args.thumb,
             )
             session.commit()
 
@@ -142,6 +154,7 @@ def create(
     session: Optional[Session] = None,
     json: bool = True,
     bottom_row: Optional[MutableSequence[Union[Path, str]]] = None,
+    thumb=None,
 ):
     """
     Creates a Panorama Product in *outdir*. Returns None.
@@ -236,7 +249,7 @@ def create(
         bot_arr = np.hstack(bottom_list)
         pano_arr = np.vstack((pano_arr, bot_arr))
 
-    pp = make_pano_record(metadata, pano_arr, outdir)
+    pp = make_pano_record(metadata, pano_arr, outdir, thumb)
 
     if image_records and session is not None:
         bound_name = getattr(session.get_bind(), "name", None)
@@ -289,6 +302,7 @@ def make_pano_record(
     metadata: dict,
     image: Union[ImageType, Path, None] = None,
     outdir: Path = Path.cwd(),
+    thumb: Union[int, None] = None,
 ) -> PanoRecord:
     """
     Returns a PanoProduct created from the provided meta-data, and
@@ -316,6 +330,26 @@ def make_pano_record(
                 metadata=None,
             )
             tif_d = tif_info(outpath)
+
+            if thumb is not None:
+                # Scale down image to be no larger than thumb pixels
+                max_dim = max(np.shape(image))
+                if max_dim > thumb:
+                    scale = max_dim / thumb
+                    new_shape = tuple(int(x / scale) for x in np.shape(image))
+                    image_th = rescale_intensity(
+                        resize(image, new_shape), in_range="image", out_range="uint8"
+                    )
+                else:
+                    image_th = image
+
+                imsave(
+                    outpath.stem + "_thumb.jpg",
+                    image_th,
+                    check_contrast=False,
+                    description=desc,
+                    metadata=None,
+                )
 
         pp.update(tif_d)
     else:
