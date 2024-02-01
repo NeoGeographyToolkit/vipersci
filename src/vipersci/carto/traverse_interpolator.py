@@ -49,7 +49,7 @@ def arg_parser():
     parser.add_argument(
         "json",
         type=Path,
-        help="The JSON file that contains a traverse."
+        help="The JSON file that contains a traverse.",
         # Assumed to be GeoJSON from the Map Server.
     )
 

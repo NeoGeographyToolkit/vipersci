@@ -127,7 +127,7 @@ class ImageRecord(Base):
     capture_id = mapped_column(
         Integer,
         nullable=False,
-        doc="The captureId from the command sequence."
+        doc="The captureId from the command sequence.",
         # TODO: learn more about captureIds to provide better doc here.
     )
     captureId = synonym("capture_id")
@@ -284,7 +284,7 @@ class ImageRecord(Base):
     stereo = mapped_column(
         Boolean,
         nullable=False,
-        doc="The stereo parameter from the Yamcs imageHeader."
+        doc="The stereo parameter from the Yamcs imageHeader.",
         # TODO: learn more about stereo to provide better doc here.
     )
     stop_time = mapped_column(DateTime(timezone=True), nullable=False)

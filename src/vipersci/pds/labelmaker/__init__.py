@@ -83,41 +83,58 @@ def get_common_label_info(element: ET.Element, area="pds:Observation_Area"):
     d = {
         "lid": lid,
         "vid": find_text(element, "./pds:Identification_Area/pds:version_id"),
-        "start_date_time": None
-        if area is None
-        else fromisozformat(
-            find_text(element, f"./{area}/pds:Time_Coordinates/pds:start_date_time")
+        "start_date_time": (
+            None
+            if area is None
+            else fromisozformat(
+                find_text(element, f"./{area}/pds:Time_Coordinates/pds:start_date_time")
+            )
         ),
-        "stop_date_time": None
-        if area is None
-        else fromisozformat(
-            find_text(element, f"./{area}/pds:Time_Coordinates/pds:stop_date_time")
+        "stop_date_time": (
+            None
+            if area is None
+            else fromisozformat(
+                find_text(element, f"./{area}/pds:Time_Coordinates/pds:stop_date_time")
+            )
         ),
-        "investigation_name": None
-        if area is None
-        else find_text(element, f"./{area}/pds:Investigation_Area/pds:name"),
-        "investigation_type": None
-        if area is None
-        else find_text(element, f"./{area}/pds:Investigation_Area/pds:type"),
-        "investigation_lid": None
-        if area is None
-        else find_text(
-            element,
-            f"./{area}/pds:Investigation_Area/pds:Internal_Reference/pds:lid_reference",
+        "investigation_name": (
+            None
+            if area is None
+            else find_text(element, f"./{area}/pds:Investigation_Area/pds:name")
+        ),
+        "investigation_type": (
+            None
+            if area is None
+            else find_text(element, f"./{area}/pds:Investigation_Area/pds:type")
+        ),
+        "investigation_lid": (
+            None
+            if area is None
+            else find_text(
+                element,
+                f"./{area}/pds:Investigation_Area/pds:Internal_Reference/"
+                "pds:lid_reference",
+            )
         ),
         "host_name": host_name,
         "host_lid": host_lid,
-        "target_name": None
-        if area is None
-        else find_text(element, ".//pds:Target_Identification/pds:name"),
-        "target_type": None
-        if area is None
-        else find_text(element, ".//pds:Target_Identification/pds:type"),
-        "target_lid": None
-        if area is None
-        else find_text(
-            element,
-            ".//pds:Target_Identification/pds:Internal_Reference/pds:lid_reference",
+        "target_name": (
+            None
+            if area is None
+            else find_text(element, ".//pds:Target_Identification/pds:name")
+        ),
+        "target_type": (
+            None
+            if area is None
+            else find_text(element, ".//pds:Target_Identification/pds:type")
+        ),
+        "target_lid": (
+            None
+            if area is None
+            else find_text(
+                element,
+                ".//pds:Target_Identification/pds:Internal_Reference/pds:lid_reference",
+            )
         ),
         "instruments": instruments,
         "purposes": purposes,

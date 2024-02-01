@@ -96,9 +96,9 @@ def main():
         parser.error(str(err))
 
     metadata["source_lidvid"] = metadata["lid"] + "::" + metadata["vid"]
-    metadata[
-        "source_product_type"
-    ] = f"data_to_{metadata['type'].lower()}_source_product"
+    metadata["source_product_type"] = (
+        f"data_to_{metadata['type'].lower()}_source_product"
+    )
 
     # Adjust LID
     lid_tokens = metadata["lid"].split(":")

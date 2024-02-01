@@ -295,8 +295,7 @@ def example_plot(palette: Palette, output=None):
     x = np.arange(-3.0, 3.0, dx)
     x_grid, y_grid = np.meshgrid(x, x)
     z = rescale(
-        (1 - x_grid / 2 + x_grid**5 + y_grid**3)
-        * np.exp(-(x_grid**2 + y_grid**2)),
+        (1 - x_grid / 2 + x_grid**5 + y_grid**3) * np.exp(-(x_grid**2 + y_grid**2)),
         palette.vmin,
         palette.vmax,
     )
