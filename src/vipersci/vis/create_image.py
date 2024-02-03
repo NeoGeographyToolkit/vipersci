@@ -41,6 +41,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from skimage.io import imread, imsave  # maybe just imageio here?
 from skimage.util import img_as_ubyte, img_as_uint
@@ -143,7 +144,7 @@ def create(
     outdir: Path = Path.cwd(),
     session: Optional[Session] = None,
     json: bool = True,
-    png: bool = False,
+    imgtype="tif",
 ):
     """
     Creates a TIFF file / JSON file pair in *outdir* based on the provided
@@ -171,7 +172,7 @@ def create(
     # db insert (otherwise the outfile-writing would need to happen in the
     # context of the session).  However, if the db insert fails, the files
     # already exist on disk.  Is that a problem?  Maybe that's fine?
-    rp = make_image_record(metadata, image, outdir, png)
+    rp = make_image_record(metadata, image, outdir, imgtype)
 
     if json:
         write_json(rp.asdict(), outdir)
@@ -227,35 +228,46 @@ def make_image_record(
     metadata: dict,
     image: Union[ImageType, Path, None] = None,
     outdir: Path = Path.cwd(),
-    make_png=False,
+    imgtype="tif",
 ) -> ImageRecord:
     """
     Returns an ImageRecord created from the provided meta-data, and
-    if *image* is a numpy array, it will also use write_tiff() to
-    create a TIFF file in *outdir* (defaults to current
-    working directory).
+    if *image* is a numpy array, it will write out an image file
+    in TIFF format (default or if *imgtype* is "tif") or PNG format
+    (if *imgtype* is "png") in *outdir* (defaults to current
+    working directory).  The *imgtype* is ignored if *image* is
+    a Path to an existing image file.
     """
     ir = ImageRecord(**metadata)
     pid = pds.VISID(ir.product_id)
 
     if image is not None:
         if isinstance(image, Path):
-            tif_d = tif_info(image)
+            if image.suffix.casefold() in (".tif", ".tiff"):
+                img_d = tif_info(image)
+            elif image.suffix.casefold() == ".png":
+                img_d = png_info(image)
+            else:
+                raise ValueError(f"Don't know how to evaluate {image}")
         else:
-            tif_d = tif_info(write_tiff(pid, image, outdir))
-            if make_png:
-                write_png(pid, image, outdir)
+            if imgtype.casefold() == "tif":
+                img_d = tif_info(write_tiff(pid, image, outdir))
+            elif imgtype.casefold() == "png":
+                img_d = png_info(write_png(pid, image, outdir))
+            else:
+                raise ValueError(f"The value {imgtype} is not a recognized imgtype.")
 
         for k in ("lines", "samples"):
-            if getattr(ir, k) != tif_d[k]:
+            if getattr(ir, k) != img_d[k]:
                 raise ValueError(
-                    f"The value of {k} from the TIFF ({tif_d[k]}) does not "
+                    f"The value of {k} from the image ({img_d[k]}) does not "
                     f"match the value from the metadata ({getattr(ir, k)})"
                 )
 
-        check_bit_depth(pid, tif_d["file_data_type"])
+        if "file_data_type" in img_d:
+            check_bit_depth(pid, img_d["file_data_type"])
 
-        ir.update(tif_d)
+        ir.update(img_d)
     else:
         ir.update(
             {
@@ -278,13 +290,41 @@ def make_image_record(
     return ir
 
 
+def file_info(p: Path) -> dict:
+    """
+    Returns a dict containing meta-data from a file at the provided path, *p*.
+    """
+    dt = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc)
+
+    d = {
+        "file_creation_datetime": dt,
+        "file_md5_checksum": util.md5(p),
+        "file_path": p.name,
+    }
+    return d
+
+
+def png_info(p: Path) -> dict:
+    """
+    Returns a dict containing meta-data from the PNG file at the
+    provided path, *p*.
+    """
+    im = Image.open(p)
+
+    d = {
+        # "file_data_type": f"Unsigned{dt_end}",
+        "lines": im.size[1],
+        "samples": im.size[0],
+    }
+    d.update(file_info(p))
+    return d
+
+
 def tif_info(p: Path) -> dict:
     """
     Returns a dict containing meta-data from the TIFF file at the
     provided path, *p*.
     """
-    dt = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc)
-
     info = read_tiff(str(p))
     tags = info["ifds"][0]["tags"]
 
@@ -300,13 +340,11 @@ def tif_info(p: Path) -> dict:
 
     d = {
         "file_byte_offset": tags[273]["data"][0],  # Tag 273 is StripOffsets
-        "file_creation_datetime": dt,
         "file_data_type": f"Unsigned{dt_end}",
-        "file_md5_checksum": util.md5(p),
-        "file_path": p.name,
         "lines": tags[257]["data"][0],  # Tag 257 is ImageWidth,
         "samples": tags[256]["data"][0],  # Tag 256 is ImageWidth,
     }
+    d.update(file_info(p))
     return d
 
 
@@ -361,5 +399,5 @@ def write_png(pid: pds.VISID, image: ImageType, outdir: Path = Path.cwd()) -> Pa
     logger.debug(desc)
     outpath = (outdir / str(pid)).with_suffix(".png")
 
-    imsave(str(outpath), image, check_contrast=False, pnginfo=info, compress_level=0)
+    imsave(str(outpath), image, check_contrast=False, pnginfo=info)
     return outpath
