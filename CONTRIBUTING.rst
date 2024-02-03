@@ -60,8 +60,7 @@ Get Started!
 Ready to contribute? Here's how to set up `vipersci` for local development.
 
 At this time, the target version of Python for this library is 3.8 in order to
-align with current anticipated mission systems.  The intent is to allow this library
-to work successfully against Python as early as version 3.6.
+align with current anticipated mission systems.
 
 1. Fork the `vipersci` repo on GitHub.
 2. Clone your fork locally::
