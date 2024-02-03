@@ -32,6 +32,8 @@ Changed
 ^^^^^^^
 - The light_records.py table now just records state changes (from 'on' to 'off' or
   vice-versa).
+- create_image.py's create() method now has an imgtype argument that default to TIFF
+  (but can be PNG).
 - junc_image_req_ldst.py got some additional columns to manage the Science Team
   evaluation of images acquired from Image Requests.
 - create_pano.py's make_pano_product() function renamed to make_pano_record().
