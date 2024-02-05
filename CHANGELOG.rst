@@ -28,6 +28,9 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+0.7.0 (2023-02-05)
+------------------
+
 Changed
 ^^^^^^^
 - The light_records.py table now just records state changes (from 'on' to 'off' or
@@ -74,6 +77,7 @@ Removed
 ^^^^^^^
 - ldst_verification.py because the evaluation activity reflected here was on a per-image
   basis, but it has been revised to be on a per-Image-Request basis.
+
 
 0.6.1 (2023-09-25)
 ------------------
