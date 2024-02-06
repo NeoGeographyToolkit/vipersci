@@ -88,7 +88,7 @@ align with current anticipated mission systems.
    <https://www.conventionalcommits.org/>`_ in styling your commit messages.
 
 5. When you're done making changes, check that your changes pass flake8 and the
-   tests, including testing other Python versions with tox::
+   tests, including testing other Python versions (optionally with tox)::
 
     $ flake8 src/vipersci tests
     $ python setup.py test or pytest
@@ -115,7 +115,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in CHANGELOG.rst.
-3. The pull request should work for Python 3.7, 3.8 and 3.9, and optionally for PyPy.
+3. The pull request should work for Python 3.8, 3.9, 3.10 and 3.11, and optionally for PyPy.
    And make sure that the tests pass for all supported Python versions.
 
 
