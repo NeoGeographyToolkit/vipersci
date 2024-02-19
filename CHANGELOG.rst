@@ -32,7 +32,8 @@ Changed
 ^^^^^^^
 - The instrument_name() function in pid.py now can deal with alias names that are
   within a given string, not just an exact match.
-
+- Now that pid.instrument_name() is more robust, ImageRecord.__init__() can handle a
+  wider variety of Yamcs parameter names, should they change in the future.
 
 0.7.0 (2023-02-05)
 ------------------
