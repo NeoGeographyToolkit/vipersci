@@ -33,6 +33,7 @@ import numpy as np
 import numpy.typing as npt
 from skimage.io import imread, imsave  # maybe just imageio here?
 from skimage.exposure import equalize_adapthist, rescale_intensity
+from skimage.transform import resize
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
@@ -110,6 +111,7 @@ def create(
     outdir: Path = Path.cwd(),
     mapserver: Optional[str] = None,
     session: Optional[Session] = None,
+    thumbsize=(None, 93),
 ):
     """
     Creates an MMGIS Panorama in *outdir*. Returns None.
@@ -179,20 +181,51 @@ def create(
         "uint8"
     )
 
-    outpath = outdir / source_path.with_suffix(".png").name
+    outpath = outdir / longname(source_path).with_suffix(".png").name
 
     imsave(str(outpath), image8, check_contrast=False)
 
     d = mmgis_data(pano, yaw)
-    d["url"] = "not/sure/what/the/path/should/be/to/" + outpath.name
+    # Decided not to include the URL key in the JSON this program outputs
+    # as the process that takes these data and publishes them are what
+    # should set that.
+    # d["url"] = "not/sure/what/the/path/should/be/to/" + outpath.name
 
-    with open(outpath.stem + "_mmgis.json", "w") as f:
+    # Make JPG thumbnail
+    if thumbsize is not None:
+        if isinstance(int, thumbsize):
+            max_dim = max(np.shape(image8))
+            if max_dim > thumbsize:
+                scale = max_dim / thumbsize
+                new_shape = tuple(int(x / scale) for x in np.shape(image8))
+        elif len(thumbsize) == 2:
+            if thumbsize[0] is not None:
+                raise ValueError(
+                    "Not sure how to handle a non-None first element for thumbsize."
+                )
+            scale = np.shape(image8)[1] / thumbsize[1]
+            new_shape = tuple(int(x / scale) for x in np.shape(image8))
+
+        image8 = rescale_intensity(
+            resize(image8, new_shape), in_range="image8", out_range="uint8"
+        )
+        outthumb = outpath.with_suffix("") + "_thumb.jpeg"
+        imsave(outthumb, image8, check_contrast=False)
+
+    with open(outpath.stem + ".json", "w") as f:
         json.dump(d, f, indent=2, sort_keys=True)
 
     return
 
 
-def mmgis_data(pano_data: dict, yaw=0):
+def longname(path):
+    """Returns a longer iso8601-esque filename."""
+    # YYYY-MM-DDTHH-mm-ss.SSS-pan
+    vid = pds.PanoID(path.name)
+    return vid.date.isoformat() + "T" + vid.time.isformat().replace(":", "-") + "-pan"
+
+
+def mmgis_data(pano_data: dict, yaw=0.0):
     d = {
         "azmax": yaw + pano_data["rover_pan_max"],
         "azmin": yaw + pano_data["rover_pan_min"],
