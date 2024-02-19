@@ -386,11 +386,9 @@ class ImageRecord(Base):
         if "instrument_name" in kwargs:
             self.instrument_name = VISID.instrument_name(self.instrument_name)
         elif "yamcs_name" in kwargs:
-            maybe_name = self.yamcs_name.split("/")[-1].replace("_", " ")
-            if maybe_name.endswith((" icer", " jpeg", " slog")):
-                maybe_name = maybe_name[:-5]
-
-            self.instrument_name = VISID.instrument_name(maybe_name)
+            self.instrument_name = VISID.instrument_name(
+                self.yamcs_name.split("/")[-1].replace("_", " ")
+            )
 
         if "cameraId" in otherargs:
             if VISID.instrument_name(otherargs["cameraId"]) != self.instrument_name:
