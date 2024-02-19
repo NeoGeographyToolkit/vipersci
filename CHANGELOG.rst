@@ -34,6 +34,9 @@ Changed
   within a given string, not just an exact match.
 - Now that pid.instrument_name() is more robust, ImageRecord.__init__() can handle a
   wider variety of Yamcs parameter names, should they change in the future.
+- create_mmgis_pano.py - create() now takes a thumbsize int or tuple of ints that
+  will control the creation and size of an output thumbnail JPG file, with naming
+  convention set by Yamcs/OpenMCT.
 
 0.7.0 (2023-02-05)
 ------------------
