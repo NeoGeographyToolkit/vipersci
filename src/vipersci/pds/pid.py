@@ -365,7 +365,13 @@ class VISID(VIPERID):
         elif name.casefold() in vis_instrument_aliases:
             return vis_instruments[vis_instrument_aliases[name.casefold()]]
         else:
-            raise ValueError(f"No VIS instrument name based on {name} could be found.")
+            for k in vis_instrument_aliases.keys():
+                if k in name.casefold():
+                    return vis_instruments[vis_instrument_aliases[k]]
+            else:
+                raise ValueError(
+                    f"No VIS instrument name based on {name} could be found."
+                )
 
     def compression_class(self):
         """Returns text value for the PDS onboard_compression_class."""

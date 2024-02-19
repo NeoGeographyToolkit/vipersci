@@ -259,6 +259,9 @@ class TestVISID(unittest.TestCase):
         vids = [vid3, vid4, vid1, vid2, vid0]
         self.assertEqual(sorted(vids), [vid0, vid1, vid2, vid3, vid4])
 
+    def test_instrument_name(self):
+        self.assertEqual("NavCam Left", pid.VISID.instrument_name("navcam left orig"))
+
     def test_best_compression(self):
         truth = ["241127-010203-ncl-a", "241127-010204-ncr-z"]
 

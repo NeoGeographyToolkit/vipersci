@@ -28,6 +28,12 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+Changed
+^^^^^^^
+- The instrument_name() function in pid.py now can deal with alias names that are
+  within a given string, not just an exact match.
+
+
 0.7.0 (2023-02-05)
 ------------------
 
