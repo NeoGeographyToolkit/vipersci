@@ -3,7 +3,7 @@
 
 """Defines the VIS image_records table using the SQLAlchemy ORM."""
 
-# Copyright 2022-2023, United States Government as represented by the
+# Copyright 2022-2024, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -44,7 +44,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import mapped_column, relationship, synonym, validates
 
 from vipersci.pds import Purpose
-from vipersci.pds.pid import VISID, vis_instruments, vis_compression
+from vipersci.pds.pid import VISID, vis_instruments
 from vipersci.pds.xml import find_text, ns
 from vipersci.pds.datetime import fromisozformat, isozformat
 from vipersci.vis.header import pga_gain as header_pga_gain
@@ -66,15 +66,6 @@ class ImageType(enum.Flag):
     @classmethod
     def _missing_(cls, value):
         return None
-
-    def compression_ratio(self):
-        # This mapping reflects the current settings in RFSW
-        if self == ImageType.LOSSLESS_ICER_IMAGE or self == ImageType.SLOG_ICER_IMAGE:
-            return 1
-        if self == ImageType.LOSSY_ICER_IMAGE:
-            return 16
-        else:
-            return None
 
 
 class ProcessingStage(enum.Flag):
@@ -154,6 +145,14 @@ class ImageRecord(Base):
         nullable=False,
         doc="The absolute path (POSIX style) that contains the Array_2D_Image "
         "that this metadata refers to.",
+    )
+    icer_byte_quota = mapped_column(
+        Integer,
+        doc="The byteQuota value during onboard ICER compression.  In the returned "
+        "Yamcs info, the value is in kilobytes, but this value is in bytes.",
+    )
+    icer_minloss = mapped_column(
+        Integer, doc="The minLoss value during onboard ICER compression."
     )
     image_id = mapped_column(
         Integer,
@@ -366,6 +365,15 @@ class ImageRecord(Base):
         else:
             pid = False
 
+        # Adjust the byteQuota value
+        if "byteQuota" in kwargs and "icer_byte_quota" not in kwargs:
+            kwargs["icer_byte_quota"] = int(kwargs["byteQuota"]) * 1000
+            del kwargs["byteQuota"]
+
+        if "minLoss" in kwargs and "icer_minloss" not in kwargs:
+            kwargs["icer_minloss"] = int(kwargs["minLoss"])
+            del kwargs["minLoss"]
+
         rpargs = dict()
         otherargs = dict()
         for k, v in kwargs.items():
@@ -438,6 +446,7 @@ class ImageRecord(Base):
 
         # Ensure product_id consistency
         if pid:
+            # Check datetimes
             if "lobt" in kwargs:
                 if pid.datetime() != lobt_dt:
                     raise ValueError(
@@ -451,6 +460,7 @@ class ImageRecord(Base):
                     f"provided start_time ({kwargs['start_time']}) disagree."
                 )
 
+            # Check instrument
             if (
                 self.instrument_name is not None
                 and vis_instruments[pid.instrument] != self.instrument_name
@@ -461,69 +471,59 @@ class ImageRecord(Base):
                     f"({self.instrument_name}) disagree."
                 )
 
+            # Check compression letter
             if self.output_image_mask is None:
-                if self.processing_info is not None:
-                    ps = ProcessingStage(self.processing_info)
-                    if ProcessingStage.SLOG in ps and pid.compression != "s":
+                if self.yamcs_name is not None:
+                    if "slog" in self.yamcs_name and pid.compression != "s":
                         raise ValueError(
                             f"The product_id compression code ({pid.compression}) is "
-                            "not s, but processing_info indicates it should be "
-                            f"({self.processing_info}). "
-                        )
-                    elif ProcessingStage.SLOG not in ps and pid.compression == "s":
-                        raise ValueError(
-                            "The product_id compression code is s, but "
-                            "processing_info indicates it shouldn't be "
-                            f"({self.processing_info}). "
+                            "not s, but yamcs_name indicates it should be "
+                            f"({self.yamcs_name}). "
                         )
             else:
                 t = ImageType(self.output_image_mask)
                 if ImageType.SLOG_ICER_IMAGE == t and pid.compression == "s":
                     pass
-                elif t.compression_ratio() != vis_compression[pid.compression]:
+                elif (
+                    VISID.compression_letter(compression_ratio(self.icer_byte_quota))
+                    != pid.compression
+                ):
                     raise ValueError(
                         f"The product_id compression code ({pid.compression}) and "
-                        f"the compression ratio ({t.compression_ratio()}) based on "
-                        f"the output_image_mask ({self.output_image_mask}) disagree."
+                        "the compression ratio "
+                        f"({compression_ratio(self.icer_byte_quota)}) based on "
+                        f"the icer_byte_quota ({self.icer_byte_quota}) disagree."
                     )
-        elif (
-            self.start_time is not None
-            and self.instrument_name is not None
-            and self.output_image_mask is not None
-        ):
-            try:
-                t = ImageType(self.output_image_mask)
-                c = None
-                if (
-                    self.processing_info == ProcessingStage.SLOG
-                    or t == ImageType.SLOG_ICER_IMAGE
-                ):
-                    c = "s"
-                else:
-                    c = t.compression_ratio()
-                pid = VISID(
-                    self.start_time.date(),
-                    self.start_time.time(),
-                    self.instrument_name,
-                    c,
+        elif self.start_time is not None and self.instrument_name is not None:
+            c = None
+            if self.output_image_mask is not None:
+                try:
+                    if ImageType(self.output_image_mask) == ImageType.SLOG_ICER_IMAGE:
+                        c = "s"
+                except ValueError:
+                    # output_image_mask has bad value
+                    pass
+
+            if c is None and self.yamcs_name is not None and "slog" in self.yamcs_name:
+                c = "s"
+
+            if c is None and self.icer_byte_quota is not None:
+                c = compression_ratio(self.icer_byte_quota)
+
+            if c is None:
+                raise ValueError(
+                    "Could not determine the compression information "
+                    f"from output_image_mask ({self.output_image_mask}), "
+                    f"processing_info ({self.processing_info}), or "
+                    f"icer_byte_quota ({self.icer_byte_quota})."
                 )
-            except ValueError as err:
-                # output_image_mask has bad value, last try
-                if self.yamcs_name is None:
-                    raise err
-                else:
-                    if "slog" in self.yamcs_name:
-                        pid = VISID(
-                            self.start_time.date(),
-                            self.start_time.time(),
-                            self.instrument_name,
-                            "s",
-                        )
-                    else:
-                        raise ValueError(
-                            "Could not determine the compression information "
-                            f"from output_image_mask ({self.output_image_mask})."
-                        )
+
+            pid = VISID(
+                self.start_time.date(),
+                self.start_time.time(),
+                self.instrument_name,
+                c,
+            )
         else:
             got = dict()
             for k in (
@@ -531,6 +531,8 @@ class ImageRecord(Base):
                 "start_time",
                 "instrument_name",
                 "output_image_mask",
+                "processing_info",
+                "icer_byte_quota",
             ):
                 v = getattr(self, k)
                 if v is not None:
@@ -538,7 +540,8 @@ class ImageRecord(Base):
 
             raise ValueError(
                 "Either product_id must be given, or each of start_time, "
-                f"instrument_name, and output_image_mask. Got: {got}"
+                f"instrument_name, and output_image_mask plus some other things."
+                f"Got: {got}"
             )
 
         self._pid = str(pid)
@@ -737,3 +740,10 @@ class ImageRecord(Base):
                 setattr(self, k, v)
             else:
                 self.labelmeta[k] = v
+
+
+def compression_ratio(byte_quota):
+    """Returns the result of dividing the number of bytes in a grayscale image
+    (2048 * 2048 * 2 == 8,388,608) by the byte_quota of the returned image.
+    """
+    return (2048 * 2048 * 2) / byte_quota

@@ -37,6 +37,12 @@ Changed
 - create_mmgis_pano.py - create() now takes a thumbsize int or tuple of ints that
   will control the creation and size of an output thumbnail JPG file, with naming
   convention set by Yamcs/OpenMCT.
+- image_records.py - Added icer_byte_quota and icer_minloss parameters to ImageRecord,
+  as well as a variety of improved handling related to this change and in pid.py.
+- pid.py - Changed handling of the compression value to match the kinds of data we'll
+  get from telemetry, so that the letters are assigned to cover an interval of possible
+  compression ratios, and to reflect the new default byte quota value for driving
+  images.
 
 0.7.0 (2023-02-05)
 ------------------

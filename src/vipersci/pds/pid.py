@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """This module contains classes for VIPER Product IDs."""
 
-# Copyright 2022-2023, United States Government as represented by the
+# Copyright 2022-2024, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
 #
@@ -73,7 +73,7 @@ vis_compression = dict(
     a=1,  # 1:1 Lossless compression
     b=5,  # 5:1 compression
     c=16,  # 16:1 compression
-    d=64,  # 64:1 compression
+    d=24,  # 24:1 compression
     s="SLoG",  # SLoG compression
     z=None,  # Uncompressed
 )
@@ -319,15 +319,8 @@ class VISID(VIPERID):
 
         instrument = self.instrument_name(instrument)
 
-        if compression in vis_compression:
-            pass
-        elif compression in vis_compression.values():
-            compression = get_key(compression, vis_compression)
-        else:
-            raise ValueError(f"{args[3]} is not one of {vis_compression.keys()}")
-
         super().__init__(date, time, instrument)
-        self.compression = compression
+        self.compression = self.compression_letter(compression)
 
     def __str__(self):
         return "-".join((super().__str__(), self.compression))
@@ -379,6 +372,41 @@ class VISID(VIPERID):
             return "Lossless"
         else:
             return "Lossy"
+
+    @staticmethod
+    def compression_letter(compression):
+        """Returns the letter code from the pid.vis_compression dictionary that matches
+        the value provided via *compression*.
+        """
+        if compression in vis_compression:
+            return compression
+        elif compression in vis_compression.values():
+            return get_key(compression, vis_compression)
+        elif isinstance(compression, (int, float)):
+            compression_ratios = []
+            for v in vis_compression.values():
+                if isinstance(v, (int, float)):
+                    compression_ratios.append(v)
+
+            if len(compression_ratios) == 0:
+                raise ValueError(
+                    "There are no numeric values in vis_compression "
+                    f"({vis_compression})."
+                )
+
+            for r in sorted(compression_ratios, reverse=True):
+                if compression >= r:
+                    return get_key(r, vis_compression)
+            else:
+                raise ValueError(
+                    f"The numeric value of {compression} is not greater than one "
+                    f"of {compression_ratios}"
+                )
+        else:
+            raise ValueError(
+                f"Could not determine one of {vis_compression.keys()} from "
+                f"compression ({compression})."
+            )
 
     @staticmethod
     def best_compression(identifiers: Iterable):
