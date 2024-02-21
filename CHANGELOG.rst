@@ -28,6 +28,10 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+
+0.8.0 (2024-02-21)
+------------------
+
 Changed
 ^^^^^^^
 - The instrument_name() function in pid.py now can deal with alias names that are
@@ -44,7 +48,7 @@ Changed
   compression ratios, and to reflect the new default byte quota value for driving
   images.
 
-0.7.0 (2023-02-05)
+0.7.0 (2024-02-05)
 ------------------
 
 Changed
