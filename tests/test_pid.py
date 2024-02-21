@@ -27,10 +27,18 @@
 # import shutil
 import datetime
 import unittest
+from unittest.mock import patch
 
 # from pathlib import Path
 
 from vipersci.pds import pid
+
+
+class TestGetKey(unittest.TestCase):
+    def test_get_key(self):
+        d = {"a": "alpha", "b": "beta", "g": "gamma"}
+        self.assertEqual(pid.get_key("beta", d), "b")
+        self.assertRaises(KeyError, pid.get_key, "omega", d)
 
 
 class TestVIPERID(unittest.TestCase):
@@ -80,6 +88,8 @@ class TestVIPERID(unittest.TestCase):
             ("not a date", datetime.time(1, 1, 1), "ncl"),
             (datetime.date(2024, 1, 1), "not a time", "ncl"),
             (datetime.datetime(2022, 1, 17, 1, 1, 1), "not an instrument"),
+            (999, datetime.time(1, 1, 1), "ncl"),
+            (datetime.date(2024, 1, 1), 999, "ncl"),
         )
         for t in tuples:
             with self.subTest(t):
@@ -122,6 +132,10 @@ class TestVIPERID(unittest.TestCase):
         truth = "220117-010101-aim"
         self.assertEqual(truth, pid.VIPERID(test).__str__())
 
+    def test_eq(self):
+        p1 = pid.VIPERID("231120-010101-acl")
+        self.assertFalse(p1 == "foo")
+
     def test_lt(self):
         p1 = pid.VIPERID("231120-010101-acl")
         p2 = pid.VIPERID("231121-010101-acl")
@@ -130,12 +144,22 @@ class TestVIPERID(unittest.TestCase):
         self.assertTrue(p1 < p2)
         self.assertTrue(p2 < p3)
         self.assertTrue(p3 < p4)
+        self.assertEqual(NotImplemented, p1.__lt__("foo"))
+
+    def test_format_time(self):
+        self.assertRaises(ValueError, pid.VISID.format_time, datetime.time(1, 1, 1, 1))
 
     def test_datetime(self):
         p = pid.VIPERID("231121-010101-acl")
         self.assertEqual(
             p.datetime(),
             datetime.datetime(2023, 11, 21, 1, 1, 1, tzinfo=datetime.timezone.utc),
+        )
+
+        p2 = pid.VIPERID("240219-010101001-aim")
+        self.assertEqual(
+            p2.datetime(),
+            datetime.datetime(2024, 2, 19, 1, 1, 1, 1000, tzinfo=datetime.timezone.utc),
         )
 
 
@@ -190,11 +214,40 @@ class TestVISID(unittest.TestCase):
         vid = pid.VISID(d)
         self.assertEqual("220127-000000-ncl-b", str(vid))
 
+        vid2 = pid.VISID(
+            dict(
+                start_time=datetime.datetime(
+                    2024, 2, 19, 1, 1, 1, tzinfo=datetime.timezone.utc
+                ),
+                instrument_name="NavCam Left",
+                onboard_compression_ratio=5,
+            )
+        )
+        self.assertEqual("240219-010101-ncl-b", str(vid2))
+
+        self.assertRaises(ValueError, pid.VISID, dict(a="NavCam Left", b=5))
+
     def test_init_bad_tuples(self):
-        tuples = ((datetime.date(2024, 1, 1), datetime.time(1, 1, 1), "ncl", "w"),)
+        tuples = (
+            (datetime.date(2024, 1, 1), datetime.time(1, 1, 1), "ncl", "w"),
+            (datetime.date(2024, 1, 1), datetime.time(1, 1, 1), "ncl", 0.5),
+        )
         for t in tuples:
             with self.subTest(test=t):
                 self.assertRaises(ValueError, pid.VISID, *t)
+
+        with patch(
+            "vipersci.pds.pid.vis_compression", return_value=dict(s="SLoG", z=None)
+        ):
+            self.assertRaises(
+                ValueError,
+                pid.VISID,
+                dict(
+                    lobt=1643241600,
+                    instrument_name="NavCam Left",
+                    onboard_compression_ratio=5,
+                ),
+            )
 
     def test_init_bad_strings(self):
         strings = (
@@ -245,6 +298,10 @@ class TestVISID(unittest.TestCase):
         cid = pid.VISID(s)
         self.assertEqual("VISID('220117-010101-ncl-a')", repr(cid))
 
+    def test_eq(self):
+        vid0 = pid.VISID("220117-010101-ncl-z")
+        self.assertFalse(vid0 == "foo")
+
     def test_lt(self):
         vid0 = pid.VISID("220117-010101-ncl-z")
         vid1 = pid.VISID("220117-010101-ncl-a")
@@ -255,6 +312,8 @@ class TestVISID(unittest.TestCase):
         self.assertTrue(vid1 < vid2)
         self.assertTrue(vid2 < vid3)
         self.assertTrue(vid3 < vid4)
+
+        self.assertEqual(NotImplemented, vid0.__lt__("foo"))
 
         vids = [vid3, vid4, vid1, vid2, vid0]
         self.assertEqual(sorted(vids), [vid0, vid1, vid2, vid3, vid4])
@@ -274,6 +333,10 @@ class TestVISID(unittest.TestCase):
         ]
         result = pid.VISID.best_compression(test)
         self.assertEqual(result, truth)
+
+    def test_compression_class(self):
+        vid = pid.VISID("240219-010101-ncl-a")
+        self.assertEqual(vid.compression_class(), "Lossless")
 
 
 class TestPanoID(unittest.TestCase):

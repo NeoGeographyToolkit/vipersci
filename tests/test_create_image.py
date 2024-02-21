@@ -11,18 +11,19 @@ from argparse import ArgumentParser
 from datetime import datetime, timezone
 from pathlib import Path
 import unittest
-from unittest.mock import create_autospec, patch
+from unittest.mock import create_autospec, Mock, mock_open, patch
 
 import numpy as np
 import numpy.testing as npt
 from PIL import Image
+from sqlalchemy.orm import Session
 
 from vipersci.pds import pid as pds
 from vipersci.vis.db.image_records import ImageRecord
 from vipersci.vis import create_image as ci
 
 
-class TestParser(unittest.TestCase):
+class TestCLI(unittest.TestCase):
     def test_arg_parser(self):
         p = ci.arg_parser()
         self.assertIsInstance(p, ArgumentParser)
@@ -30,6 +31,61 @@ class TestParser(unittest.TestCase):
         d = vars(p.parse_args(["-o", "output_directory", "dummy.json"]))
         self.assertIn("output_dir", d)
         self.assertIn("input", d)
+
+    def test_main(self):
+        pa_ret_val = ci.arg_parser().parse_args(
+            [
+                "input.json",
+            ]
+        )
+        with patch("vipersci.vis.create_image.arg_parser") as parser, patch(
+            "vipersci.vis.create_image.create"
+        ) as m_create, patch(
+            "vipersci.vis.create_image.open", mock_open(read_data='{"json": "dummy"}')
+        ):
+            parser.return_value.parse_args.return_value = pa_ret_val
+            ci.main()
+            m_create.assert_called_once()
+
+    def test_main_db(self):
+        pa2_ret_val = ci.arg_parser().parse_args(
+            [
+                "--dburl",
+                "db://foo:username@host/db",
+                "--tiff",
+                "dummy.tif",
+                "dummy.json",
+            ]
+        )
+        session_engine_mock = create_autospec(Session)
+        session_mock = create_autospec(Session)
+        session_engine_mock.__enter__ = Mock(return_value=session_mock)
+        with patch("vipersci.vis.create_image.arg_parser") as parser, patch(
+            "vipersci.vis.create_image.create"
+        ) as m_create, patch("vipersci.vis.create_image.create_engine"), patch(
+            "vipersci.vis.create_image.Session", return_value=session_engine_mock
+        ), patch(
+            "vipersci.vis.create_image.open", mock_open(read_data='{"json": "dummy"}')
+        ):
+            parser.return_value.parse_args.return_value = pa2_ret_val
+            ci.main()
+            m_create.assert_called_once()
+            session_engine_mock.__enter__.assert_called_once()
+            session_mock.commit.assert_called_once()
+
+    def test_main_image(self):
+
+        pa_ret_val = ci.arg_parser().parse_args(["--image", "dummy.png", "input.json"])
+        with patch("vipersci.vis.create_image.arg_parser") as parser, patch(
+            "vipersci.vis.create_image.create"
+        ) as m_create, patch(
+            "vipersci.vis.create_image.open", mock_open(read_data='{"json": "dummy"}')
+        ), patch(
+            "vipersci.vis.create_image.imread"
+        ):
+            parser.return_value.parse_args.return_value = pa_ret_val
+            ci.main()
+            m_create.assert_called_once()
 
 
 class TestBitDepth(unittest.TestCase):
@@ -48,12 +104,28 @@ class TestBitDepth(unittest.TestCase):
         self.assertRaises(ValueError, ci.check_bit_depth, pids, 16)
 
 
+class TestCreate(unittest.TestCase):
+    def test_create(self):
+        d = {"meta": "data"}
+        with patch("vipersci.vis.create_image.make_image_record") as m_mir:
+            ci.create(d, json=False)
+            m_mir.assert_called_once_with(d, None, Path.cwd(), "tif")
+
+        with patch("vipersci.vis.create_image.make_image_record") as m_mir, patch(
+            "vipersci.vis.create_image.write_json"
+        ) as m_wj:
+            session_mock = create_autospec(Session)
+            ci.create(d, session=session_mock)
+            m_wj.assert_called_once()
+
+
 class TestMakeImage(unittest.TestCase):
     def setUp(self) -> None:
         self.startUTC = datetime(2022, 1, 27, 0, 0, 0, tzinfo=timezone.utc)
         self.d = {
             "adcGain": 0,
             "autoExposure": 0,
+            "byteQuota": 1677,
             "cameraId": 0,
             "captureId": 1,
             "exposureTime": 111,

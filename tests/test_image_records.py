@@ -50,9 +50,6 @@ class TestImageType(unittest.TestCase):
     def test_not_member(self):
         self.assertRaises(ValueError, trp.ImageType, 1000)
 
-    def test_ratio(self):
-        self.assertEqual(trp.ImageType(1).compression_ratio(), 1)
-
 
 class TestProcessingStage(unittest.TestCase):
     def test_init(self):
@@ -85,17 +82,19 @@ class TestImageRecord(unittest.TestCase):
             hazlight_center_starboard_on=False,
             hazlight_fore_port_on=False,
             hazlight_fore_starboard_on=False,
+            icer_byte_quota=493448,
             image_id=0,
             instrument_name="NavCam Left",
             instrument_temperature=128,
             lines=2048,
             lobt=self.startUTC.timestamp(),
             md5_checksum="dummychecksum",
+            minLoss=0,
             mission_phase="Test",
             navlight_left_on=False,
             navlight_right_on=False,
             offset=16324,
-            onboard_compression_ratio=5,
+            # onboard_compression_ratio=5,
             onboard_compression_type="ICER",
             output_image_mask=8,
             output_image_type="?",
@@ -119,6 +118,12 @@ class TestImageRecord(unittest.TestCase):
         rpl = trp.ImageRecord(**d)
         self.assertEqual("220127-000000-ncl-c", str(rpl.product_id))
 
+        d = self.d.copy()
+        d["capture_id"] = 65537
+        ir_ci = trp.ImageRecord(**d)
+        self.assertEqual(1, ir_ci.image_request_id)
+
+    def test_init_slog(self):
         d_slog = {
             "adcGain": 0,
             "autoExposure": 0,
@@ -146,6 +151,20 @@ class TestImageRecord(unittest.TestCase):
         }
         ir_slog = trp.ImageRecord(**d_slog)
         self.assertEqual("NavCam Left", ir_slog.instrument_name)
+
+        d2_slog = d_slog.copy()
+        del d2_slog["outputImageMask"]
+        trp.ImageRecord(**d2_slog)
+
+        d3_slog = d_slog.copy()
+        del d3_slog["product_id"]
+        del d3_slog["outputImageMask"]
+        trp.ImageRecord(**d3_slog)
+
+        err_slog = d_slog.copy()
+        err_slog["product_id"] = "231026-200000-ncl-z"  # bad compression letter
+        err_slog["outputImageMask"] = None
+        self.assertRaises(ValueError, trp.ImageRecord, **err_slog)
 
         # for k in dir(rp):
         #     if k.startswith(("_", "validate_")):
@@ -176,7 +195,28 @@ class TestImageRecord(unittest.TestCase):
         self.assertRaises(ValueError, trp.ImageRecord, **d)
 
         d = self.d.copy()
+        del d["lobt"]
+        d["start_time"] = self.startUTC  # correct
+        d["product_id"] = "220127-000001-ncl-c"  # pid.datetime incorrect
+        self.assertRaises(ValueError, trp.ImageRecord, **d)
+
+        d = self.d.copy()
         d["cameraId"] = 1
+        self.assertWarns(UserWarning, trp.ImageRecord, **d)
+
+        d = self.d.copy()
+        d["product_id"] = "220127-000001-ncl-s"  # pid.compression incorrect
+        del d["output_image_mask"]
+        del d["processing_info"]
+        self.assertRaises(ValueError, trp.ImageRecord, **d)
+
+        d = self.d.copy()
+        del d["output_image_mask"]
+        del d["icer_byte_quota"]
+        self.assertRaises(ValueError, trp.ImageRecord, **d)
+
+        d = self.d.copy()
+        d["processing_info"] = 99
         self.assertWarns(UserWarning, trp.ImageRecord, **d)
 
     # Commented out while this exception has been converted to a warning until we
@@ -200,6 +240,8 @@ class TestImageRecord(unittest.TestCase):
             product_id=str(v), start_time=v.datetime(), exposure_duration=111
         )
         self.assertTrue(ir1 < ir2)
+
+        self.assertEqual(NotImplemented, ir1.__lt__("not an ImageRecord"))
 
     def test_update(self):
         rp = trp.ImageRecord(**self.d)
@@ -483,3 +525,17 @@ class TestImageRecord(unittest.TestCase):
         """  # noqa: E501
         rp = trp.ImageRecord.from_xml(t.encode())
         self.assertEqual("231125-143859-ncl-d", rp.product_id)
+
+        t_not_viper_vis = t.replace(
+            "<logical_identifier>urn:nasa:pds:viper_vis:raw:231125-143859-ncl-d",
+            "<logical_identifier>urn:nasa:pds:NOT_viper_vis:raw:231125-143859-ncl-d",
+        )
+        self.assertRaises(
+            ValueError, trp.ImageRecord.from_xml, t_not_viper_vis.encode()
+        )
+
+        t_not_raw = t.replace(
+            "<logical_identifier>urn:nasa:pds:viper_vis:raw:231125-143859-ncl-d",
+            "<logical_identifier>urn:nasa:pds:viper_vis:NOT_raw:231125-143859-ncl-d",
+        )
+        self.assertRaises(ValueError, trp.ImageRecord.from_xml, t_not_raw.encode())
