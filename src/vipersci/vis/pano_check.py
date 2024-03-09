@@ -60,12 +60,6 @@ def arg_parser():
         "postgresql://postgres:NotTheDefault@localhost/visdb",
     )
     parser.add_argument(
-        "-m",
-        "--mapserver",
-        help="URL that will respond to requests when given an event_time and "
-        "a crs_code.",
-    )
-    parser.add_argument(
         "-s",
         "--since",
         default=0,
