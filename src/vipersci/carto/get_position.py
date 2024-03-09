@@ -25,13 +25,18 @@
 
 import argparse
 import csv
+from collections.abc import Sequence
 from datetime import datetime, timezone
+import getpass
 import logging
 from pathlib import Path
 import sys
 
+import http.client as http_client
+
 import pandas as pd
 import requests
+from requests.auth import HTTPBasicAuth
 
 from vipersci import util
 
@@ -45,7 +50,7 @@ def arg_parser():
     parser.add_argument(
         "-s",
         "--start",
-        default=datetime(2020, 1, 1, tz=timezone.utc),
+        default=datetime(2020, 1, 1, tzinfo=timezone.utc),
         help="An ISO8601 datetime to start the query at.",
     )
     parser.add_argument(
@@ -68,6 +73,13 @@ def arg_parser():
         help="URL to which event_times may be posted and for which location and "
         "orientation will be returned.",
     )
+    parser.add_argument("--user", help="Username to authenticate to URL with.")
+    parser.add_argument(
+        "-p",
+        "--password",
+        action="store_true",
+        help="If given will trigger asking for a password.",
+    )
     parser.add_argument(
         "-o", "--output", type=Path, help="Output path for CSV file output."
     )
@@ -79,6 +91,19 @@ def main():
     args = parser.parse_args()
     util.set_logger(args.verbose)
 
+    if args.verbose >= 2:
+        http_client.HTTPConnection.debuglevel = 1
+
+    basic_auth = None
+    if args.password:
+        if args.user:
+            username = args.user
+        else:
+            username = getpass.getuser()
+
+        print(f"For username {username}")
+        basic_auth = HTTPBasicAuth(username, getpass.getpass())
+
     t_start = datetime.fromisoformat(args.start)
     t_end = datetime.fromisoformat(args.end)
 
@@ -89,10 +114,10 @@ def main():
         for t in times:
             unix_times.append(t.timestamp())
 
-        tpp = get_position_and_pose(unix_times, args.url)
+        tpp = get_position_and_pose(unix_times, args.url, auth=basic_auth)
     else:
         tpp = get_position_and_pose_range(
-            t_start.timestamp(), t_end.timestamp(), args.url
+            t_start.timestamp(), t_end.timestamp(), args.url, auth=basic_auth
         )
 
     if args.output is not None:
@@ -109,7 +134,7 @@ def main():
                 )
 
 
-def get_position_and_pose(times: list, url: str, crs: str = "VIPER:910101"):
+def get_position_and_pose(times: list, url: str, crs: str = "VIPER:910101", auth=None):
     """
     Given a list of unix times and a URL that requests can be made against,
     return a list of two-tuples whose first element is the time and
@@ -133,19 +158,21 @@ def get_position_and_pose(times: list, url: str, crs: str = "VIPER:910101"):
                 "crs_code": crs,
             },
             verify=False,
+            auth=auth,
         )
+        logger.debug(position_result)
         rj = position_result.json()
         logger.info(rj)
 
         tpp.append(
-            (rj["event_seconds"], (rj["location"][0], rj["location"][1], rj["yaw"]))
+            (rj["event_seconds"], rj["location"][0], rj["location"][1], rj["yaw"])
         )
 
     return tpp
 
 
 def get_position_and_pose_range(
-    start_time, stop_time, url: str, crs: str = "VIPER:910101"
+    start_time, stop_time, url: str, crs: str = "VIPER:910101", auth=None
 ):
     tpp = list()
 
@@ -164,11 +191,19 @@ def get_position_and_pose_range(
             "order": "asc",
         },
         verify=False,
+        auth=auth,
     )
+    logger.debug(track_result)
     rj = track_result.json()
+    logger.info(rj)
 
-    for time, loc, yaw in zip(rj["event_seconds"], rj["location"], rj["yaw"]):
-        tpp.append((time, loc[0], loc[1], yaw))
+    if isinstance(rj["event_seconds"], Sequence):
+        for time, loc, yaw in zip(rj["event_seconds"], rj["location"], rj["yaw"]):
+            tpp.append((time, loc[0], loc[1], yaw))
+    else:
+        tpp.append(
+            (rj["event_seconds"], rj["location"][0], rj["location"][1], rj["yaw"])
+        )
 
     return tpp
 
