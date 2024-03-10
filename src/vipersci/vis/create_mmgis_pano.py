@@ -181,7 +181,7 @@ def create(
         "uint8"
     )
 
-    outpath = outdir / longname(source_path).with_suffix(".png").name
+    outpath = outdir / Path(longname(source_path)).with_suffix(".png").name
 
     imsave(str(outpath), image8, check_contrast=False)
 
@@ -193,7 +193,7 @@ def create(
 
     # Make JPG thumbnail
     if thumbsize is not None:
-        if isinstance(int, thumbsize):
+        if isinstance(thumbsize, int):
             max_dim = max(np.shape(image8))
             if max_dim > thumbsize:
                 scale = max_dim / thumbsize
@@ -207,9 +207,9 @@ def create(
             new_shape = tuple(int(x / scale) for x in np.shape(image8))
 
         image8 = rescale_intensity(
-            resize(image8, new_shape), in_range="image8", out_range="uint8"
+            resize(image8, new_shape), in_range="image", out_range="uint8"
         )
-        outthumb = outpath.with_suffix("") + "_thumb.jpeg"
+        outthumb = outpath.with_name(outpath.stem + "_thumb.jpeg")
         imsave(outthumb, image8, check_contrast=False)
 
     with open(outpath.stem + ".json", "w") as f:
@@ -222,7 +222,10 @@ def longname(path):
     """Returns a longer iso8601-esque filename."""
     # YYYY-MM-DDTHH-mm-ss.SSS-pan
     vid = pds.PanoID(path.name)
-    return vid.date.isoformat() + "T" + vid.time.isformat().replace(":", "-") + "-pan"
+    vdt = vid.datetime()
+    return (
+        vdt.date().isoformat() + "T" + vdt.time().isoformat().replace(":", "-") + "-pan"
+    )
 
 
 def mmgis_data(pano_data: dict, yaw=0.0):
