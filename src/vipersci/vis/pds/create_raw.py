@@ -308,9 +308,8 @@ def label_dict(ir: ImageRecord, lights: dict):
         led_wavelength=453,  # nm
         luminaires={},
         compression_class=pid.compression_class(),
-        minloss=0 if pid.compression_class() == "Lossless" else 12,
         observational_intent={},
-        onboard_compression_ratio=pds.vis_compression[pid.compression],
+        onboard_compression_ratio=ir.icer_byte_quota / (2048 * 2048 * 2),
         onboard_compression_type="ICER",
         sample_bits=12,
         sample_bit_mask="2#0000111111111111",

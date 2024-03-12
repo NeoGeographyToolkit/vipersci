@@ -130,7 +130,7 @@
 				<img:onboard_compression_type>${onboard_compression_type}</img:onboard_compression_type>
                 <img:onboard_compression_ratio py:if="compression_class == 'Lossy'">${onboard_compression_ratio}</img:onboard_compression_ratio>
                 <img:ICER_Parameters>
-                    <img:icer_quality>${minloss}</img:icer_quality>
+                    <img:icer_quality>${icer_minloss}</img:icer_quality>
                 </img:ICER_Parameters>
 			</img:Onboard_Compression>
 			<img:Sampling>
