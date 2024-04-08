@@ -28,6 +28,27 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+0.9.0 (2024-04-08)
+------------------
+
+Added
+^^^^^
+- get_position.py - Now has support for http basic auth and can now handle returns
+  from the REST service that could be either a sequence of elements or a single
+  element.
+- create_raw.py - Updated to accommodate the icer_minloss and icer_byte_quota properties
+  of an ImageRecord.
+- image_records.py - Added properties for the new image_nickname and waypoint_id
+  properties, and updated the concept of capture_id to be a combination of the
+  waypoint_id and the locally unique_capture_id, instead of a combination of the
+  locally unique_capture_id and the image_request_id.
+
+Fixed
+^^^^^
+- pano_check.py - removed a redundant argument.
+- create_mmgis_pano.py - outpaths for saving the pano and thumbnail were being
+  incorrectly generated.
+
 
 0.8.0 (2024-02-21)
 ------------------
