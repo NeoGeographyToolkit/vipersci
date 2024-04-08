@@ -160,6 +160,13 @@ class ImageRecord(Base):
         doc="The IMG_ID from the MCSE Image Header used for CCU storage and "
         "retrieval.",
     )
+    image_nickname = mapped_column(
+        String,
+        nullable=True,
+        doc="This was designed to be a unique nickname for the waypoint+camera. It has "
+        "the form: <camera>-<waypoint>-<index>, where the index is represented as "
+        "letters A, B, C, ..., Z, AA, AB, ...",
+    )
     # This image_request_id column and image_request relationship allow a many
     # ImageRecords to one ImageRequest relationship, and the nullable allows it to be
     # optional.  So an ImageRecord may be connected to an ImageRequest, but it may not.
@@ -179,6 +186,7 @@ class ImageRecord(Base):
     )
     imageHeight = synonym("lines")
     imageId = synonym("image_id")
+    imageNickname = synonym("image_nickname")
     imageWidth = synonym("samples")
     instrument_name = mapped_column(
         String, nullable=False, doc="The full name of the instrument."
@@ -266,6 +274,7 @@ class ImageRecord(Base):
         "what onboard processing occurred.",
     )
     processingInfo = synonym("processing_info")
+    requestId = synonym("image_request_id")
     samples = mapped_column(
         Integer,
         nullable=False,
@@ -288,6 +297,14 @@ class ImageRecord(Base):
     )
     stop_time = mapped_column(DateTime(timezone=True), nullable=False)
     temperature = synonym("instrument_temperature")
+    unique_capture_id = mapped_column(
+        Integer,
+        nullable=True,
+        doc="The unique portion from the lower 16 bits of the captureId.  Ironically, "
+        "this isn't guaranteed to be a mission-long globally unique value, only "
+        "locally unique in time.  It gets set and linearly increases, but can "
+        "be reset to zero.",
+    )
     verification_notes = mapped_column(
         String,
         nullable=True,
@@ -314,6 +331,11 @@ class ImageRecord(Base):
         doc="The VOLTAGE_RAMP parameter from the MCSE Image Header.",
     )
     voltageRamp = synonym("voltage_ramp")
+    waypoint_id = mapped_column(
+        Integer,
+        nullable=True,
+        doc="The waypoint id extracted from the upper 16 bits of the captureId.",
+    )
     yamcs_generation_time = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -549,7 +571,8 @@ class ImageRecord(Base):
         if self.capture_id is not None and self.capture_id > int(
             "1111111111111111", base=2
         ):  # 65535
-            self.image_request_id = int(bin(self.capture_id)[-16:], base=2)
+            self.waypoint_id = int(bin(self.capture_id)[:-16], base=2)
+            self.unique_capture_id = int(bin(self.capture_id)[-16:], base=2)
 
         # Is this really a good idea?  Not sure.  This instance variable plus
         # label_dict() and update() allow other key/value pairs to be carried around

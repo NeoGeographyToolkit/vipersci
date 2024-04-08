@@ -121,7 +121,8 @@ class TestImageRecord(unittest.TestCase):
         d = self.d.copy()
         d["capture_id"] = 65537
         ir_ci = trp.ImageRecord(**d)
-        self.assertEqual(1, ir_ci.image_request_id)
+        self.assertEqual(1, ir_ci.waypoint_id)
+        self.assertEqual(1, ir_ci.unique_capture_id)
 
     def test_init_slog(self):
         d_slog = {
