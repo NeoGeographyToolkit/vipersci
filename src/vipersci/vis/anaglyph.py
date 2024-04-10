@@ -164,7 +164,7 @@ def correlate_and_shift(left: NDArray, right: NDArray) -> NDArray:
     function with performs the correlation, and then shifts the array.
     """
     shift = tuple(
-        phase_cross_correlation(left, right, return_error="always", normalization=None)[
+        phase_cross_correlation(left, right, normalization=None)[
             0
         ].astype(int)
     )

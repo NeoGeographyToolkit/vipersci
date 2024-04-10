@@ -28,6 +28,15 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+0.9.1 (2024-04-10)
+------------------
+
+Fixed
+^^^^^
+- anaglyph.py - when used with scikit-image versions greater than 0.21 changed the
+  argument signature for phase_cross_correlation().  Fixed call, and should now
+  work more globally.
+
 0.9.0 (2024-04-08)
 ------------------
 
