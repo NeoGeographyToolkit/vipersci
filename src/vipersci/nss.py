@@ -167,7 +167,7 @@ class DataModeler:
             np.column_stack((d1.compressed(), d2.compressed()))
         )
         weh_arr[~d1.mask] = self.det2_model(
-            np.column_stack((d2.compressed(), d2.compressed()))
+            np.column_stack((d1.compressed(), d2.compressed()))
         )
         uweh_arr = uniform_weh(
             d1.filled(self.fill_value), fill_value=self.fill_value, bounds_error=False
