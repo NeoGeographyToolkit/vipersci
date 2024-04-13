@@ -109,3 +109,68 @@ class TestSimulator(unittest.TestCase):
             d1_arr, d2_arr = ds([0.3, 0.5], [20, 30])
             np.testing.assert_array_almost_equal(np.array([88, 20]), d1_arr)
             np.testing.assert_array_almost_equal(np.array([88, 20]), d2_arr)
+
+
+class TestModeler(unittest.TestCase):
+    def setUp(self) -> None:
+        self.rc = np.array([10, 30, 60])
+        self.cc = np.array([0, 0.5, 1])
+        self.arr = np.array(
+            [
+                [100, 200, 300],
+                [10, 20, 30],
+                [1, 2, 3],
+            ]
+        )
+
+    def test_init(self):
+        with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
+            ds = nss.DataModeler(Path("dummy1"), Path("dummy2"))
+            self.assertIsInstance(ds, nss.DataModeler)
+
+    def test_call(self):
+        with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
+            m = nss.DataModeler(Path("dummy"), Path("dummy2"))
+            d1 = np.ma.array([1, 2, 3], mask=[1, 0, 1])
+            d2 = np.ma.array([1, 2, 3], mask=[0, 1, 1])
+            self.assertRaises(ValueError, m, d1, d2)
+
+        with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
+            m = nss.DataModeler(Path("dummy"), Path("dummy2"))
+            bd_arr, weh_arr, uweh_arr = m(
+                [0.1, 0.2, 0.3, 0.4, 0.5], [10, 20, np.nan, 40, 50]
+            )
+            t = np.array(
+                [
+                    120.0,
+                    77.0,
+                    np.nan,
+                    12.6,
+                    8.0,
+                ]
+            )
+            np.testing.assert_array_almost_equal(t, bd_arr)
+            np.testing.assert_array_almost_equal(t, weh_arr)
+            np.testing.assert_array_equal(
+                np.array([np.nan, np.nan, np.nan, np.nan, np.nan]), uweh_arr
+            )
+
+        with patch("vipersci.nss.read_csv", return_value=(self.arr, self.rc, self.cc)):
+            m = nss.DataModeler(Path("dummy"), Path("dummy2"))
+            d1 = np.ma.array([0.1, 0.2, 0.3, 0.4, 0.5], mask=[0, 0, 0, 0, 1])
+            d2 = np.ma.array([10, 20, np.nan, 40, 50], mask=[0, 0, 0, 0, 1])
+            bd_arr, weh_arr, uweh_arr = m(d1, d2)
+            t = np.array(
+                [
+                    120.0,
+                    77.0,
+                    np.nan,
+                    12.6,
+                    np.nan,
+                ]
+            )
+            np.testing.assert_array_almost_equal(t, bd_arr)
+            np.testing.assert_array_almost_equal(t, weh_arr)
+            np.testing.assert_array_equal(
+                np.array([np.nan, np.nan, np.nan, np.nan, np.nan]), uweh_arr
+            )
