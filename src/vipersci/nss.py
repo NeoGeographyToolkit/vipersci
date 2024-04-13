@@ -157,20 +157,32 @@ class DataModeler:
         of BD values, a numpy array of WEH values, and a numpy array of UWEH values.
         """
         is_arraylike = True if hasattr(det1, "__iter__") else False
-        d1 = det1 if isinstance(det1, np.ma.MaskedArray) else np.ma.array(det1)
-        d2 = det2 if isinstance(det2, np.ma.MaskedArray) else np.ma.array(det2)
 
-        bd_arr = np.full_like(d1, self.fill_value, dtype=np.double)
-        weh_arr = np.full_like(d2, self.fill_value, dtype=np.double)
+        if isinstance(det1, np.ma.MaskedArray) or isinstance(det2, np.ma.MaskedArray):
+            d1 = det1 if isinstance(det1, np.ma.MaskedArray) else np.ma.array(det1)
+            d2 = det2 if isinstance(det2, np.ma.MaskedArray) else np.ma.array(det2)
 
-        bd_arr[~d1.mask] = self.det1_model(
-            np.column_stack((d1.compressed(), d2.compressed()))
-        )
-        weh_arr[~d1.mask] = self.det2_model(
-            np.column_stack((d1.compressed(), d2.compressed()))
-        )
+            if not np.array_equal(d1.mask, d2.mask):
+                raise ValueError(
+                    "The masks for the two masked arrays are not symmetric."
+                )
+
+            bd_arr = np.full_like(det1, self.fill_value, dtype=np.double)
+            weh_arr = np.full_like(det2, self.fill_value, dtype=np.double)
+
+            stacked = np.column_stack((d1.compressed(), d2.compressed()))
+            bd_arr[~d1.mask] = self.det1_model(stacked)
+            weh_arr[~d1.mask] = self.det2_model(stacked)
+            d1_for_uweh = d1.filled(self.fill_value)
+
+        else:
+            stacked = np.column_stack((det1, det2))
+            bd_arr = self.det1_model(stacked)
+            weh_arr = self.det2_model(stacked)
+            d1_for_uweh = det1
+
         uweh_arr = uniform_weh(
-            d1.filled(self.fill_value), fill_value=self.fill_value, bounds_error=False
+            d1_for_uweh, fill_value=self.fill_value, bounds_error=False
         )
 
         if not is_arraylike:
