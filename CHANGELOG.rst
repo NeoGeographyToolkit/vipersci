@@ -28,6 +28,15 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+0.9.2 (2024-04-15)
+------------------
+
+Fixed
+^^^^^
+- nss.py - The DataModeler class would incorrectly always return a weh_arr of all-NaN
+  values.  This bug has been fixed, and additional safeguards and error reporting have
+  been placed in the class, and tests written.
+
 0.9.1 (2024-04-10)
 ------------------
 
