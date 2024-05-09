@@ -146,6 +146,12 @@ class ImageRecord(Base):
         doc="The absolute path (POSIX style) that contains the Array_2D_Image "
         "that this metadata refers to.",
     )
+    haz1LightState = synonym("light_on_hfp")
+    haz2LightState = synonym("light_on_hap")
+    haz3LightState = synonym("light_on_hfs")
+    haz4LightState = synonym("light_on_has")
+    haz5LightState = synonym("light_on_hcp")
+    haz6LightState = synonym("light_on_hcs")
     icer_byte_quota = mapped_column(
         Integer,
         doc="The byteQuota value during onboard ICER compression.  In the returned "
@@ -200,6 +206,46 @@ class ImageRecord(Base):
     # There is a sensor in the camera body (PT1000) which is apparently not
     # connected (sigh).  And there is also a sensor external to each camera
     # body (AD590), need to track down its Yamcs feed.
+    light_on_hfp = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="haz1LightState as reported by image metadata.",
+    )
+    light_on_hap = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="haz2LightState as reported by image metadata.",
+    )
+    light_on_hfs = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="haz3LightState as reported by image metadata.",
+    )
+    light_on_has = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="haz4LightState as reported by image metadata.",
+    )
+    light_on_hcp = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="haz5LightState as reported by image metadata.",
+    )
+    light_on_hcs = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="haz6LightState as reported by image metadata.",
+    )
+    light_on_nl = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="navLeftLightState as reported by image metadata.",
+    )
+    light_on_nr = mapped_column(
+        Boolean,
+        nullable=True,
+        doc="navRightLightState as reported by image metadata.",
+    )
     lines = mapped_column(
         Integer,
         nullable=False,
@@ -211,6 +257,8 @@ class ImageRecord(Base):
         nullable=False,
         doc="The TIME_TAG from the MCSE Image Header.",
     )
+    navLeftLightState = synonym("light_on_nl")
+    navRightLightState = synonym("light_on_nr")
     # mcam_id, The MCAM_ID from the MCSE Image Header is not returned to the ground.
     offset = mapped_column(
         Integer,
@@ -639,6 +687,25 @@ class ImageRecord(Base):
     )
     def validate_datetime_asutc(self, key, value):
         return vld.validate_datetime_asutc(key, value)
+
+    @validates(
+        "light_on_hap",
+        "light_on_has",
+        "light_on_hcp",
+        "light_on_hcs",
+        "light_on_hfp",
+        "light_on_hfs",
+        "light_on_nl",
+        "light_on_nr",
+    )
+    def validate_lights(self, key, value):
+        if isinstance(value, str):
+            if value.casefold() == "on":
+                return True
+            elif value.casefold() == "off":
+                return False
+
+        return bool(value)
 
     @validates("output_image_mask")
     def validate_output_image_mask(self, key, value):

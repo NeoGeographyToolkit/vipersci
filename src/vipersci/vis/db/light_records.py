@@ -49,6 +49,17 @@ luminaire_names = {
     "haz3": "HazLight Fore Starboard",
 }
 
+luminaire_shortnames = dict(
+    hfp="haz1",
+    hap="haz2",
+    hfs="haz3",
+    has="haz4",
+    hcp="haz5",
+    hcs="haz6",
+    nl="navLeft",
+    nr="navRight",
+)
+
 
 class LightRecord(Base):
     """An object to represent rows in the light_records table for VIS.  Each row
