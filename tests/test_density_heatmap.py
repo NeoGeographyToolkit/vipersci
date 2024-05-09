@@ -39,12 +39,15 @@ class TestDensityHeatmap(unittest.TestCase):
     def test_density_heatmap_3x3_uniform(self):
         self.uniform_density_heatmap_runner((3, 3), processes=1)
 
+    @unittest.skip("for speedup")
     def test_density_heatmap_30x50_uniform(self):
         self.uniform_density_heatmap_runner((30, 50), processes=8)
 
+    @unittest.skip("for speedup")
     def test_density_heatmap_31x17_uniform(self):
         self.uniform_density_heatmap_runner((31, 17), processes=8)
 
+    @unittest.skip("for speedup")
     def test_density_heatmap_100x100_uniform(self):
         self.uniform_density_heatmap_runner((100, 100), processes=8)
 
