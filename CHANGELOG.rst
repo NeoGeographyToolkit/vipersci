@@ -28,6 +28,18 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+Added
+^^^^^
+- image_records.py - Added various light_on_x columns to record the state of the
+  lights in ImageRecord objects.
+
+Changed
+^^^^^^^
+- create_raw.py - For the get_lights() function, session is now optional, and by default,
+  the get_lights() function now relies on the values in the passed ImageRecord, but if
+  given a session, the values in the light_records table will override what is in the
+  ImageRecord.
+
 0.9.2 (2024-04-15)
 ------------------
 
