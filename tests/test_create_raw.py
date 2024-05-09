@@ -61,6 +61,14 @@ class TestDatabase(unittest.TestCase):
             immediateDownloadInfo=10,
             instrument_name="NavCam Left",
             instrument_temperature=0,
+            light_on_hap=None,
+            light_on_has=None,
+            light_on_hcp=None,
+            light_on_hcs=None,
+            light_on_hfp=None,
+            light_on_hfs=None,
+            light_on_nl=None,
+            light_on_nr=None,
             lines=2048,
             lobt=1700921056,
             offset=0,
@@ -139,6 +147,11 @@ class TestDatabase(unittest.TestCase):
         truth[light_name] = True
         t = cr.get_lights(self.ir, self.session)
         self.assertEqual(truth, t)
+
+        # Now, no session
+        t = cr.get_lights(self.ir, None)
+        all_false = {k: False for k in luminaire_names.values()}
+        self.assertEqual(all_false, t)
 
     def test_label_dict(self):
         d = cr.label_dict(self.ir, cr.get_lights(self.ir, self.session))

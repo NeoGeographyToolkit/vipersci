@@ -54,7 +54,9 @@ from sqlalchemy.orm import Session
 
 import vipersci
 from vipersci.vis.db.image_records import ImageRecord, ProcessingStage
-from vipersci.vis.db.light_records import LightRecord, luminaire_names
+from vipersci.vis.db.light_records import (
+    LightRecord, luminaire_names, luminaire_shortnames
+)
 from vipersci.vis.create_image import tif_info
 from vipersci.vis.pds import lids, write_xml
 from vipersci.pds import pid as pds
@@ -153,7 +155,7 @@ def main():
         }
 
         # This allows values in these dicts to override the hard-coded values above.
-        metadata.update(label_dict(ir, get_lights(ir, session)))
+        metadata.update(label_dict(ir, get_lights(ir)))
         if args.dburl.startswith("sqlite://"):
             for c in ir.__table__.columns:
                 dt = getattr(ir, c.name)
@@ -265,28 +267,32 @@ def main():
 #
 #             self.__call__(d, im)
 
-
-def get_lights(ir: ImageRecord, session: Session):
+def get_lights(ir: ImageRecord, session: Union[Session, None] = None):
+    # If session is given, values in the ImageRecord are ignored.
     lights = {k: False for k in luminaire_names.values()}
-    for light in lights:
-        prev_stmt = (
-            select(LightRecord)
-            .where(
-                and_(
-                    LightRecord.name == light,
-                    LightRecord.datetime < ir.start_time,
-                )
+    for short in luminaire_shortnames:
+        light_name = luminaire_names[luminaire_shortnames[short]]
+        light_col = getattr(ir, f"light_on_{short}")
+        if session is not None:
+            prev_stmt = (
+                select(LightRecord)
+                    .where(
+                    and_(
+                        LightRecord.name == light_name,
+                        LightRecord.datetime < ir.start_time,
+                    )
+                ).order_by(LightRecord.datetime.desc())
             )
-            .order_by(LightRecord.datetime.desc())
-        )
-        prev_light = session.scalars(prev_stmt).first()
+            prev_light = session.scalars(prev_stmt).first()
 
-        if (
-            prev_light is not None
-            and prev_light.on
-            and ir.start_time - prev_light.datetime < timedelta(seconds=10)
-        ):
-            lights[light] = True
+            if (
+                prev_light is not None
+                and prev_light.on
+                and ir.start_time - prev_light.datetime < timedelta(seconds=10)
+            ):
+                lights[light_name] = True
+        elif light_col is not None:
+            lights[light_name] = light_col
 
     return lights
 
