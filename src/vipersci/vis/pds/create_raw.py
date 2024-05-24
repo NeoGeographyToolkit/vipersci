@@ -55,7 +55,9 @@ from sqlalchemy.orm import Session
 import vipersci
 from vipersci.vis.db.image_records import ImageRecord, ProcessingStage
 from vipersci.vis.db.light_records import (
-    LightRecord, luminaire_names, luminaire_shortnames
+    LightRecord,
+    luminaire_names,
+    luminaire_shortnames,
 )
 from vipersci.vis.create_image import tif_info
 from vipersci.vis.pds import lids, write_xml
@@ -267,6 +269,7 @@ def main():
 #
 #             self.__call__(d, im)
 
+
 def get_lights(ir: ImageRecord, session: Union[Session, None] = None):
     # If session is given, values in the ImageRecord are ignored.
     lights = {k: False for k in luminaire_names.values()}
@@ -276,12 +279,13 @@ def get_lights(ir: ImageRecord, session: Union[Session, None] = None):
         if session is not None:
             prev_stmt = (
                 select(LightRecord)
-                    .where(
+                .where(
                     and_(
                         LightRecord.name == light_name,
                         LightRecord.datetime < ir.start_time,
                     )
-                ).order_by(LightRecord.datetime.desc())
+                )
+                .order_by(LightRecord.datetime.desc())
             )
             prev_light = session.scalars(prev_stmt).first()
 
