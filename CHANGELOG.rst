@@ -28,6 +28,10 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+
+0.10.0 (2024-05-28)
+-------------------
+
 Added
 ^^^^^
 - image_records.py - Added various light_on_x columns to record the state of the
