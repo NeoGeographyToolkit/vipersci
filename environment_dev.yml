@@ -5,12 +5,13 @@ channels:
 dependencies:
   - black
   - bump2version
-  - cookiecutter
   - flake8
+  - icecream
   - ipympl
   - jupyterlab
   - matplotlib
   - mypy
+  - pylint
   - pytest
   - pytest-cov
   - sphinx
