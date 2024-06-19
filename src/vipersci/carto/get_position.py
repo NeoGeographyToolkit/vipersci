@@ -25,14 +25,13 @@
 
 import argparse
 import csv
+import getpass
+import http.client as http_client
+import logging
+import sys
 from collections.abc import Sequence
 from datetime import datetime, timezone
-import getpass
-import logging
 from pathlib import Path
-import sys
-
-import http.client as http_client
 
 import pandas as pd
 import requests
@@ -142,7 +141,7 @@ def get_position_and_pose(times: list, url: str, crs: str = "VIPER:910101", auth
     and yaw.
     """
 
-    tpp = list()
+    tpp = []
 
     for t in times:
         logger.info(f"unix timestamp: {t}")
@@ -159,8 +158,10 @@ def get_position_and_pose(times: list, url: str, crs: str = "VIPER:910101", auth
             },
             verify=False,
             auth=auth,
+            timeout=2,
         )
         logger.debug(position_result)
+        position_result.raise_for_status()
         rj = position_result.json()
         logger.info(rj)
 
@@ -174,7 +175,7 @@ def get_position_and_pose(times: list, url: str, crs: str = "VIPER:910101", auth
 def get_position_and_pose_range(
     start_time, stop_time, url: str, crs: str = "VIPER:910101", auth=None
 ):
-    tpp = list()
+    tpp = []
 
     track_result = requests.get(
         url,
@@ -192,8 +193,10 @@ def get_position_and_pose_range(
         },
         verify=False,
         auth=auth,
+        timeout=2,
     )
     logger.debug(track_result)
+    track_result.raise_for_status()
     rj = track_result.json()
     logger.info(rj)
 
