@@ -56,9 +56,6 @@ lint/black: ## check style with black
 lint/mypy: ## check types with mypy
 	mypy src/vipersci
 
-lint/twine: dist ## check if this would pass twine upload
-	twine check dist/*
-
 lint/ufmt:
 	ufmt check src
 	ufmt check tests
@@ -87,6 +84,9 @@ docs: ## generate Sphinx HTML documentation, including API docs
 
 servedocs: docs ## compile the docs watching for changes
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+
+release-check: dist ## check state of distribution
+	twine check dist/*
 
 release: dist ## package and upload a release
 	twine upload -r vipersci dist/*

@@ -33,6 +33,11 @@ Fixed
 - get_position.py - The get_position_and_pose functions now have an explicit timeout
   and throw exceptions if they have difficulties with their connection.
 
+Changed
+^^^^^^^
+- requirements.txt - Added version number requirements that reflect the current testing
+  environment.
+
 
 0.10.0 (2024-05-28)
 -------------------
