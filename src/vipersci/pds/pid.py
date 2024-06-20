@@ -24,11 +24,11 @@
 # top level of this library.
 
 import datetime
-from itertools import groupby
 import re
+from itertools import groupby
 from typing import Iterable
 
-instruments = dict()
+instruments = {}
 vis_instruments = dict(
     ncl="NavCam Left",
     ncr="NavCam Right",
@@ -109,8 +109,8 @@ def get_key(value, dictionary):
     for k, v in dictionary.items():
         if v == value:
             return k
-    else:
-        raise KeyError(f"No value, {value}, was found in the dictionary.")
+
+    raise KeyError(f"No value, {value}, was found in the dictionary.")
 
 
 class VIPERID:
@@ -141,7 +141,7 @@ class VIPERID:
                     time = args[0].time()
                 else:
                     raise ValueError(
-                        "For two arguments, the first must be a datetime" "object."
+                        "For two arguments, the first must be a datetime object."
                     )
                 instrument = args[1]
 
@@ -177,7 +177,6 @@ class VIPERID:
                 self.instrument = get_key(instrument, instruments)
             else:
                 raise ValueError(f"{instrument} did not match regex: {inst_re.pattern}")
-        return
 
     def __str__(self):
         return "-".join((self.date, self.time, self.instrument))
@@ -208,8 +207,8 @@ class VIPERID:
                 other.time,
                 other.instrument,
             )
-        else:
-            return NotImplemented
+
+        return NotImplemented
 
     @staticmethod
     def format_date(date) -> str:
@@ -296,7 +295,7 @@ class VISID(VIPERID):
                     time = dt.time()
                 else:
                     raise ValueError(
-                        "The dictionary had neither 'start_time' nor 'lobt' " "keys."
+                        "The dictionary had neither 'start_time' nor 'lobt' keys."
                     )
                 instrument = args[0]["instrument_name"]
                 compression = args[0]["onboard_compression_ratio"]
@@ -339,14 +338,10 @@ class VISID(VIPERID):
                 if "z" in (self.compression, other.compression):
                     if other.compression == "z" and self.compression != "z":
                         return False
-                    else:
-                        return True
-                else:
-                    return self.compression < other.compression
-            else:
-                return super().__lt__(other)
-        else:
-            return NotImplemented
+                    return True
+                return self.compression < other.compression
+            return super().__lt__(other)
+        return NotImplemented
 
     @staticmethod
     def instrument_name(name):
@@ -355,23 +350,19 @@ class VISID(VIPERID):
             return vis_instruments[vis_instrument_numbers[name]]
         if name.casefold() in vis_instruments:
             return vis_instruments[name.casefold()]
-        elif name.casefold() in vis_instrument_aliases:
+        if name.casefold() in vis_instrument_aliases:
             return vis_instruments[vis_instrument_aliases[name.casefold()]]
-        else:
-            for k in vis_instrument_aliases.keys():
-                if k in name.casefold():
-                    return vis_instruments[vis_instrument_aliases[k]]
-            else:
-                raise ValueError(
-                    f"No VIS instrument name based on {name} could be found."
-                )
+        for k in vis_instrument_aliases.keys():
+            if k in name.casefold():
+                return vis_instruments[vis_instrument_aliases[k]]
+        raise ValueError(f"No VIS instrument name based on {name} could be found.")
 
     def compression_class(self):
         """Returns text value for the PDS onboard_compression_class."""
-        if self.compression == "a" or self.compression == "s":
+        if self.compression in {"a", "s"}:
             return "Lossless"
-        else:
-            return "Lossy"
+
+        return "Lossy"
 
     @staticmethod
     def compression_letter(compression):
@@ -380,9 +371,11 @@ class VISID(VIPERID):
         """
         if compression in vis_compression:
             return compression
-        elif compression in vis_compression.values():
+
+        if compression in vis_compression.values():
             return get_key(compression, vis_compression)
-        elif isinstance(compression, (int, float)):
+
+        if isinstance(compression, (int, float)):
             compression_ratios = []
             for v in vis_compression.values():
                 if isinstance(v, (int, float)):
@@ -397,16 +390,14 @@ class VISID(VIPERID):
             for r in sorted(compression_ratios, reverse=True):
                 if compression >= r:
                     return get_key(r, vis_compression)
-            else:
-                raise ValueError(
-                    f"The numeric value of {compression} is not greater than one "
-                    f"of {compression_ratios}"
-                )
-        else:
             raise ValueError(
-                f"Could not determine one of {vis_compression.keys()} from "
-                f"compression ({compression})."
+                f"The numeric value of {compression} is not greater than one "
+                f"of {compression_ratios}"
             )
+        raise ValueError(
+            f"Could not determine one of {vis_compression.keys()} from "
+            f"compression ({compression})."
+        )
 
     @staticmethod
     def best_compression(identifiers: Iterable):
@@ -420,13 +411,13 @@ class VISID(VIPERID):
         >>> print(best)
         ["241127-010203-ncl-a",]
         """
-        d = dict()
+        d = {}
         for i in identifiers:
             d[VISID(i)] = i
 
-        best_ids = list()
+        best_ids = []
         vids = sorted(d.keys())
-        for k, g in groupby(vids, key=VIPERID):
+        for _, g in groupby(vids, key=VIPERID):
             best_ids.append(sorted(g)[0])
 
         return [d[x] for x in best_ids]
@@ -462,5 +453,5 @@ class PanoID(VIPERID):
     def __str__(self):
         if self.instrument in ("pan", None):
             return "-".join((self.date, self.time, "pan"))
-        else:
-            return "-".join((self.date, self.time, self.instrument, "pan"))
+
+        return "-".join((self.date, self.time, self.instrument, "pan"))

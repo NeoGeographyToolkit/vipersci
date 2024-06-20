@@ -23,13 +23,14 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-import numpy as np
-import rasterio
-from rasterio.coords import BoundingBox
-import shapely
 import unittest
 
-from vipersci.carto import heatmap, bounds
+import numpy as np
+import rasterio
+import shapely
+from rasterio.coords import BoundingBox
+
+from vipersci.carto import bounds, heatmap
 
 
 class TestBounds(unittest.TestCase):

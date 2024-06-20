@@ -31,9 +31,9 @@ from pathlib import Path
 
 from skimage.io import imread
 
+from vipersci import util
 from vipersci.pds import pid as pds
 from vipersci.vis.create_image import write_tiff
-from vipersci import util
 
 logger = logging.getLogger(__name__)
 
@@ -70,5 +70,3 @@ def main():
     image = imread(str(args.image))
 
     write_tiff(pid, image, args.output_dir)
-
-    return

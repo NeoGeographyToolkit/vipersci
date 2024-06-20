@@ -23,8 +23,8 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from datetime import datetime, timezone
 import unittest
+from datetime import datetime, timezone
 
 from vipersci.vis.db import image_requests as ir
 from vipersci.vis.db.junc_image_req_ldst import JuncImageRequestLDST  # noqa

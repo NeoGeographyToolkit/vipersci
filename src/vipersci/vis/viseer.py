@@ -26,8 +26,8 @@
 import argparse
 import json
 import logging
-from typing import Union
 from pathlib import Path
+from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -36,8 +36,8 @@ from scipy import stats
 from skimage.exposure import equalize_adapthist
 from skimage.io import imread
 
-from vipersci.vis import image_statistics
 from vipersci import util
+from vipersci.vis import image_statistics
 
 logger = logging.getLogger(__name__)
 
@@ -102,8 +102,6 @@ def main():
     plot_img_and_hist(
         image, title=imtitle, vmin=args.vmin, vmax=args.vmax, grid=args.grid, save=False
     )
-
-    return
 
 
 def describe(image: ImageType, message: str):

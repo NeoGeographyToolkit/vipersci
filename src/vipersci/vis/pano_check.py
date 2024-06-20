@@ -24,10 +24,10 @@
 # top level of this library.
 
 import argparse
-from datetime import datetime, timezone
-from functools import partial
 import itertools
 import logging
+from datetime import datetime, timezone
+from functools import partial
 from pathlib import Path
 from typing import Iterable, Union
 
@@ -36,9 +36,9 @@ import requests
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from vipersci.vis.db.image_records import ImageRecord
-from vipersci.pds import pid as pds
 from vipersci import util
+from vipersci.pds import pid as pds
+from vipersci.vis.db.image_records import ImageRecord
 
 logger = logging.getLogger(__name__)
 
@@ -129,8 +129,6 @@ def main():
         for p in pg[0]:
             print(f"\t{p}")
 
-    return
-
 
 def check(
     images: Iterable[Union[pds.VISID, ImageRecord]], get_pos_pose_func=None
@@ -184,7 +182,7 @@ def check(
     tpp = get_pos_pose_func(times)
     grouped = groupby_2nd(tpp)
 
-    pano_groups = list()
+    pano_groups = []
     for t_list, position_pose in grouped:
         if len(t_list) > 1:
             # We have a pano group
@@ -213,14 +211,14 @@ def get_position_and_pose_from_csv(
     If None is given for any of the x-, y-, or yaw- columns, they are ignored
     from the CSV read.
     """
-    uc = list()
+    uc = []
     for c in (time_column, x_column, y_column, yaw_column):
         if c is not None:
             uc.append(c)
 
     df = pd.read_csv(path, usecols=uc)
 
-    tpp = list()
+    tpp = []
     for t in times:
         row = df.iloc[(df.iloc[:, time_column] - t).abs().argsort()[:1]]
         tpp.append((t, tuple(row.values.flatten().tolist()[1:])))
@@ -238,7 +236,7 @@ def get_position_and_pose_from_mapserver(
     and yaw.
     """
 
-    tpp = list()
+    tpp = []
 
     for t in times:
         position_result = requests.get(
@@ -247,6 +245,7 @@ def get_position_and_pose_from_mapserver(
                 "event_time": t,
                 "crs_code": crs,
             },
+            timeout=2,
         )
         rj = position_result.json()
 
@@ -280,9 +279,9 @@ def groupby_2nd(
     def keyfunc(t: tuple):
         return t[1]
 
-    grouped = list()
-    for k, g in itertools.groupby(tuples, key=keyfunc):
-        first = list()
+    grouped = []
+    for _, g in itertools.groupby(tuples, key=keyfunc):
+        first = []
         second = ""
         for elem in g:
             first.append(elem[0])

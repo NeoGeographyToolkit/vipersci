@@ -7,10 +7,10 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
+import unittest
 from argparse import ArgumentParser
 from datetime import datetime, timezone
 from pathlib import Path
-import unittest
 from unittest.mock import create_autospec, Mock, mock_open, patch
 
 import numpy as np
@@ -19,8 +19,8 @@ from PIL import Image
 from sqlalchemy.orm import Session
 
 from vipersci.pds import pid as pds
-from vipersci.vis.db.image_records import ImageRecord
 from vipersci.vis import create_image as ci
+from vipersci.vis.db.image_records import ImageRecord
 
 
 class TestCLI(unittest.TestCase):

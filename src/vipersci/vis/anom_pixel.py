@@ -26,8 +26,8 @@ in the detector may be of concern.
 
 import argparse
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import numpy as np
 from skimage.filters import median
@@ -66,8 +66,6 @@ def main():
     print(f"There are {len(indices[0])} anomalous pixels.")
     print(f"or {100 * len(indices[0]) / image.size} %")
     print(indices)
-
-    return
 
 
 def check(image, tolerance=3):

@@ -7,12 +7,12 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
+import unittest
+import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 from pathlib import Path
 from textwrap import dedent
-import unittest
 from unittest.mock import create_autospec, mock_open, patch
-import xml.etree.ElementTree as ET
 
 import vipersci.pds.bundle_install as bi
 

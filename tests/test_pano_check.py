@@ -7,11 +7,11 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
+import unittest
 from argparse import ArgumentParser
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
-import unittest
 from unittest.mock import patch
 
 import pandas as pd
@@ -82,7 +82,7 @@ class TestPositionAndPose(unittest.TestCase):
         for t, x, y, yaw in zip(self.times, self.x, self.y, self.yaw):
             time_d[t] = req_dict(location=(x, y), yaw=yaw)
 
-        def requests_get_se(url, params):
+        def requests_get_se(url, params, timeout):
             return time_d[params["event_time"]]
 
         with patch("vipersci.vis.pano_check.requests.get", side_effect=requests_get_se):

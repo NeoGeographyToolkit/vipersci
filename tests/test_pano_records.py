@@ -23,8 +23,8 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from datetime import datetime, timedelta, timezone
 import unittest
+from datetime import datetime, timedelta, timezone
 
 from vipersci.vis.db import pano_records as tpp
 from vipersci.vis.db.image_records import ImageRecord  # noqa

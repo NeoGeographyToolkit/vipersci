@@ -23,9 +23,9 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
+import logging
 from datetime import date
 from importlib import resources
-import logging
 from pathlib import Path
 
 from genshi.template import MarkupTemplate
@@ -86,4 +86,3 @@ def write_xml(
     stream = tmpl.generate(**d)
     out_path = (outdir / product["product_id"]).with_suffix(".xml")
     out_path.write_text(stream.render())
-    return

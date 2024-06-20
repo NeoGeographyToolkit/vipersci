@@ -7,8 +7,8 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from argparse import ArgumentParser
 import unittest
+from argparse import ArgumentParser
 from unittest.mock import patch
 
 from geoalchemy2 import load_spatialite
@@ -16,8 +16,7 @@ from sqlalchemy import create_engine, insert
 from sqlalchemy.event import listen
 from sqlalchemy.orm import Session
 
-from vipersci.vis.db import Base
-from vipersci.vis.db import create_vis_dbs as cvd
+from vipersci.vis.db import Base, create_vis_dbs as cvd
 from vipersci.vis.db.image_tags import ImageTag, taglist
 
 

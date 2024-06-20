@@ -26,20 +26,20 @@
 import argparse
 import json
 import logging
-from typing import Union, Optional
 from pathlib import Path
+from typing import Optional, Union
 
 import numpy as np
 import numpy.typing as npt
-from skimage.io import imread, imsave  # maybe just imageio here?
 from skimage.exposure import equalize_adapthist, rescale_intensity
+from skimage.io import imread, imsave  # maybe just imageio here?
 from skimage.transform import resize
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from vipersci.vis.db.pano_records import PanoRecord
-from vipersci.pds import pid as pds
 from vipersci import util
+from vipersci.pds import pid as pds
+from vipersci.vis.db.pano_records import PanoRecord
 
 logger = logging.getLogger(__name__)
 
@@ -142,8 +142,8 @@ def create(
             ).first()
             if pr is None:
                 raise ValueError(f"{info} was not found in the database.")
-            else:
-                info = pr
+
+            info = pr
         else:
             raise ValueError(f"Without a database session, can't lookup {info}")
 
@@ -193,18 +193,19 @@ def create(
 
     # Make JPG thumbnail
     if thumbsize is not None:
+        scale: float = 1
         if isinstance(thumbsize, int):
             max_dim = max(np.shape(image8))
             if max_dim > thumbsize:
                 scale = max_dim / thumbsize
-                new_shape = tuple(int(x / scale) for x in np.shape(image8))
         elif len(thumbsize) == 2:
             if thumbsize[0] is not None:
                 raise ValueError(
                     "Not sure how to handle a non-None first element for thumbsize."
                 )
             scale = np.shape(image8)[1] / thumbsize[1]
-            new_shape = tuple(int(x / scale) for x in np.shape(image8))
+
+        new_shape = tuple(int(x / scale) for x in np.shape(image8))
 
         image8 = rescale_intensity(
             resize(image8, new_shape), in_range="image", out_range="uint8"
@@ -214,8 +215,6 @@ def create(
 
     with open(outpath.stem + ".json", "w") as f:
         json.dump(d, f, indent=2, sort_keys=True)
-
-    return
 
 
 def longname(path):

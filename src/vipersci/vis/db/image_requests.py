@@ -62,20 +62,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from datetime import datetime
 import enum
+from datetime import datetime
 from typing import Sequence, Union
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum,
-    Identity,
-    Integer,
-    String,
-)
-from sqlalchemy.orm import mapped_column, relationship, validates
 from geoalchemy2 import Geometry  # type: ignore
+from sqlalchemy import Boolean, DateTime, Enum, Identity, Integer, String
+from sqlalchemy.orm import mapped_column, relationship, validates
 
 from vipersci.pds.datetime import isozformat
 from vipersci.pds.pid import vis_instruments
@@ -270,7 +263,8 @@ class ImageRequest(Base):
 
         if limit is not None and len(value) > limit:
             raise ValueError(f"Maximum {limit} {name}s per request.")
-        elif len(value) == 1:
+
+        if len(value) == 1:
             legal = allowable + generalities
             if value[0] not in legal:
                 raise ValueError(f"Single {name} entry must be one of {legal}.")

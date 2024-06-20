@@ -35,7 +35,7 @@ from collections import Counter
 from typing import Optional
 
 import geopandas as gp
-from shapely.geometry import LineString, box
+from shapely.geometry import box, LineString
 
 
 def arg_parser():
@@ -80,7 +80,7 @@ The area and path have different coordinate reference systems.
     try:
         accrual = accumulate(path["geometry"], areas)
     except ValueError as err:
-        parser.error(err.msg)
+        parser.error(str(err))
 
     accumulated_length = sum(accrual.values())
 

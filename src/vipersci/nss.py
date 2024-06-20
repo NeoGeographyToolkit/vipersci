@@ -28,8 +28,8 @@ models.
 # top level of this library.
 
 import logging
-from typing import Any, Iterable, Sequence, Union
 from os import PathLike
+from typing import Any, Iterable, Sequence, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -76,7 +76,6 @@ class DataSimulator:
         self.det1_model = model(det1, bounds_error=bounds_error, fill_value=fill_value)
         self.det2_model = model(det2, bounds_error=bounds_error, fill_value=fill_value)
         self.rng = rng
-        return
 
     def __call__(
         self,
@@ -97,7 +96,7 @@ class DataSimulator:
         one value each, then the returned two-tuple will be a numpy array
         of detector 1 values, and a numpy array of detector 2 values.
         """
-        is_arraylike = True if hasattr(bd, "__iter__") else False
+        is_arraylike = hasattr(bd, "__iter__")
 
         d1 = self.det1_model(np.column_stack((bd, weh)))
         d2 = self.det2_model(np.column_stack((bd, weh)))
@@ -137,7 +136,6 @@ class DataModeler:
         self.det1_model = model(bd_mod, bounds_error=False, fill_value=fill_value)
         self.det2_model = model(weh_mod, bounds_error=False, fill_value=fill_value)
         self.fill_value = fill_value
-        return
 
     def __call__(
         self,
@@ -156,7 +154,7 @@ class DataModeler:
         one value each, then the returned three-tuple will be a numpy array
         of BD values, a numpy array of WEH values, and a numpy array of UWEH values.
         """
-        is_arraylike = True if hasattr(det1, "__iter__") else False
+        is_arraylike = hasattr(det1, "__iter__")
 
         if isinstance(det1, np.ma.MaskedArray) or isinstance(det2, np.ma.MaskedArray):
             d1 = det1 if isinstance(det1, np.ma.MaskedArray) else np.ma.array(det1)
@@ -276,7 +274,7 @@ def uniform_weh(
     If provided, the value to use for points when *measured* triggers the
     *bounds_error*.
     """
-    is_arraylike = True if hasattr(measured, "__iter__") else False
+    is_arraylike = hasattr(measured, "__iter__")
     if is_arraylike and not isinstance(measured, np.ndarray):
         m: Any = np.array(measured)
     else:

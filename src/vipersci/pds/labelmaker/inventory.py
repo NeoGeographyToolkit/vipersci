@@ -26,8 +26,8 @@
 import logging
 from pathlib import Path
 
-from vipersci.pds.labelmaker import get_lidvidfile, write_inventory
 from vipersci import util
+from vipersci.pds.labelmaker import get_lidvidfile, write_inventory
 
 logger = logging.getLogger(__name__)
 
@@ -72,5 +72,3 @@ def main(args):
         labels.append(get_lidvidfile(path))
 
     write_inventory(outpath, labels, args.member)
-
-    return

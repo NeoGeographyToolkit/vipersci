@@ -26,23 +26,23 @@ This module builds "browse" VIS data products from VIS Image Products.
 # top level of this library.
 
 import argparse
-from datetime import datetime, timezone
 import logging
-from typing import Union
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 import numpy.typing as npt
-from skimage.io import imread, imsave
 from skimage.exposure import equalize_adapthist, rescale_intensity
+from skimage.io import imread, imsave
 from skimage.transform import resize
 
-from vipersci.vis.pds import write_xml
-from vipersci.pds.labelmaker import get_lidvidfile
-from vipersci.pds.datetime import isozformat
-from vipersci.pds.xml import find_text, ns
 from vipersci import util
+from vipersci.pds.datetime import isozformat
+from vipersci.pds.labelmaker import get_lidvidfile
+from vipersci.pds.xml import find_text, ns
+from vipersci.vis.pds import write_xml
 
 logger = logging.getLogger(__name__)
 
@@ -133,8 +133,6 @@ def main():
 
     write_xml(metadata, args.template, args.output_dir)
 
-    return
-
 
 def get_product_info(xml_path: Path):
     d = get_lidvidfile(xml_path)
@@ -149,9 +147,9 @@ def get_product_info(xml_path: Path):
 
 
 def get_modification_details(element_tree: ET.Element):
-    mod_history = list()
+    mod_history = []
     for mod_detail in element_tree.findall(".//pds:Modification_Detail", ns):
-        d = dict()
+        d = {}
         for key in ("modification_date", "version_id", "description"):
             d[key] = find_text(mod_detail, f"pds:{key}")
         mod_history.append(d)

@@ -38,11 +38,11 @@ The command-line version is primarily to aide testing.
 # top level of this library.
 
 import argparse
-from datetime import datetime, timedelta, timezone
 import json
 import logging
-from typing import Union
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Union
 from warnings import warn
 
 import numpy as np
@@ -53,17 +53,17 @@ from sqlalchemy.event import listen
 from sqlalchemy.orm import Session
 
 import vipersci
+from vipersci import util
+from vipersci.pds import pid as pds
+from vipersci.pds.datetime import isozformat
+from vipersci.vis.create_image import tif_info
 from vipersci.vis.db.image_records import ImageRecord, ProcessingStage
 from vipersci.vis.db.light_records import (
     LightRecord,
     luminaire_names,
     luminaire_shortnames,
 )
-from vipersci.vis.create_image import tif_info
 from vipersci.vis.pds import lids, write_xml
-from vipersci.pds import pid as pds
-from vipersci.pds.datetime import isozformat
-from vipersci import util
 
 logger = logging.getLogger(__name__)
 
@@ -203,8 +203,6 @@ def main():
 
     write_xml(metadata, args.template, args.output_dir)
 
-    return
-
 
 # class Creator:
 #     """
@@ -339,7 +337,7 @@ def label_dict(ir: ImageRecord, lights: dict):
             f"of {list(ProcessingStage)}, so assuming a value of {proc_info}"
         )
 
-    im_filt = list()
+    im_filt = []
     if ProcessingStage.FLATFIELD in proc_info:
         im_filt.append("Flat field normalization.")
 
