@@ -32,10 +32,10 @@ Panorama Product, only a mock-up of one.
 # top level of this library.
 
 import argparse
-from datetime import timezone
 import logging
-from typing import Any, Dict, Union, Optional, MutableSequence, List
+from datetime import timezone
 from pathlib import Path
+from typing import Any, Dict, List, MutableSequence, Optional, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -46,12 +46,12 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 import vipersci
+from vipersci import util
+from vipersci.pds import pid as pds
+from vipersci.vis.create_image import tif_info, write_json
 from vipersci.vis.db.image_records import ImageRecord
 from vipersci.vis.db.junc_image_pano import JuncImagePano
 from vipersci.vis.db.pano_records import PanoRecord
-from vipersci.pds import pid as pds
-from vipersci.vis.create_image import tif_info, write_json
-from vipersci import util
 
 logger = logging.getLogger(__name__)
 
@@ -144,8 +144,6 @@ def main():
             )
             session.commit()
 
-    return
-
 
 def create(
     inputs: MutableSequence[Union[Path, pds.VISID, ImageRecord, str]],
@@ -190,8 +188,8 @@ def create(
                 ).first()
                 if ir is None:
                     raise ValueError(f"{vid} was not found in the database.")
-                else:
-                    inputs[i] = ir
+
+                inputs[i] = ir
 
     for inp in inputs:
         if isinstance(inp, ImageRecord):
@@ -216,7 +214,7 @@ def create(
     metadata["rover_tilt_max"] = 15
     metadata["rover_tilt_min"] = -50 if bottom_row is None else -80
 
-    image_list = list()
+    image_list = []
     for path in source_paths:
         p = Path(path)
         if not p.exists():
@@ -233,7 +231,7 @@ def create(
                 "-",
             ] * (len(source_paths) - len(bottom_row))
 
-        bottom_list = list()
+        bottom_list = []
         for b in bottom_row:
             if b == "-":
                 bottom_list.append(np.zeros_like(image_list[0]))
@@ -294,8 +292,6 @@ def create(
 
         else:
             session.add(pp)
-
-    return
 
 
 def make_pano_record(

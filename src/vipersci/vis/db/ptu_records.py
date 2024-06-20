@@ -25,14 +25,12 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from sqlalchemy import (
-    DateTime,
-    Float,
-)
+from sqlalchemy import DateTime, Float
 from sqlalchemy.orm import mapped_column, validates
 
-from vipersci.vis.db import Base
 import vipersci.vis.db.validators as vld
+
+from vipersci.vis.db import Base
 
 
 class PanRecord(Base):

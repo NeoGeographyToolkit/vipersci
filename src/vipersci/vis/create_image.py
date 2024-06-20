@@ -33,11 +33,11 @@ The command-line version is primarily to aide testing.
 # top level of this library.
 
 import argparse
-from datetime import datetime, timezone
 import json
 import logging
-from typing import Union, Optional
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -50,14 +50,15 @@ from sqlalchemy.orm import Session
 from tifftools import read_tiff
 
 import vipersci
-from vipersci.vis.db.image_records import ImageRecord
-from vipersci.vis.db.image_requests import ImageRequest  # noqa
-from vipersci.vis.db.junc_image_pano import JuncImagePano  # noqa
-from vipersci.vis.db.junc_image_record_tags import JuncImageRecordTag  # noqa
-from vipersci.vis.db.junc_image_req_ldst import JuncImageRequestLDST  # noqa
-from vipersci.vis.db.pano_records import PanoRecord  # noqa
-from vipersci.pds import pid as pds
 from vipersci import util
+from vipersci.pds import pid as pds
+from vipersci.vis.db.image_records import ImageRecord
+
+# from vipersci.vis.db.image_requests import ImageRequest  # noqa
+# from vipersci.vis.db.junc_image_pano import JuncImagePano  # noqa
+# from vipersci.vis.db.junc_image_record_tags import JuncImageRecordTag  # noqa
+# from vipersci.vis.db.junc_image_req_ldst import JuncImageRequestLDST  # noqa
+# from vipersci.vis.db.pano_records import PanoRecord  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -134,8 +135,6 @@ def main():
                 args.json,
             )
             session.commit()
-
-    return
 
 
 def create(
@@ -221,7 +220,6 @@ def check_bit_depth(pid: pds.VISID, bit_depth: Union[int, str, np.dtype]):
             raise ValueError(
                 f"This product ({pid}) should be 16-bit, but it is {bit_depth}"
             )
-    return
 
 
 def make_image_record(

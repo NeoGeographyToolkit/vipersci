@@ -26,11 +26,7 @@ image_tags tables using the SQLAlchemy ORM."""
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from sqlalchemy import (
-    ForeignKey,
-    Integer,
-    String,
-)
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import mapped_column, relationship
 
 from vipersci.vis.db import Base

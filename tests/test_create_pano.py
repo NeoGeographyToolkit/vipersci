@@ -7,22 +7,22 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
+import unittest
 from argparse import ArgumentParser
 from datetime import datetime, timezone
 from pathlib import Path
-import unittest
 from unittest.mock import create_autospec, Mock, patch
 
-from geoalchemy2 import load_spatialite
 import numpy as np
+from geoalchemy2 import load_spatialite
 from sqlalchemy import create_engine
 from sqlalchemy.event import listen
 from sqlalchemy.orm import Session
 
+from vipersci.vis import create_pano as cp
 from vipersci.vis.db import Base
 from vipersci.vis.db.image_records import ImageRecord
 from vipersci.vis.db.pano_records import PanoRecord
-from vipersci.vis import create_pano as cp
 
 
 class TestCLI(unittest.TestCase):

@@ -25,9 +25,9 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from textwrap import dedent
 import unittest
 import xml.etree.ElementTree as ET
+from textwrap import dedent
 
 from vipersci.pds import xml
 

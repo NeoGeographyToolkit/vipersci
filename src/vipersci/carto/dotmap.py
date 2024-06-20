@@ -26,11 +26,11 @@ The dotmap module takes scalar values with 2D coordinates and creates a simple
 # top level of this library.
 
 import math
-from typing import Tuple, Sequence
+from typing import Sequence, Tuple
 
 import numpy as np
-from numpy.typing import NDArray
 import rasterio
+from numpy.typing import NDArray
 from rasterio.coords import BoundingBox
 from rasterio.features import rasterize
 from shapely.geometry import Point

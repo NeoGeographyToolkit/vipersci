@@ -27,22 +27,15 @@
 
 from datetime import datetime
 
-from sqlalchemy import (
-    DateTime,
-    Enum,
-    Float,
-    Identity,
-    Integer,
-    String,
-)
+from sqlalchemy import DateTime, Enum, Float, Identity, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import mapped_column, relationship, validates
 
-from vipersci.pds import Purpose
-from vipersci.pds.pid import VISID, PanoID
-from vipersci.pds.datetime import isozformat
-from vipersci.vis.db import Base
 import vipersci.vis.db.validators as vld
+from vipersci.pds import Purpose
+from vipersci.pds.datetime import isozformat
+from vipersci.pds.pid import PanoID, VISID
+from vipersci.vis.db import Base
 
 
 class PanoRecord(Base):
@@ -189,7 +182,7 @@ class PanoRecord(Base):
 
             pid = PanoID(st.date(), st.time(), inst)
         else:
-            got = dict()
+            got = {}
             for k in (
                 "product_id",
                 "start_time",
@@ -214,14 +207,12 @@ class PanoRecord(Base):
         # they should just be pre-defined properties and not left to chance?
         self.labelmeta = otherargs
 
-        return
-
     @hybrid_property
     def product_id(self):
         return self._pid
 
     @product_id.inplace.setter
-    def _product_id_setter(self, pid):
+    def _product_id_setter(self, _):
         # In this class, the source of product_id information really is what
         # based on the source products, and so this should not be monkeyed with.
         # So at this time, this can only be set when this object is instantiated.
@@ -238,7 +229,7 @@ class PanoRecord(Base):
         return vld.validate_datetime_asutc(key, value)
 
     @validates("purpose")
-    def validate_purpose(self, key, value: str):
+    def validate_purpose(self, _, value: str):
         return vld.validate_purpose(value)
 
     def asdict(self):

@@ -26,17 +26,16 @@
 # top level of this library.
 
 import argparse
-from io import StringIO
 import logging
+from io import StringIO
 from pathlib import Path
 from typing import Sequence, Union
 
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 
-from vipersci import __version__
-from vipersci import util
+from vipersci import __version__, util
 
 logger = logging.getLogger(__name__)
 
@@ -331,8 +330,6 @@ def example_plot(palette: Palette, output=None):
     else:
         plt.savefig(output)
 
-    return
-
 
 def plot_colorbar(palette: Palette, orientation: str = "h", output=None):
     """Plot colorbars only."""
@@ -348,6 +345,8 @@ def plot_colorbar(palette: Palette, orientation: str = "h", output=None):
     elif orientation == "vertical":
         fig, ax = plt.subplots(figsize=(1.2, 5))
         fig.subplots_adjust(right=0.4)
+    else:
+        raise ValueError(f"The orientation ({orientation}) is not recognized.")
 
     fig.colorbar(
         mpl.cm.ScalarMappable(norm=palette.norm, cmap=palette.cmap),
@@ -360,8 +359,6 @@ def plot_colorbar(palette: Palette, orientation: str = "h", output=None):
         plt.show()
     else:
         plt.savefig(output)
-
-    return
 
 
 def rescale(arr, min, max, range_mult=0.1):

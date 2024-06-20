@@ -36,11 +36,11 @@ The command-line version is primarily to aide testing.
 # top level of this library.
 
 import argparse
-from datetime import timezone
 import json
 import logging
-from typing import Union
+from datetime import timezone
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import numpy.typing as npt
@@ -48,10 +48,10 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 import vipersci
-from vipersci.vis.db.pano_records import PanoRecord
-from vipersci.vis.create_image import tif_info
-from vipersci.pds import pid as pds
 from vipersci import util
+from vipersci.pds import pid as pds
+from vipersci.vis.create_image import tif_info
+from vipersci.vis.db.pano_records import PanoRecord
 from vipersci.vis.pds import lids, write_xml
 
 logger = logging.getLogger(__name__)
@@ -184,8 +184,6 @@ def main():
         metadata.update(t_info)
 
     write_xml(metadata, args.template, args.output_dir)
-
-    return
 
 
 def label_dict(pr: PanoRecord):

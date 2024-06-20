@@ -27,13 +27,13 @@ a bundle directory.
 import argparse
 import csv
 import logging
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from shutil import copy2
-import xml.etree.ElementTree as ET
 
+from vipersci import util
 from vipersci.pds.labelmaker import get_lidvidfile
 from vipersci.pds.xml import find_text, ns
-from vipersci import util
 
 logger = logging.getLogger(__name__)
 
@@ -134,5 +134,3 @@ def main():
 
             if len(col_lidvids) != 0:
                 raise ValueError(f"Could not find the following lidvids: {col_lidvids}")
-
-    return

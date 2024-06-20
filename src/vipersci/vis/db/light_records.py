@@ -25,17 +25,12 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Identity,
-    Integer,
-    String,
-)
+from sqlalchemy import Boolean, DateTime, Identity, Integer, String
 from sqlalchemy.orm import mapped_column, validates
 
-from vipersci.vis.db import Base
 import vipersci.vis.db.validators as vld
+
+from vipersci.vis.db import Base
 
 
 luminaire_names = {

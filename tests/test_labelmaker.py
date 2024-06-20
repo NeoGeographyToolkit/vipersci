@@ -7,17 +7,17 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
+import unittest
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from textwrap import dedent
-import unittest
 from unittest.mock import call, create_autospec, mock_open, patch
-import xml.etree.ElementTree as ET
 
-from genshi.template import Template
 import pandas as pd
 
 import vipersci.pds.labelmaker as lm
+from genshi.template import Template
 
 
 class TestFunctions(unittest.TestCase):

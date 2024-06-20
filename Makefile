@@ -59,7 +59,11 @@ lint/mypy: ## check types with mypy
 lint/twine: dist ## check if this would pass twine upload
 	twine check dist/*
 
-lint: lint/flake8 lint/black lint/mypy ## check style
+lint/ufmt:
+	ufmt check src
+	ufmt check tests
+
+lint: lint/flake8 lint/black lint/mypy lint/ufmt  ## check style
 
 test: ## run tests quickly with the default Python
 	pytest

@@ -23,11 +23,11 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from datetime import datetime, timezone, timedelta
 import unittest
+from datetime import datetime, timedelta, timezone
 
-from vipersci.pds.datetime import fromisozformat
 import vipersci.vis.db.validators as vld
+from vipersci.pds.datetime import fromisozformat
 
 
 class TestValidators(unittest.TestCase):

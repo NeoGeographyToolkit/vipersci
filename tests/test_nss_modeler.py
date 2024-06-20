@@ -24,8 +24,8 @@
 # top level of this library.
 
 import argparse
-from pathlib import Path
 import unittest
+from pathlib import Path
 from unittest.mock import mock_open, patch
 
 import numpy as np

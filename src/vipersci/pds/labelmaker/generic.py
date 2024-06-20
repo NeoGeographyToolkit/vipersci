@@ -27,10 +27,11 @@ the template.
 import json
 import logging
 from pathlib import Path
+
 import yaml
 
-from vipersci.pds.labelmaker import write_xml
 from vipersci import util
+from vipersci.pds.labelmaker import write_xml
 
 logger = logging.getLogger(__name__)
 
@@ -56,5 +57,3 @@ def main(args):
         info = yaml.safe_load(args.yaml.read_text())
 
     write_xml(info, args.output, args.template)
-
-    return

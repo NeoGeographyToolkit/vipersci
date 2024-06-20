@@ -25,11 +25,11 @@
 
 import argparse
 
+from vipersci import util
 from vipersci.pds.labelmaker.bundle import add_parser as bundle_ap
 from vipersci.pds.labelmaker.collection import add_parser as collection_ap
 from vipersci.pds.labelmaker.generic import add_parser as generic_ap
 from vipersci.pds.labelmaker.inventory import add_parser as inventory_ap
-from vipersci import util
 
 
 def main():
@@ -47,5 +47,3 @@ def main():
     generic_ap(subparsers)
     args = parser.parse_args()
     args.func(args)
-
-    return

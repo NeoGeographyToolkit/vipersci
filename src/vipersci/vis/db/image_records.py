@@ -25,10 +25,10 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from datetime import datetime, timedelta, timezone
 import enum
-from warnings import warn
 import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta, timezone
+from warnings import warn
 
 from sqlalchemy import (
     Boolean,
@@ -43,13 +43,13 @@ from sqlalchemy import (
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import mapped_column, relationship, synonym, validates
 
-from vipersci.pds import Purpose
-from vipersci.pds.pid import VISID, vis_instruments
-from vipersci.pds.xml import find_text, ns
-from vipersci.pds.datetime import fromisozformat, isozformat
-from vipersci.vis.header import pga_gain as header_pga_gain
-from vipersci.vis.db import Base
 import vipersci.vis.db.validators as vld
+from vipersci.pds import Purpose
+from vipersci.pds.datetime import fromisozformat, isozformat
+from vipersci.pds.pid import vis_instruments, VISID
+from vipersci.pds.xml import find_text, ns
+from vipersci.vis.db import Base
+from vipersci.vis.header import pga_gain as header_pga_gain
 
 
 class ImageType(enum.Flag):
@@ -404,6 +404,8 @@ class ImageRecord(Base):
     def __init__(self, **kwargs):
         if "lobt" in kwargs:
             lobt_dt = datetime.fromtimestamp(kwargs["lobt"], tz=timezone.utc)
+        else:
+            lobt_dt = None
 
         if kwargs.keys() >= {"start_time", "lobt"}:
             if isinstance(kwargs["start_time"], str):
@@ -444,8 +446,8 @@ class ImageRecord(Base):
             kwargs["icer_minloss"] = int(kwargs["minLoss"])
             del kwargs["minLoss"]
 
-        rpargs = dict()
-        otherargs = dict()
+        rpargs = {}
+        otherargs = {}
         for k, v in kwargs.items():
             if k in self.__table__.columns or k in self.__mapper__.synonyms:
                 rpargs[k] = v
@@ -595,7 +597,7 @@ class ImageRecord(Base):
                 c,
             )
         else:
-            got = dict()
+            got = {}
             for k in (
                 "product_id",
                 "start_time",
@@ -628,13 +630,11 @@ class ImageRecord(Base):
         # they should just be pre-defined properties and not left to chance?
         self.labelmeta = otherargs
 
-        return
-
     def __lt__(self, other):
         if isinstance(other, self.__class__):
             return VISID(self.product_id) < VISID(other.product_id)
-        else:
-            return NotImplemented
+
+        return NotImplemented
 
     @hybrid_property
     def exposure_duration(self):
@@ -698,11 +698,12 @@ class ImageRecord(Base):
         "light_on_nl",
         "light_on_nr",
     )
-    def validate_lights(self, key, value):
+    def validate_lights(self, _, value):
         if isinstance(value, str):
             if value.casefold() == "on":
                 return True
-            elif value.casefold() == "off":
+
+            if value.casefold() == "off":
                 return False
 
         return bool(value)
@@ -763,9 +764,7 @@ class ImageRecord(Base):
             )
         d["product_id"] = lid[5]
 
-        d["auto_exposure"] = (
-            True if find_text(root, ".//img:exposure_type") == "Auto" else False
-        )
+        d["auto_exposure"] = find_text(root, ".//img:exposure_type") == "Auto"
         d["bad_pixel_table_id"] = int(
             find_text(root, ".//img:bad_pixel_replacement_table_id")
         )

@@ -24,12 +24,13 @@
 # top level of this library.
 
 import logging
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import pandas as pd
 import yaml
 
+from vipersci import util
 from vipersci.pds.labelmaker import (
     assert_unique,
     gather_info,
@@ -37,7 +38,6 @@ from vipersci.pds.labelmaker import (
     write_xml,
 )
 from vipersci.pds.xml import find_text, ns
-from vipersci import util
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +94,6 @@ def main(args):
 
     write_xml(d, outpath, args.template)
     logger.info(f"Wrote {outpath}")
-
-    return
 
 
 def check_and_derive(config: dict, labelinfo: list):

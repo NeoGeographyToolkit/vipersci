@@ -25,15 +25,15 @@
 
 import csv
 import logging
-from pathlib import Path
-from typing import List, Dict, Optional
 import xml.etree.ElementTree as ET
+from pathlib import Path
+from typing import Dict, List, Optional
 
 import pandas as pd
+from genshi.template import MarkupTemplate
 
 from vipersci.pds.datetime import fromisozformat, isozformat
 from vipersci.pds.xml import find_text, ns
-from genshi.template import MarkupTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -235,7 +235,6 @@ def assert_unique(value, series: pd.Series):
             f"The series has more than one unique value of {series.name}: "
             f"{series.unique()} "
         )
-    return
 
 
 def vid_max(modification_details: List[Dict], max_product_vid: Optional[float] = None):
@@ -275,8 +274,6 @@ def write_inventory(path: Path, labels: List[Dict], member="P"):
             m = label.get("member", member)
             writer.writerow([m, lidvid])
 
-    return
-
 
 def write_xml(metadata: dict, outpath: Path, template_path: Path):
     """
@@ -291,4 +288,3 @@ def write_xml(metadata: dict, outpath: Path, template_path: Path):
 
     stream = tmpl.generate(**metadata)
     outpath.write_text(stream.render())
-    return

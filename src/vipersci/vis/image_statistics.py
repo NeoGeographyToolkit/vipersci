@@ -25,17 +25,17 @@
 
 import argparse
 import logging
+from pathlib import Path
 from textwrap import dedent
 from typing import Union
-from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 from rasterio.windows import Window
 from scipy.ndimage import generic_filter
-from skimage.morphology import disk
-from skimage.io import imread
 from skimage import measure
+from skimage.io import imread
+from skimage.morphology import disk
 
 from vipersci import util
 
@@ -77,8 +77,6 @@ def main():
     print(pprint(image))
 
     print(f"aggregate_noise: {aggregate_noise(image)} DN")
-
-    return
 
 
 def aggregate_noise(image):

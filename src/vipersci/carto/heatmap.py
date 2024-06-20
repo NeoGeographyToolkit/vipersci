@@ -25,19 +25,19 @@ heatmap representation with individual points effectively averaged together.
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-import math
-from multiprocessing import Pool
-from itertools import chain
-import time
-from typing import Any, Dict, Optional, Sequence, Tuple
 import logging
+import math
+import time
+from itertools import chain
+from multiprocessing import Pool
+from typing import Any, Dict, Optional, Sequence, Tuple
 
-import pyproj
 import numpy as np
-from numpy.typing import NDArray
+import pyproj
 import rasterio
 import rasterio.features
 import shapely.geometry
+from numpy.typing import NDArray
 from sklearn.neighbors import KernelDensity
 
 from vipersci.carto.bounds import compute_bounds, pad_grid_align_bounds
@@ -106,8 +106,8 @@ def as_ndarray(input: Sequence) -> NDArray:
     """
     if isinstance(input, np.ndarray):
         return input
-    else:
-        return np.asarray(input)
+
+    return np.asarray(input)
 
 
 def generate_density_heatmap(
@@ -174,7 +174,7 @@ def generate_density_heatmap(
     if processes < 1:
         raise ValueError("Processes must be a positive integer.")
 
-    if not (len(x_coords) == len(y_coords) == len(values)):
+    if not len(x_coords) == len(y_coords) == len(values):
         raise ValueError("Input arrays must be of the same length.")
 
     values_all = as_ndarray(values)

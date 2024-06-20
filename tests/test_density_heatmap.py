@@ -24,13 +24,13 @@
 # top level of this library.
 
 import math
-from typing import Tuple
 import unittest
+from typing import Tuple
 
 import numpy as np
 import numpy.testing as npt
-from rasterio import transform, windows
 import shapely
+from rasterio import transform, windows
 
 from vipersci.carto import heatmap as hm
 

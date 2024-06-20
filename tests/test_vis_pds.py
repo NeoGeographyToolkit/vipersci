@@ -25,8 +25,8 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 from unittest.mock import create_autospec, patch
 
 from genshi.template import Template

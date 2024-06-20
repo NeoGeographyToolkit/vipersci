@@ -7,11 +7,12 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
+import unittest
 from argparse import ArgumentParser
 from pathlib import Path
-import unittest
 from unittest.mock import patch
 
+from datetime_sqlite import isozformat
 from geoalchemy2 import load_spatialite
 from sqlalchemy import create_engine
 from sqlalchemy.event import listen
@@ -22,8 +23,6 @@ from vipersci.vis.db.image_records import ImageRecord
 from vipersci.vis.db.junc_image_pano import JuncImagePano
 from vipersci.vis.db.pano_records import PanoRecord
 from vipersci.vis.pds import create_pano_product as cpp
-
-from datetime_sqlite import isozformat
 
 
 class TestParser(unittest.TestCase):

@@ -29,7 +29,7 @@ buffered versions of the regions.
 import argparse
 
 import geopandas as gp
-from shapely.geometry import Polygon, MultiPolygon
+from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
 
@@ -73,7 +73,7 @@ def main():
     elif args.buffer < 0:
         # Since we are shrinking the geometries, we must first put them
         # together.
-        expanded = list()
+        expanded = []
         for cat in categories.index:
             if cat == isr_order[0]:
                 # The first geometry doesn't combine
@@ -108,11 +108,10 @@ def main():
 
 def clean(geometry):
     if isinstance(geometry, GeometryCollection):
-        polys = list()
+        polys = []
         for geom in geometry:
             if isinstance(geom, (Polygon, MultiPolygon)):
                 polys.append(geom)
         return unary_union(polys)
 
-    else:
-        return geometry
+    return geometry

@@ -7,8 +7,8 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from argparse import ArgumentParser
 import unittest
+from argparse import ArgumentParser
 from unittest.mock import patch
 
 import vipersci.pds.labelmaker.inventory as inv

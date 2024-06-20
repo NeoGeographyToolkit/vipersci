@@ -1,6 +1,26 @@
 """Creates a PDS4 Collection XML file from the provided XML labels.
 """
 
+import logging
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
+from pathlib import Path
+
+import pandas as pd
+import yaml
+
+from vipersci import util
+from vipersci.pds.datetime import isozformat
+from vipersci.pds.labelmaker import (
+    assert_unique,
+    gather_info,
+    get_common_label_info,
+    vid_max,
+    write_inventory,
+    write_xml,
+)
+from vipersci.pds.xml import ns
+
 # Copyright 2023, United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All rights reserved.
@@ -23,25 +43,6 @@
 # The AUTHORS file and the LICENSE file are at the
 # top level of this library.
 
-from datetime import datetime, timezone
-import logging
-from pathlib import Path
-import xml.etree.ElementTree as ET
-
-import pandas as pd
-import yaml
-
-from vipersci.pds.datetime import isozformat
-from vipersci.pds.labelmaker import (
-    assert_unique,
-    gather_info,
-    get_common_label_info,
-    vid_max,
-    write_inventory,
-    write_xml,
-)
-from vipersci.pds.xml import ns
-from vipersci import util
 
 logger = logging.getLogger(__name__)
 
@@ -107,8 +108,6 @@ def main(args):
 
     write_xml(d, outpath, args.template)
     logger.info(f"Wrote {outpath}")
-
-    return
 
 
 def check_and_derive(config: dict, labelinfo: list):
