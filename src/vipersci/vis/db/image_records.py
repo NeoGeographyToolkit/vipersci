@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding: utf-8
 
 """Defines the VIS image_records table using the SQLAlchemy ORM."""
@@ -122,6 +121,12 @@ class ImageRecord(Base):
         # TODO: learn more about captureIds to provide better doc here.
     )
     captureId = synonym("capture_id")
+    ccu_temperature = mapped_column(
+        Float,
+        nullable=True,
+        doc="The temperature in degrees C from the AD590 sensor mounted "
+        "on the interior wall of the warmbox near the CCU.",
+    )
     _exposure_duration = mapped_column(
         "exposure_duration",
         Integer,
@@ -130,6 +135,12 @@ class ImageRecord(Base):
         "EXP_STEP and EXP paramaters from the MCSE Image Header.",
     )
     exposureTime = synonym("exposure_duration")  # Yamcs parameter name.
+    external_temperature = mapped_column(
+        Float,
+        nullable=True,
+        doc="The temperature in degrees C from the AD590 sensor mounted "
+        "on the outside of the camera body.",
+    )
     file_creation_datetime = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -152,6 +163,7 @@ class ImageRecord(Base):
     haz4LightState = synonym("light_on_has")
     haz5LightState = synonym("light_on_hcp")
     haz6LightState = synonym("light_on_hcs")
+    HS_STBD_AD590_1 = synonym("ccu_temperature")
     icer_byte_quota = mapped_column(
         Integer,
         doc="The byteQuota value during onboard ICER compression.  In the returned "
@@ -623,6 +635,30 @@ class ImageRecord(Base):
         ):  # 65535
             self.waypoint_id = int(bin(self.capture_id)[:-16], base=2)
             self.unique_capture_id = int(bin(self.capture_id)[-16:], base=2)
+
+        # Extract relevant AD590 sensor, if available
+        ad590_names = {
+            "acl": "AFTCAM_STEREO_L_AD590",
+            "acr": "AFTCAM_STEREO_R_AD590",
+            "hap": "HAZCAM2_AFT_PORT_AD590",
+            "has": "HAZCAM4_AFT_STBD_AD590",
+            "hfp": "HAZCAM1_FWD_PORT_AD590",
+            "hfs": "HAZCAM3_FWD_STBD_AD590",
+            "ncl": "NAVCAM_STEREO_L_AD590",
+            "ncr": "NAVCAM_STEREO_R_AD590",
+        }
+        if ad590_names[pid.instrument] in otherargs:
+            self.external_temperature = otherargs[ad590_names[pid.instrument]]
+            del otherargs[ad590_names[pid.instrument]]
+
+        # Remove other AD590 temperatures
+        for t in ad590_names.values():
+            otherargs.pop(t, None)
+
+        # Remove pan and tilt from non-NavCams:
+        if not pid.instrument.startswith("nc"):
+            otherargs.pop("pan", None)
+            otherargs.pop("tilt", None)
 
         # Is this really a good idea?  Not sure.  This instance variable plus
         # label_dict() and update() allow other key/value pairs to be carried around

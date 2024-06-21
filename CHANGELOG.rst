@@ -28,6 +28,12 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+Added
+^^^^^
+
+- image_records.py - Added ccu_temperature and external_temperature columns to record the
+  AD590 sensor data.
+
 Fixed
 ^^^^^
 - get_position.py - The get_position_and_pose functions now have an explicit timeout
