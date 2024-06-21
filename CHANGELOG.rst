@@ -28,9 +28,15 @@ and the release date, in year-month-day format (see examples below).
 Unreleased
 ----------
 
+
+0.11.0 (2024-06-24)
+-------------------
+The large number of minor changes in this release are the result of applying ufmt
+to organize the imports that the top of each module, and the application of pylint
+to tidy up a variety of code structures.
+
 Added
 ^^^^^
-
 - image_records.py - Added ccu_temperature and external_temperature columns to record the
   AD590 sensor data.
 
